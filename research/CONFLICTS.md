@@ -2,7 +2,7 @@
 
 This register aggregates every recorded disagreement between sources in the Phase 1 corpus, for use in the Phase 2 council debate (docs/phase2/council-kit.md, rule 4: conflicts listed here must be argued, not ignored). It resolves nothing and gives no verdict on the hypothesis.
 
-Sources aggregated: the Conflicts sections of research/01 to research/08; section 13 of every research/references/REF-*.md present at the time of writing (REF-C01 to REF-C09, REF-C11, REF-L01 to REF-L08, REF-L10 to REF-L23); and the "Unrecorded conflicts" table of research/REVIEW-phase1.md (every row is carried; the QUIC attribution row is entered as a correction with provenance). REF-C10 (Aneris/Trillium/Grove) was not on disk at the time of writing and will be folded in by a refresh pass; new entries will take the next free numbers.
+Sources aggregated: the Conflicts sections of research/01 to research/08; section 13 of every research/references/REF-*.md present at the time of writing (REF-C01 to REF-C11, REF-L01 to REF-L08, REF-L10 to REF-L23); and the "Unrecorded conflicts" table of research/REVIEW-phase1.md (every row is carried; the QUIC attribution row is entered as a correction with provenance). Later additions take the next free numbers.
 
 Conventions:
 - Entries are numbered CF-001 onward and are never renumbered. CF-001 to CF-119 follow document order; later additions take the next free number and are placed in their sub-claim section, so numbers after CF-119 are not in document order.
@@ -12,7 +12,7 @@ Conventions:
 - Deduplication: where several files record the same disagreement, one entry is made and the "Recorded in" line lists every recording.
 - Status is "open" for every entry. Where a recording file or the review already gives a reading (for example "likely a version difference"), it is quoted, not adopted.
 
-Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Implementation link: 58; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 125.
+Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 46; H3 Implementation link: 58; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 126.
 
 ## Index
 
@@ -50,7 +50,7 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 | CF-030 | CatCrypt handshake-security claims versus availability | H2 | doc-vs-doc | 02 |
 | CF-031 | Hydrozoan: machine-checked versus "Read critically" | H2, D | interpretive | 02 |
 | CF-032 | IronFleet proof-to-code ratio | H2 | number mismatch | 04 |
-| CF-033 | IronFleet liveness and correctness scope | H2, H3, D | claim-vs-code | REF-C02, 04, REVIEW-phase1 |
+| CF-033 | IronFleet liveness and correctness scope | H2, H3, D | claim-vs-code | REF-C02, 04, REVIEW-phase1, REF-C10 |
 | CF-034 | IronKV line counts: Verus versus IronFleet | H2 | number mismatch | REF-C02 |
 | CF-035 | Verdi Raft size | H2 | number mismatch | REF-C03 |
 | CF-036 | Tamarin 5G-AKA model and lemma counts | H2 | paper-vs-repo | REF-C05 |
@@ -92,7 +92,7 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 | CF-072 | hax `implies` semantics | H3 | doc-vs-doc | REF-L08 |
 | CF-073 | Aeneas support for unsafe and union code | H3, H4 | doc-vs-doc | 08 |
 | CF-074 | Aeneas supported loop and borrow subset | H3, H4 | doc-vs-doc | REF-L07 |
-| CF-075 | Aeneas Result semantics: paper versus main, and the uninspected pinned revision | H3 | paper-vs-repo | REF-L07, REVIEW-phase1 |
+| CF-075 | Aeneas Result semantics across revisions (paper, pinned d71d2e3f, main) | H3 | paper-vs-repo | REF-L07, REVIEW-phase1 |
 | CF-076 | SymCrypt paper Appendix C versus code | H3 | paper-vs-repo | REF-L07 |
 | CF-077 | SymCrypt ML-KEM size | H3 | number mismatch | REF-L07 |
 | CF-078 | Cedar Rust line counts | H3 | number mismatch | REF-L01 |
@@ -143,6 +143,7 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 | CF-123 | Perennial default branch | H3 | doc-vs-doc | REF-L22 |
 | CF-124 | Wording of the CompCert guarantee | H3, D | doc-vs-doc | REF-C11, 03 |
 | CF-125 | CakeML in-logic bootstrapping versus CompCert extraction trust | H3, D | interpretive | REF-C11 |
+| CF-126 | Aneris network model: no duplication (paper) versus duplication step (code) | H1 | paper-vs-repo | REF-C10 |
 
 ## H1 Expressiveness
 
@@ -235,6 +236,15 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 - Why it matters for the debate: Claims about Perennial's crash-reasoning capability in Lean depend on which branch is meant.
 - Status: open
 - Recorded in: REF-L22 §13
+
+### CF-126 Aneris network model: no duplication (paper) versus duplication step (code)
+- Sub-claims: H1
+- Type: paper-vs-repo
+- Side A: the ESOP 2020 Aneris paper "assumed a network that does not duplicate" (REF-C10:S4, research/references/REF-C10-aneris-trillium-grove-fairneris.md; dossier paraphrase, no verbatim sentence from the paper is recorded)
+- Side B: "`aneris/aneris_lang/lang.v:1032` `MessageDuplicateStep` adds a copy of an in-flight message (`state_ms σ ⊎ {[+ m +]}`)" (REF-C10:S5, logsem/aneris @ 59ae379)
+- Why it matters for the debate: Statements about which network faults Aneris-based proofs cover depend on whether the 2020 paper or the current code is cited.
+- Status: open
+- Recorded in: REF-C10 §13
 
 ## H2 Provability at scale
 
@@ -448,11 +458,11 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 ### CF-033 IronFleet liveness and correctness scope
 - Sub-claims: H2, H3, D
 - Type: claim-vs-code
-- Side A: "We prove complete functional correctness and its key liveness property" (REF-C02:C02-S1, research/references/REF-C02-ironfleet-verus.md); "the first methodology for automated machine-checked verification of the safety and liveness of non-trivial distributed system implementations" (04:S55, research/04-other-tools-protocol-verification.md)
-- Side B: "A machine-checked proof that this obligation enables reduction is future work; instead, we sketch an informal argument" (REF-C02:C02-S1); "`assume TimeNotZeno(timefun);`" at `ViewAdvance.i.dfy:321` (REF-C02:C02-S5); Trillium describes IronFleet as one that "does not support node-local concurrency" and uses "a pen-and-paper argument for proving liveness" (04:S43)
+- Side A: "We prove complete functional correctness and its key liveness property" (REF-C02:C02-S1, research/references/REF-C02-ironfleet-verus.md); "the first methodology for automated machine-checked verification of the safety and liveness of non-trivial distributed system implementations" (04:S55, research/04-other-tools-protocol-verification.md); Grove: "IronFleet also includes a proof of liveness, though it does not handle thread concurrency" (REF-C10:S2, research/references/REF-C10-aneris-trillium-grove-fairneris.md)
+- Side B: "A machine-checked proof that this obligation enables reduction is future work; instead, we sketch an informal argument" (REF-C02:C02-S1); "`assume TimeNotZeno(timefun);`" at `ViewAdvance.i.dfy:321` (REF-C02:C02-S5); Trillium describes IronFleet as one that "does not support node-local concurrency" and uses "a pen-and-paper argument for proving liveness" (04:S43); the same Trillium Related Work section is cited again in REF-C10 (REF-C10:S1, §8); Fairneris describes IronFleet as requiring each node to be "a simple single-threaded event loop", with liveness obtained by proving that event handlers terminate (REF-C10:S3)
 - Why it matters for the debate: The main comparator's guarantee mixes machine-checked layers with an informal meta-argument and an assumed environment property.
 - Status: open
-- Recorded in: REF-C02 §13; 04 §9 (Trillium) and §10; REVIEW-phase1 "Unrecorded conflicts" (Trillium/IronFleet row)
+- Recorded in: REF-C02 §13; REF-C10 §13 (Trillium, Fairneris and Grove items); 04 §9 (Trillium) and §10; REVIEW-phase1 "Unrecorded conflicts" (Trillium/IronFleet row)
 
 ### CF-034 IronKV line counts: Verus versus IronFleet
 - Sub-claims: H2
@@ -843,14 +853,14 @@ Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Impl
 - Status: open
 - Recorded in: REF-L07 §13 item 4
 
-### CF-075 Aeneas Result semantics: paper versus main, and the uninspected pinned revision
+### CF-075 Aeneas Result semantics across revisions (paper, pinned d71d2e3f, main)
 - Sub-claims: H3
 - Type: paper-vs-repo
-- Side A: the paper describes the Lean `Result` as an exception monad with `←` propagating failure (REF-L07:A1 §5.1, research/references/REF-L07-aeneas-symcrypt.md)
-- Side B: "Aeneas main now defines `Result := ITree RustEffect`" (REF-L07:C2); SymCrypt is "pinned to Aeneas `d71d2e3f`" (REF-L07 header table)
-- Why it matters for the debate: Main-branch semantics may be attributed to the pinned revision used for SymCrypt; REVIEW-phase1 asks to "preserve as a version/provenance limitation, not as demonstrated semantic disagreement".
-- Status: open
-- Recorded in: REF-L07 §13 item 6; REVIEW-phase1 "Unrecorded conflicts" (Aeneas row)
+- Side A: the paper describes the Lean `Result` as an exception monad with `←` propagating failure (REF-L07:A1 §5.1, research/references/REF-L07-aeneas-symcrypt.md); at the revision SymCrypt pins, `backends/lean/Aeneas/Std/Primitives.lean:63-67` defines "`inductive Result (α : Type u) where | ok (v: α): Result α | fail (e: Error): Result α | div`", with "`spec := theta`" (REF-L07:C4, Aeneas @ d71d2e3f, [CODE])
+- Side B: "Aeneas `main` (c5eb4a2, Lean v4.35.0) has since replaced this with an interaction-tree `Result` (`abbrev Result := ITree RustEffect`) and a `DWP`-based `spec` at `WP.lean:56`" (REF-L07:C2); the dossier adds: "That main-branch definition is not the one SymCrypt's proofs were checked against and is recorded here only to show that the two revisions differ" (REF-L07 §3.1)
+- Why it matters for the debate: What a SymCrypt `⦃ ⦄` theorem asserts depends on which Aeneas revision's `Result` and `spec` are cited.
+- Status: open (reframed). The earlier gap, that the pinned revision had not been inspected, is closed by evidence: REF-L07 now inspects d71d2e3f (C4). The entry is kept as a version and provenance difference between the pinned and main revisions, as REVIEW-phase1 asks ("preserve as a version/provenance limitation, not as demonstrated semantic disagreement"). The paper's exception-monad description and the pinned `ok | fail | div` inductive are not in tension in the dossier's account (REF-L07 §3.1: "it matches the paper's stated intent").
+- Recorded in: REF-L07 §13 item 6 and §3.1; REVIEW-phase1 "Unrecorded conflicts" (Aeneas row)
 
 ### CF-076 SymCrypt paper Appendix C versus code
 - Sub-claims: H3
