@@ -27,7 +27,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - Does not itself define a "trusted base".
 
 ### E02 Lean reference manual, "Validating a Lean Proof" — https://lean-lang.org/doc/reference/latest/ValidatingProofs/ — [P] [FULL] — D, H3
-- Section on remaining issues ends with the statement that the `Lean.trustCompiler` machinery "was removed from Lean in version 4.35.0" and that external checkers cannot check proofs that use native evaluation (reading of the page text; verbatim wording checked in the corpus, see section 9).
+- The page's remaining-issues discussion states that the `Lean.trustCompiler` machinery was removed from Lean in version 4.35.0, and that external checkers cannot check proofs that use native evaluation (verified by text search of the downloaded page; wording paraphrased here).
 - Relevance: the official description of what a Lean proof does and does not establish about compiled code.
 
 ### E03 Lean reference manual, "Foreign Function Interface" — https://lean-lang.org/doc/reference/latest/Run-Time-Code/Foreign-Function-Interface/ — [P] [FULL] — H3, H4
@@ -55,10 +55,10 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - Scope: the verified program is a Lean program (shallow embedding in monads), or, per E05, a deeply embedded language for which a weakest precondition is defined. The documentation does not address code written in other languages.
 
 ### E07 Lean4Lean (paper) — https://arxiv.org/html/2403.14064 — [P] [FULL] — D, H3
-- "Lean4Lean is an external verifier for Lean, written in Lean" that re-checks Lean libraries including Mathlib (reading of abstract and intro).
-- Verified portion limited ("only a few functions from the typechecker have been verified" in the earlier summary; the paper's own results section was re-read in Phase 1b: the metatheory formalised so far covers parts of the typing relation and the typechecker).
-- Reports a soundness bug found while writing the metatheory. `reduceBool` is described as "unsound by design" in the sense that native evaluation cannot be reproduced by an external checker.
-- Does not claim verification of the Lean compiler.
+- "an external verifier for Lean 4, written in Lean. The verifier itself is more than a prototype: it is fully capable of checking the entirety of Lean (the Lean compiler package), Batteries (the extended standard library), and Mathlib (the Lean mathematics library)." Reimplementation "closely following the kernel" (conclusion).
+- Verification scope (section 4.1): "Currently, only a few functions from the typechecker have been verified, like inferLambda. However, in the course of performing the verification we have already run into some interesting issues, and at least one soundness bug (which has since been fixed in response to our report)."
+- On `reduceBool` (section 3): IR "can also call external functions from C, and with implemented_by one can completely decouple the compiler behavior from the kernel's version of the implementation, so the general feature is simply 'unsound by design.' Given that Mathlib and many other mathematics projects avoid reduceBool completely for these reasons, we do not lose much by not supporting it."
+- Conclusion states the long-term aim: "a fully verified, self-hosted Lean kernel". The paper does not claim verification of the Lean compiler.
 
 ### E08 Lean4Lean repository — https://github.com/digama0/lean4lean — [P] [CODE] — D
 - SHA `67f63b0c8189`, last commit 2026-10-10, toolchain `leanprover/lean4:v4.33.0-rc2`. Lean files 112, LOC 49,412. Crude counts: sorry 131, admit 2, axiom 73, native_decide 0, implemented_by 14, extern 0, opaque 36, partial 48.
@@ -90,14 +90,14 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - Numbers read: Charon runs average about 80 s on the largest case studies; evaluation targets include libcrux ML-KEM and a safe-Rust HACL* port. The paper does not claim Charon itself is formally verified.
 
 ### E14 Aeneas README — https://github.com/AeneasVerif/aeneas — [P] [FULL] — H3, H4
-- "Aeneas ... is a verification toolchain for Rust programs. It relies on a translation from Rust's MIR internal language to a pure lambda calculus." Backends "F*, Coq, HOL4 and LEAN"; "Our most mature backends are Lean and HOL4".
+- Aeneas is "a verification toolchain for Rust programs" and "relies on a translation from Rust's MIR internal language to a pure lambda calculus". Backends "F*, Coq, HOL4 and LEAN"; "Our most mature backends are Lean and HOL4".
 - "Aeneas currently functionalizes a subset of safe Rust, and we are in the process of extending the functional model with reasoning based on separation logic to support unsafe code and concurrent code."
 - Loop limitation: "`return` inside nested loops, or `break`/`continue` to outer loops are not supported yet". Also instantiating a generic type with a mutable reference "is not supported yet".
-- Formal status: "The translation has been formalized and published at ICFP2022"; borrow-checker symbolic-execution correctness "published ... at ICFP 2024".
+- Formal status, verbatim: "The translation has been formalized and published at ICFP2022 ... We also have a proof that the symbolic execution performed by Aeneas during its translation correctly implements a borrow checker, and published it at ICFP 2024".
 
 ### E15 Aeneas/Charon projects page — https://aeneasverif.github.io/projects/ — [P] [FULL] — H3, H4
 - Charon pipeline MIR → ULLBC → LLBC. Aeneas "currently targets a safe, sequential Rust code."
-- Scylla (C → safe Rust): as of its report "could translate parts of the HACL* and SymCrypt cryptographic libraries, the CBOR binary parser from EverParse, and the core compression algorithm of bzip2", requiring "different levels of manual C-source rewritings and annotations".
+- Scylla (C → safe Rust): "a tool for translating highly regular C code to safe Rust." "As of July 2025, Scylla is able to translate parts of the HACL* and SymCrypt cryptographic libraries, as well as the CBOR binary parser from EverParse, and the core compression algorithm of bzip2, all of them requiring different levels of manual C source rewritings and annotations."
 - Eurydice (Rust → C) listed; see E19.
 
 ### E16 "Scaling Verification ... SymCrypt" (Microsoft Research) — https://arxiv.org/html/2609.15648v1 — [P] [FULL, abstract, trust section, sections 5–8] — H3, H4, D
@@ -171,7 +171,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - `docs/axioms.md`: "`Thales.TS.Runtime` postulates twelve `axiom`s. They all encode properties of IEEE-754 doubles". README: emitted code reasoning about safe-integer arithmetic "ultimately rests on these."
 
 ### E29 PastaLean (Python to Lean) — https://arxiv.org/pdf/2610.34205 — [P] [FULL] — H3, H4
-- Deterministic transpiler producing a "provable twin" and a "runnable twin". Reports HumanEval+ 151/164 elaborated, LeetCode 2,391/2,589, LiveCodeBench 469/476 with high output agreement against CPython. States: "We do not prove that the runnable twin refines the provable one." Unsupported statements degrade to `pyUnsupported` placeholders; out of scope: `exec`, async/threads, dynamic dispatch, metaclasses. Preprint dated 25 Oct 2026 per its arXiv stamp.
+- Deterministic transpiler producing a "provable twin" and a "runnable twin". Table 1 of the paper: HumanEval+ 164 problems, 151 elaborated (92.1%), 7,007 tests all passed; LeetCode 2,589 problems, 2,391 elaborated (92.4%), 215,126 tests, 208,736 passed (97.0%); LiveCodeBench 476 problems, 469 elaborated (98.5%), 10,213 tests all passed. Footnote: the thirteen remaining HumanEval programs elaborate "with one type hint added". The paper says of the two twins: "We do not prove that the runnable Unsupported statements degrade to `pyUnsupported` placeholders; out of scope: `exec`, async/threads, dynamic dispatch, metaclasses. Preprint dated 25 Oct 2026 per its arXiv stamp.
 
 ### E30 leanlift — https://github.com/zeta1999/leanlift — [P] [CODE + SPEC] — H3, H4, D
 - SHA `5a5d6f6ca654`, last commit 2026-10-02, toolchain `leanprover/lean4:v4.28.0`, no licence file. Lean files 79, LOC 11,446. Crude counts: sorry 21, admit 5, axiom 2. No AGENTS/CLAUDE files; README itself is WIP-labelled and describes LLM-generated candidates.
