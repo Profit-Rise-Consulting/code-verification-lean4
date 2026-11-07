@@ -1,17 +1,340 @@
 # 07 - Protocol specification formats and candidate benchmark corpora
 
-Phase 1 evidence only. No analysis or conclusions. Hypothesis under test (not evaluated here): "Lean 4 cannot verify protocols and therefore cannot check code implementations."
+Phase 1b version, access date 2026-11-07. Evidence-only, no verdict on the hypothesis.
+**Entry counts: [CODE] 7 Lean repositories (L1-L7) plus 1 implementation-language scan of 49 repositories; [FULL] 13 (F1 RFC 9846 info page, F2 WireGuard paper sections 1-4.3, F3-F13 eleven NVD records); [PART] 11 papers; [EXT] 13 extraction-only pages (X1-X10, three Signal sources); unverified leads: see last section (about 70 Phase-1 sources, excluded from evidence).** The [PART] and [EXT] tags are my additions because the [FULL]/[CODE] pair was not reachable for those sources within the session; Phase 2 may discount them.
 
-- Access date for every URL below: **2026-11-07** (web search and page fetch in one session).
-- Tags: **[P]** primary (standard text, official project page or repository, paper by the authors, NVD/ITU/IETF/3GPP/ETSI record). **[S]** secondary (blog, vendor page, survey, encyclopedia, news, aggregator, citation in another paper).
-- Where a search-result excerpt was the only thing read (page not fetched in full), the entry says "excerpt".
-- Items I looked for and did not find a source for are listed under Open Questions, not filled in from memory.
+## 0. Conventions used in this file
 
----
+- Access date for every entry: 2026-11-07. [P] = primary source, [S] = secondary.
+- Depth tags: [FULL] = the source (or the stated sections) was fetched and read as text. [CODE] = source code inspected in a /tmp shallow clone (rule 3). Two further tags are used because some sources fell short of FULL; they are listed in their own section and the reader should discount them accordingly:
+  - [PART] = the document was downloaded in full and converted to text, but only the abstract, scope/limitation passages and result passages were read (located by text search). Not read end-to-end.
+  - [EXT] = the page was fetched but the passages were returned by an extraction prompt; the full page was not read by me.
+- Sub-claim tags H1-H5, D follow research/CONVENTIONS.md.
+- Lean counts: computed with a small script over every `*.lean` file (comments and string literals stripped, then whole-word matches). Raw whole-word counts including comments are given in brackets where I measured them; they differ because comments and docstrings contain the words. LOC = physical lines in `*.lean` files. `git ls-files`-style listing, not a build; nothing was compiled.
+- Phase-1 correction: my first version of this file stated that no Lean 4 models were found for TLS/QUIC/DNS and others. That statement was wrong as written; Section 1 and Conflicts C1 replace it. The previous Phase-1 content that I could not re-read in full is kept in the last section ("Unverified leads") and is excluded from evidence.
 
-## Part A. Specification sources and formats a Lean-based pipeline would have to ingest
+## 1. Lean 4 repositories inspected ([CODE])
 
-### A1. Summary table
+Common method: `git clone --depth 1` (plus `--filter=blob:limit=1m`, sparse checkout for two large repos) into /tmp; `lean-toolchain`, licence, SHA and last-commit date read from the clone; full history was fetched for six repos only to read commit authorship (VeriDNS, flare, tls13-lean, lean-mqtt, libp2p-fv, quiche). No build was run, so no claim below is a build result; "0 sorry" means no `sorry` token in non-comment source.
+
+| ID | Repo (URL) | SHA / last commit / toolchain / licence | Lean files / LOC | sorry / admit / axiom / native_decide / implemented_by / extern / opaque / partial | theorem tokens |
+|---|---|---|---|---|---|
+| L1 | [pb64-lean/tls13-lean](https://github.com/pb64-lean/tls13-lean) | 0c61f21f3f0e46aa8789cd10f4e03871d1c002db / 2026-09-09 / `leanprover/lean4-nightly:nightly-2026-04-25` / Apache-2.0 | 43 / 27,106 | 0 / 0 / 0 / 0 / 0 / 16 / 16 / 1 (raw: axiom 1, extern 18, opaque 39, partial 10) | 733 |
+| L2 | [dsyme/quiche](https://github.com/dsyme/quiche) `formal-verification/` (fork of cloudflare/quiche; Lean sits under `formal-verification/lean`) | 5a8195ebf9bf96383c3e6dbfe92105e93dbc637b / 2026-06-03 / `leanprover/lean4:v4.29.0` / quiche is BSD-2-Clause (file `COPYING`, Cloudflare copyright); no separate licence file for the Lean directory | 81 / 22,848 | 0 / 0 / 0 / 258 / 0 / 0 / 0 / 0 (raw whole-repo grep: sorry 23, native_decide 273, opaque 9, partial 1) | 1,592 |
+| L3 | [ehsanmok/flare](https://github.com/ehsanmok/flare) `formal/` | 576799df50c8c525db4d558e29454365e885b213 / 2026-11-02 / `leanprover/lean4:v4.33.0` / MIT | 171 / 54,125 | 0 / 0 / 0 / 0 / 0 / 0 / 0 / 1 (raw: admit 2, axiom 11, opaque 2, partial 13) | 2,695 |
+| L4 | [BasisResearch/VeriDNS](https://github.com/BasisResearch/VeriDNS) | 74bb5f3f1454a8de2744e69f8af18fe48e0e9f2e / 2026-07-17 / `leanprover/lean4:v4.31.0-rc2` / no LICENSE file in repo root (README has no licence text either) | 128 / 83,393 | 0 / 0 / 0 (one textual hit for "axiom" is prose; stripped count 1) / 0 / 0 / 14 / 14 / 7 | 2,871 |
+| L5 | [edusporto/lean-mqtt](https://github.com/edusporto/lean-mqtt) | af23e7bea58dace8e361f6d77d69ce6d7254105c / 2026-09-21 / `leanprover/lean4:v4.34.0` / Apache-2.0 | 42 / 4,751 | 0 / 0 / 0 / 0 / 0 / 0 / 0 / 0 | 150 |
+| L6 | [NyxFoundation/libp2p-fv](https://github.com/NyxFoundation/libp2p-fv) | 1f25f348524db6556c7e1fd942f37a4ad5ea4f5d / 2026-11-05 / none (no Lean files) / no LICENSE file | 0 / 0 | n/a | n/a |
+| L7 | [verse-lab/veil](https://github.com/verse-lab/veil) | 57447722e7f25f06c75cff8735d10d41697afc14 / 2026-11-07 / `leanprover/lean4:v4.35.0` / Apache-2.0 | whole repo 495 / 89,474; library `Veil/` 166 / 46,443; `Examples/` 85 / 18,120 | library `Veil/`: 1 / 4 / 3 / 1 / 7 / 0 / 2 / 47; `Examples/`: 0 / 0 / 0 / 0 / 0 / 0 / 0 / 0 (raw whole-repo: sorry 37, admit 10, axiom 21, native_decide 31, implemented_by 16, opaque 8, partial 84) | `Veil/` 545, `Examples/` 11 |
+
+### L1 tls13-lean [CODE] - H1 H2 H3 H4 D
+- What it is: a TLS 1.3 client and server written in Lean, calling HACL* C primitives through the FFI (`@[extern] opaque` bindings; 16 counted). README says the runtime uses no system crypto library such as OpenSSL. The implementation is the Lean code itself; there is no separate mainstream-language implementation being checked.
+- Authorship / AI flag: 89 commits, all by one author (Bill Peterson). No AGENTS/CLAUDE files and no mention of an LLM in README or docs found by text search. No AI-generation marker found; this is not proof of human authorship.
+- Verbatim statement of scope limits (README): "What is **not** claimed: no security proof of the handshake or state machines, no cryptographic correctness of HKDF, the AEAD, the hashes, or the signature primitives (they are opaque FFI bindings, trusted from HACL\*), no timing analysis of Lean control code, and nothing about the C shims beyond their length preconditions."
+- Unsupported features (README, Protocol scope): "PSK and session resumption ..., 0-RTT, the exporter and resumption secrets, post-handshake client authentication, AES-GCM suites, client-side HelloRetryRequest processing, and post-quantum hybrid groups".
+- Key-schedule refinement is stated as structural, not cryptographic (README): "It is **structural**, not cryptographic. HKDF-Extract and HKDF-Expand are opaque `@[extern]` HACL\* bindings, so no theorem here can say the schedule produces the right *bytes*." The authors say this is "precisely the class real TLS key-schedule bugs fall into - a mistyped label, the wrong transcript at a `Derive-Secret`, the handshake secret used where the main secret belongs".
+- Spec-as-data theorem, `TLS13/KeySchedule/Spec.lean:306` (commit above), opening lines: 
+  ```lean
+  theorem Derived.tree_rfc8446 :
+      (Derived.extBinder.parent, Derived.extBinder.label.text,
+          Derived.extBinder.context) = (Secret.early, "ext binder", Transcript.empty) ∧
+      (Derived.resBinder.parent, Derived.resBinder.label.text,
+          Derived.resBinder.context) = (Secret.early, "res binder", Transcript.empty) ∧ ...
+  ```
+- Implementation-property theorem, `Tls/Client/Laws.lean:1984` (a server twin is at `Tls/Server/Laws.lean:1907`):
+  ```lean
+  theorem run_nonce_nodup {ops : List Op} {state : State} {out : Output}
+      (h : run state ops = .ok out) :
+      ∃ (aeadKeys : List ByteArray) (keyNonces : List (ByteArray × ByteArray)),
+        Record.AeadWriteRun state.writeKeys? out.state.writeKeys? aeadKeys keyNonces ∧
+          (aeadKeys.Nodup → keyNonces.Nodup)
+  ```
+- Assurance mechanics (README "Proof assurance"): three `lean_assurance_test` targets re-derive from the compiled environment that nothing reaches `sorryAx`, that only `propext`, `Classical.choice`, `Quot.sound` are used, and that no `@[extern]` constant lives outside the `HaclStar` modules; counted "23 principal theorems" (TLS13) and "88 principal theorems" (Tls). My static count found no `sorry`, `axiom` or `native_decide` tokens, consistent with this.
+- Testing beside proof: README describes an interoperability gate "with real OpenSSL, curl, and Go `crypto/tls` clients".
+- Trusted base listed by README: two C shims, fifteen pinned HACL* translation units, the Lean compiler/runtime (including the `Nat` big-integer backend used by the pure-Lean RSA verifier), and Bazel/Nix pins.
+- The README cites RFC 8446 (e.g. section 7.1) as its spec; file 02 calls the target RFC 9846. RFC 9846 obsoletes RFC 8446 (see F1).
+
+### L2 quiche formal verification ("Lean Squad") [CODE] - H1 H2 H3 H4 D
+- What it is: Lean 4 models, written by hand, of parts of Cloudflare's Rust QUIC library quiche, with a prose correspondence table and test harnesses. The Rust code is not extracted; Lean definitions are separate transcriptions over `Nat`/`List`.
+- AI flag: yes. `formal-verification/CRITIQUE.md` and `CORRESPONDENCE.md` open with "Written by Lean Squad automated formal verification" / "Maintained by the Lean Squad automation"; they record numbered "runs" (e.g. "run 177"); the repo root has an `AGENTS.md`; file 02 attributes the workflow to Don Syme. Human review level is not stated in the files.
+- Numbers in the repo's own report (CRITIQUE.md, dated 2026-05-20): "70 Lean files, 1348 theorems, 0 sorry; 27 Route-B test targets (2864+ PASS)". At the commit I inspected (2026-06-03) the directory holds 81 `.lean` files with 1,592 `theorem` tokens, 0 `sorry`, and 258 `native_decide` tokens outside comments. `native_decide` adds the Lean compiler and evaluator to the trusted base; the reports I read do not discuss this.
+- Findings (REPORT.md "Findings"): "No implementation bugs have been found via counterexample. All proved properties hold." One specification mistake of the authors' own was caught: "`decode_pktnum_correct` spec precision gap (run 39): an initial over-general proposition was false; counterexample found; spec corrected to match RFC 9000 §A.3 strict window bound."
+- Correspondence classes (CORRESPONDENCE.md): each Lean function is tagged "abstraction" ("Lean models a pure functional subset; effects/invariants deliberately omitted") or "approximation" ("Lean diverges from the Rust in a documented, bounded way"). Example row: `varint_encode : Nat → Option (List Nat)` against `put_varint_with_len` (`octets/src/lib.rs:L505`), class approximation.
+- Representative theorem, `formal-verification/lean/FVSquad/Varint.lean:221`:
+  ```lean
+  theorem varint_round_trip (v : Nat) (hv : v ≤ MAX_VAR_INT) :
+      ∃ bytes, varint_encode v = some bytes ∧ varint_decode bytes = some v
+  ```
+- Scope: byte codecs (varint, octets, packet header), packet-number decoding, flow control, congestion control (NewReno, Cubic, BBR2), HTTP/3 frames and settings. Not a handshake or TLS model; no adversary model in the files I read.
+
+### L3 flare `formal/` [CODE] - H1 H2 H3 H4 D
+- What it is: a Mojo networking library (HTTP/1.1, HTTP/2, HTTP/3 over QUIC, WebSocket, TLS, DNS) with a `formal/` Lean 4 development. Implementation language is Mojo, not Lean.
+- AI flag: yes. 1,342 of 1,362 commits carry `Co-Authored-By: ... Claude <noreply@anthropic.com>` trailers (one trailer reads "Claude Fable 5.1"); the repo contains `.claude` and `.cursor` directories; `formal/README.md` has a section "The factory loop" with "Rules for agents".
+- Claim from root README: "Lean 4 models of flare, from the byte codecs up through HTTP/1.1, HTTP/2, QUIC and HTTP/3 to the scheduler, each proved against a separate spec written from the RFC (core Lean only, no `sorry`, no extra axioms). Anchors, a spec lock and differential tests keep the models in sync with the Mojo code, and the 0.12 audit found 138 issues, all fixed." My static count agrees on `sorry`/`axiom`/`native_decide` = 0.
+- Structure: layers `L1_Encoding`, `L2_Machine`, `L3_Protocol` (with `Quic/`), `L4_App`, `L5_Concurrency`, plus `Core`, `Kernels`, `Audit`, `Oracle`, `difftest`, `obligations`. A `#trust_surface T` command (`Flare/Core/TrustSurface.lean`) lists every `Flare.*` definition reachable from a theorem's statement; its doc comment: "A proof is checked, but its statement is only as good as the definitions it mentions: to believe `T` a reader must read every `Flare.*` definition its statement reaches."
+- Representative theorem, `formal/Flare/L3_Protocol/Quic/FrameProps.lean:18`:
+  ```lean
+  theorem ackFinish_fixed_ok (t : Nat) (largest delay first : UInt64)
+      (ranges : List (UInt64 × UInt64)) :
+      Sat RfcFrameOk (ackFinish t largest delay first ranges)
+  ```
+  Here `RfcFrameOk` is an RFC-derived predicate and `ackFinish` is a Lean model of the code path; the link between that model and the Mojo source is by "anchors", a "spec lock" and differential tests (formal/README.md "Differential testing"), not by extraction or a proof.
+- In `L3_Protocol/Quic/FrameProps.lean` the theorems I opened concern frame encodings (ACK frames); I did not open every Quic file, so I make no claim about a handshake or cryptographic property in flare.
+
+### L4 VeriDNS [CODE] - H1 H2 H3 H4 D
+- What it is: a recursive UDP DNS resolver written in Lean 4, with specs generated from RFC text. README line 3: "An end-to-end DNS resolver server written and verified in Lean 4 by Claude! Verified to what spec? To the RFC itself!"
+- AI flag: yes. `CLAUDE.md` in repo root; 16 of 17 commits carry `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`; README names Claude as author.
+- Method (README): "Each module embeds the relevant passage with the `include_rfc` macro, which checks the quoted text against the original document at compile time. An NLP pipeline (tokeniser, part-of-speech tagger, phrase chunker, clause parser) then reads the embedded prose and elaborates formal `Prop` definitions from its grammatical structure. The implementation is proven against the generated propositions, so the chain from the words of the RFC to the theorem about the running code is machine-checked end to end." RFC texts live in `rfc/` (RFC 1034, 1035, 2181, 2308, 3597, 5452, 8020, 8482, 9156, 9606).
+- Scope exclusions (README, "Out of scope (not implemented)"): "DNSSEC validation", "TCP transport and TCP fallback. UDP only.", "EDNS(0) and DNS Cookies (RFC 7873), DNS-over-TLS/HTTPS", "DNS 0x20 query-name case randomization", response-rate limiting.
+- Trust boundary (README): "Only the FFI transport and the real network sit outside - that is where the honesty oracle is assumed rather than proven, so the whole path is additionally exercised live against the real DNS with `dig`."
+- Representative theorem, `VeriDNS/Proof/NameTree.lean:2018`:
+  ```lean
+  theorem resolveWithIO_sound (T : Node ResourceRecord)
+      (hnet : NetworkConsistent T M Sock) (hnetTcp : NetworkConsistentTcp T M Sock)
+      (query : Format) (sbelt : DnsSList)
+      {cache : DnsCache} (hc : CacheAgrees T cache) (now : UInt32)
+      (fuel depth : Nat) (budget : UInt32) :
+      SatisfiesM (ShimSound T)
+        (resolveWithIO (M := M) (Sock := Sock) query sbelt cache now fuel depth budget)
+  ```
+  The statement carries network-consistency hypotheses (`hnet`, `hnetTcp`) about the transport; these are the "honesty oracle". The theorem has a TCP hypothesis even though README line ~168 says TCP is out of scope (see Conflicts C4).
+- The server is the Lean program; its compiled form calls FFI for sockets (14 `extern`, 14 `opaque`).
+
+### L5 lean-mqtt (LeanMqtt) [CODE] - H1 H2 H3 D
+- What it is: a Lean 4 library of MQTT 5.0 packet types (dependent types), a state-monad parser, a serializer, and round-trip / reconstruction proofs. 103 commits, one author (Eduardo Sandalo Porto). No AI markers found.
+- Representative theorem, `LeanMqtt/Packets/Payload/Proofs.lean:9`:
+  ```lean
+  theorem Payload.roundtrip (p : Payload fh vh) {rest : List UInt8} :
+      Payload.parser.run (p.serialize ++ rest) = some (p, rest) := by
+    cases p
+    rfl
+  ```
+- Repo has `conformance.md` with 285 lines of the form `- [MQTT-...]` (spec statement IDs); the file does not itself give a total of statements covered, so I do not state a coverage ratio.
+- Scope per companion paper (see P-MQTT): parser and serializer for packets; session semantics (QoS flows, broker) are cited as other people's work ("A substantial body of work exists on the verification of MQTT semantics").
+
+### L6 libp2p-fv [CODE] - H1 H2 D
+- No `.lean` file exists at the inspected commit. Four commits, one author. The repo is documentation: `README.md`, `inventory.md` (184 lines), `docs/verification-tool-selection.md`, `docs/properties/*`. The tool-selection document proposes Apalache, Quint, Tamarin and Lean: "**Apalache** for model checking, **Lean 4** for deductive proofs and contract...", e.g. "Use Lean for certificate-check, encoding, and identity-derivation contracts; use Tamarin for the modeled signature/identity/session correspondence. Treat parser correctness and crypto primitives as explicit ass[umptions]".
+- Phase-1b result: it is a verification plan, not a Lean model. File 02 already records its own quote "proposed, not proved or model-checked".
+
+### L7 Veil [CODE] - H1 H2 H4 D
+- What it is: a Lean 4 framework (a library using Lean metaprogramming) for specifying transition systems in a TLA/Ivy-like DSL and checking invariants by SMT plus interactive Lean proof. Apache-2.0, actively developed (last commit the date of access).
+- Examples directory (85 files) includes: `Examples/Ivy/PaxosFirstOrder.lean`, `PaxosEPR.lean`, `VerticalPaxosFirstOrder.lean`, `NOPaxos.lean`, `TwoPhaseCommit.lean`, `ReliableBroadcast.lean`, `RicartAgrawala.lean`, `SuzukiKasami.lean`, `ChordRingMaintenance.lean`; `Examples/TLA/` including `Raft.lean`, `Paxos.lean`, `MultiPaxos.lean`, `AWSDnsRace.lean`; `Examples/AWS/AWSBuggy.lean` and `AWSFixed.lean`; `Examples/StellarConsensus/SCP.lean`; `Examples/Simulate/*`; `Examples/Liveness*`.
+- Statement style, `Examples/Ivy/PaxosFirstOrder.lean:99`: `safety [coherence] decision N1 R1 V1 ∧ decision N2 R2 V2 → V1 = V2`. The same line appears at `VerticalPaxosFirstOrder.lean:132`. These are DSL declarations checked by `#check_invariants`, not hand-written `theorem`s (hence only 11 `theorem` tokens in `Examples/`).
+- `Examples/TLA/Raft.lean` (1,017 non-blank lines) contains `#gen_state`, `#gen_spec`, `#gen_executable` and no `#check_invariants` or `#model_check` directive, i.e. at this commit it is a Raft specification that generates an executable model; I did not find a machine-checked Raft safety invariant in that file. `Paxos.lean` and `MultiPaxos.lean` use `#model_check compiled`. `PaxosEPR.lean` states safety plus supporting invariants and `#check_invariants`.
+- Library trust notes (static counts above): `Veil/` contains 1 `sorry`, 4 `admit`, 3 `axiom`, 1 `native_decide`, 7 `implemented_by` and 47 `partial` tokens outside comments; the SMT solver result is accepted via Lean extensions that I did not audit.
+- Models are specifications of the protocol; Veil does not link them to implementation source code (the `Simulate` and `#gen_executable` features produce executable models from the spec).
+
+## 2. Protocol-level artefacts and papers
+
+### F1 RFC 9846, "The Transport Layer Security (TLS) Protocol Version 1.3" [P][FULL as far as the info page goes] - D H3
+- [rfc-editor.org/info/rfc9846](https://www.rfc-editor.org/info/rfc9846). Published 2026-07-11, author E. Rescorla, Proposed Standard. Abstract: "This document obsoletes RFC 8446, which specified TLS 1.3. This document obsoletes RFC 5246 (specifying TLS 1.2) and RFCs 5077, 6961, 7627, and 8422 ... and updates RFCs 5705 and 6066. This document also specifies new requirements for TLS 1.2 implementations."
+- Closes the Phase-1 open question about RFC 9846 versus RFC 8446: the first obsoletes the second. Models in Section 3 and Section 1 cite RFC 8446 section numbers; I did not diff the two RFC texts.
+
+### F2 Donenfeld and Milner, "Formal Verification of the WireGuard Protocol" (2018 draft, revision b956944) [P][FULL, sections 1-4.3 read] - H2 H3 D
+- [wireguard.com/papers/wireguard-formal-verification.pdf](https://www.wireguard.com/papers/wireguard-formal-verification.pdf). Abstract: "This paper enumerates the security properties of this key exchange and then explores the formal verification of such properties. The end result is a formally verified secure network tunnel protocol."
+- Scope as the authors state it: WireGuard "consists of several mechanisms: an authenticated key exchange, a cookie MAC system for mitigating denial of service attacks, an elegant timer state machine ..., and several desirable design decisions from an implementation security perspective." The formal section then says "Leaving aside the cookie MAC system, WireGuard consists of a 1-RTT handshake". Properties enumerated: key agreement/correctness, key secrecy, forward secrecy, session uniqueness, identity hiding, each under key-compromise combinations (Si, Sr, Ei, Er, Q).
+- Tool: Tamarin. Adversary: "an active man-in-the-middle" who may `Reveal` static, ephemeral and pre-shared keys at any time. Public keys and the pre-shared key are assumed shared out of band ("agents add the public key of their peers directly"). Lemma 1 (verbatim form): "IKeys(Si, Sr, Ei, Er, Q, C) @ t1 ∧ ¬(∃t2 < t1. RKeys(...) @ t2) ⟹ ((∃t2 < t1. Reveal(Sr) @ t2) ∨ (∃t2<t1, t3<t1. Reveal(Si) @ t2 ∧ Reveal(Ei) @ t3)) ∧ (∃t2 < t1. Reveal(Q) @ t2)".
+- No implementation (Linux kernel module, wireguard-go) is checked in this paper; it models the handshake only. Identity-hiding is not achieved when "Ei is compromised" or "Sr is compromised" per Section 3.4 (the authors' own statements).
+
+### F3-F13 NVD records [P][FULL] (records are short; read completely) - used in Section 5
+Retrieved from the NVD REST API v2.0 (`services.nvd.nist.gov/rest/json/cves/2.0?cveId=...`). Description text paraphrased in Section 5; CWE where given: CVE-2014-0160 (CWE-125), CVE-2014-0224 (CWE-326), CVE-2023-48795 (CWE-354).
+F3 CVE-2014-0160; F4 CVE-2014-0224; F5 CVE-2023-48795; F6 CVE-2020-15802; F7 CVE-2019-9506; F8 CVE-2020-10135; F9 CVE-2019-11477; F10 CVE-2016-5696; F11 CVE-2022-42898; F12 CVE-2021-3449; F13 CVE-2015-0204.
+
+### Papers read in part ([PART]; listed in Section 4)
+See Section 4 for P-IVYQUIC, P-TERRAPIN, P-SCALE, P-EYWA, P-ICEBERG, P-TLSFUZZ, P-5G, P-TLS13TAM, P-VEILCAV, P-NETSEM, P-MQTT.
+
+## 3. Implementation-language matrix ([CODE] via `git ls-tree`, no blobs downloaded)
+
+Method: `git clone --depth 1 --filter=blob:none --no-checkout`, then `git ls-tree -r --name-only HEAD` and a count of file extensions (file counts, not LOC). It shows what languages the repository's files are in; it does not show that the repository implements the protocol as a whole, nor which parts are tests. SHA is the first 10 hex digits; date = last commit date. Projects are chosen from names I met in the sources or are well-known; the list is a sample, not a census. [CODE]. Tags: H3 H4.
+
+| Protocol | Repository (SHA, date) | Extension counts at HEAD |
+|---|---|---|
+| TLS | [openssl/openssl](https://github.com/openssl/openssl) (9262a43021, 2026-11-06) | 1697 .c, 488 .h, 11 .py |
+| TLS | [rustls/rustls](https://github.com/rustls/rustls) (0d7f9b323e, 2026-11-06) | 171 .rs |
+| TLS | [golang/go](https://github.com/golang/go) (aaa423c907, 2026-11-06; includes crypto/tls) | 11909 .go, 117 .c |
+| TLS | tls13-lean (L1) | Lean |
+| QUIC | [cloudflare/quiche](https://github.com/cloudflare/quiche) (fa0e48072e, 2026-11-06) | 230 .rs, 4 .c |
+| QUIC | [microsoft/msquic](https://github.com/microsoft/msquic) (83a44975e3, 2026-11-06) | 311 .h, 229 .c, 76 .cpp, 46 .cs, 10 .rs |
+| QUIC | [quic-go/quic-go](https://github.com/quic-go/quic-go) (8d24944738, 2026-11-06) | 445 .go |
+| QUIC | [ngtcp2/ngtcp2](https://github.com/ngtcp2/ngtcp2) (e82176c810, 2026-11-03) | 152 .h, 98 .c, 57 .cc |
+| QUIC | [quinn-rs/quinn](https://github.com/quinn-rs/quinn) (765abecf7b, 2026-11-06) | 103 .rs |
+| QUIC | [aiortc/aioquic](https://github.com/aiortc/aioquic) (2f4a355d71, 2026-11-02) | 61 .py, 1 .c |
+| SSH | [openssh/openssh-portable](https://github.com/openssh/openssh-portable) (5dba72adac, 2026-11-06) | 310 .c, 116 .h, 24 .cc |
+| SSH | [paramiko/paramiko](https://github.com/paramiko/paramiko) (0e9ccb91e0, 2026-10-17) | 70 .py |
+| SSH | [Eugeny/russh](https://github.com/Eugeny/russh) (0681273687, 2026-11-03) | 102 .rs |
+| Noise | [mcginty/snow](https://github.com/mcginty/snow) (8ac60f51cf, 2026-03-25) | 26 .rs |
+| Noise | [flynn/noise](https://github.com/flynn/noise) (4d9f71cd4b, 2024-02-01) | 7 .go |
+| Noise | [rweather/noise-c](https://github.com/rweather/noise-c) (cfe2541097, 2023-12-07) | 127 .c, 121 .h |
+| WireGuard | [WireGuard/wireguard-go](https://github.com/WireGuard/wireguard-go) (b3bc704ef0, 2026-10-25) | 100 .go |
+| WireGuard | [cloudflare/boringtun](https://github.com/cloudflare/boringtun) (6dcc889a95, 2026-06-15) | 30 .rs |
+| Signal | [signalapp/libsignal](https://github.com/signalapp/libsignal) (850942581c, 2026-11-05) | 610 .rs, 343 .java, 213 .swift, 170 .ts, 115 .kt |
+| MQTT | [eclipse-mosquitto/mosquitto](https://github.com/eclipse-mosquitto/mosquitto) (fda14f2c19, 2026-11-05) | 433 .py, 384 .c, 129 .cpp, 86 .h |
+| MQTT | [emqx/emqx](https://github.com/emqx/emqx) (38c399af50, 2026-11-05) | 2314 .erl, 30 .py, 16 .ex, 13 .c |
+| MQTT | [eclipse-paho/paho.mqtt.golang](https://github.com/eclipse-paho/paho.mqtt.golang) (307a74862c, 2026-11-04) | 71 .go |
+| MQTT | [bytebeamio/rumqtt](https://github.com/bytebeamio/rumqtt) (e886a78893, 2026-05-01) | 151 .rs |
+| MQTT | lean-mqtt (L5) | Lean |
+| Raft | [etcd-io/raft](https://github.com/etcd-io/raft) (c51f010c85, 2026-10-23) | 89 .go, 3 .tla |
+| Raft | [hashicorp/raft](https://github.com/hashicorp/raft) (a5b469295d, 2026-10-12) | 65 .go |
+| Raft | [databendlabs/openraft](https://github.com/databendlabs/openraft) (86c0c1773b, 2026-11-07) | 935 .rs |
+| Raft | [logcabin/logcabin](https://github.com/logcabin/logcabin) (ee6c55ae97, 2017-07-26) | 115 .cc, 61 .h |
+| Paxos | [Tencent/paxosstore](https://github.com/Tencent/paxosstore) (120ce539ef, 2020-07-17) | 144 .cc, 135 .h, 9 .cpp |
+| TCP | [lwip-tcpip/lwip](https://github.com/lwip-tcpip/lwip) (315de84e79, 2026-11-04) | 276 .h, 204 .c |
+| TCP | [smoltcp-rs/smoltcp](https://github.com/smoltcp-rs/smoltcp) (8b0e5c8598, 2026-11-04) | 120 .rs |
+| TCP | [google/gvisor](https://github.com/google/gvisor) (3847ed738e, 2026-11-06) | 2705 .go, 372 .cc |
+| BGP | [FRRouting/frr](https://github.com/FRRouting/frr) (4daba30393, 2026-11-06) | 1479 .py, 857 .c, 667 .h |
+| BGP | [osrg/gobgp](https://github.com/osrg/gobgp) (fec9465045, 2026-11-07) | 201 .go |
+| BGP | [CZ-NIC/bird](https://github.com/CZ-NIC/bird) (d88c9362cb, 2026-11-06) | 130 .c, 91 .h |
+| DNS | [isc-projects/bind9](https://github.com/isc-projects/bind9) (b58e0dcf69, 2026-11-06) | 526 .c, 481 .py, 401 .h |
+| DNS | [coredns/coredns](https://github.com/coredns/coredns) (603b99c188, 2026-11-06) | 784 .go |
+| DNS | [hickory-dns/hickory-dns](https://github.com/hickory-dns/hickory-dns) (78d11a1332, 2026-11-06) | 369 .rs |
+| DNS | VeriDNS (L4) | Lean |
+| Kerberos | [krb5/krb5](https://github.com/krb5/krb5) (5d9782753e, 2026-11-02) | 1102 .c, 318 .h, 108 .py, 23 .cpp |
+| Kerberos | [heimdal/heimdal](https://github.com/heimdal/heimdal) (d4485469f5, 2026-10-01) | 881 .c, 129 .h |
+| Kerberos | [apache/directory-kerby](https://github.com/apache/directory-kerby) (db7a0a0926, 2026-11-05) | 959 .java |
+| Kerberos | [jcmturner/gokrb5](https://github.com/jcmturner/gokrb5) (855dbc707a, 2023-05-06) | 309 .go |
+| OAuth/OIDC | [lepture/authlib](https://github.com/lepture/authlib) (ea22a97260, 2026-11-06) | 377 .py |
+| OAuth/OIDC | [spring-projects/spring-authorization-server](https://github.com/spring-projects/spring-authorization-server) (4283973670, 2026-08-26) | 463 .java |
+| OAuth/OIDC | [panva/node-oidc-provider](https://github.com/panva/node-oidc-provider) (3ed87bef95, 2026-11-04) | 424 .js, 7 .ts |
+| 5G core/RAN | [open5gs/open5gs](https://github.com/open5gs/open5gs) (3e007ddf01, 2026-11-06) | 4476 .c, 4256 .h |
+| 5G core | [free5gc/free5gc](https://github.com/free5gc/free5gc) (b05e2a5b9f, 2026-11-05) | 45 .go (this repo is a launcher; network functions are separate repos) |
+| 5G RAN | [srsran/srsRAN_Project](https://github.com/srsran/srsRAN_Project) (6ee24f9501, 2026-06-01) | extension scan returned nothing for the listed extensions; language not established |
+| Bluetooth | [bluez/bluez](https://github.com/bluez/bluez) (a806719871, 2026-11-06) | 452 .c, 285 .h |
+| Bluetooth | [apache/mynewt-nimble](https://github.com/apache/mynewt-nimble) (31bb46e28e, 2026-11-05) | 350 .c, 289 .h |
+| Bluetooth | [zephyrproject-rtos/zephyr](https://github.com/zephyrproject-rtos/zephyr) (0c63b6bfeb, 2026-11-06; whole RTOS, includes the Bluetooth host) | 9938 .c, 5762 .h |
+| EMV | none found; see Gaps | - |
+
+Observations recorded without interpretation: etcd-io/raft contains three `.tla` files in its tree (I did not open them); Signal's libsignal tree holds Rust plus Java, Swift, TypeScript and Kotlin bindings; the Lean implementations in Section 1 (TLS 1.3, DNS resolver, MQTT parser) are the only Lean entries in this table.
+
+## 4. Papers and models read in part ([PART]) - below the FULL threshold, weigh accordingly
+
+Each PDF was downloaded complete and converted to text; I read the abstract plus the passages quoted, located by text search. Statements not quoted here were not read.
+
+| ID | Source (URL) | Tag | What it states (verbatim or near-verbatim) | Bears on |
+|---|---|---|---|---|
+| P-IVYQUIC | Crochet, Rousseaux, Sambon, Piraux, Legay, "Verifying QUIC implementations using Ivy", EPIQ'21 ([arXiv 2503.01374](https://arxiv.org/pdf/2503.01374)) [P] | [PART] (about 40% read plus conclusion) | Intro, on pure model verification: "as it is limited to models only, it does not guarantee that subsequent implementations fulfil the requirements"; Ivy's alternative "automatically generates various and well-distributed test cases that can be exercised on QUIC implementation"; prior work covered draft-18; this paper models a significant part of draft-29. "we applied the Ivy modelization framework to QUIC and produced a model verifying a large part of the requirements of the QUIC specification ... We automated the use of the model in a series of tests against QUIC clients and servers." Tests run "100 iterations of each test on each implementation"; implementations named in the results tables: lsquic, quiche, quant, aioquic, quic-go, picoquic, quinn, mvfst. Findings are reported as pass percentages per test per implementation; text examples: "the picoquic implementation does not support migration properly" and an mvfst server behaviour on HANDSHAKE_DONE. | H3 H5 D |
+| P-TERRAPIN | Bäumer, Brinkmann, Schwenk, "Terrapin Attack: Breaking SSH Channel Integrity By Sequence Number Manipulation" ([terrapin-attack.com/TerrapinAttack.pdf](https://terrapin-attack.com/TerrapinAttack.pdf)) [P] | [PART] | Section "Formal Proofs for SSH": "Cadé and Blanchet used the formal verification tool CryptoVerif to prove the security of SSH server authentication and the secrecy of the session key in the computational model." And: "Albrecht et al. included security statements for ChaCha20Poly1305, generic Encrypt-then-MAC, and AES-CTR in SSH ... Careful analysis of their proofs reveals an essential assumption about SSH sequence numbers that does not hold. In particular, they assume that the sequence counters in the stateful encryption scheme are initialized to 0 on both sides, which is false for the cipher modes affected by our attack." Also: the exchange hash "excludes seemingly 'unimportant' messages or message parts, such as IGNORE messages and unrecognized messages. This authentication gap allows a MitM attacker to inject messages into the handshake." Also: "we identify an implementation flaw in AsyncSSH". Assigned CVE-2023-48795 (CVSS 5.9); also CVE-2023-46446 (Rogue Session Attack). | H2 H3 D |
+| P-SCALE | Kakarla et al., SCALE / Ferret, NSDI 2022 ([usenix.org PDF](https://www.usenix.org/system/files/nsdi22-paper-kakarla.pdf)) [P] | [PART] | "approach for finding RFC compliance errors in DNS nameserver implementations, via automatic test generation ... jointly generates zone files and corresponding queries to cover RFC behaviors specified by an executable model of DNS resolution ... applied ... to 8 open-source DNS implementations ... generated over 13.5K test cases, of which 62% resulted in some difference among implementations ... identified and reported 30 new unique bugs ..., including at least one bug in every implementation, of which 20 have already been fixed ... a critical vulnerability in BIND that attackers could easily exploit to crash DNS resolvers and nameservers remotely." | H3 D |
+| P-EYWA | Mondal et al., "Eywa: Automating Model Based Testing using LLMs", arXiv 2312.06875 ([arXiv](https://arxiv.org/pdf/2312.06875)) [P] | [PART] | Premise: "a key bottleneck to using MBT is that users must carefully build a model of the protocol under test. This requires reading multiple RFCs ..."; the paper asks "can we automatically derive protocol models for testing using LLMs?" and answers "affirmatively". "applying Eywa enabled the discovery of 32 unique bugs across widely used DNS, BGP, and SMTP implementations, 15 of which were previously undiscovered despite extensive prior testing with manually crafted models." Implementations tested (Table): DNS bind, coredns, gdnsd, nsd, hickory, knot, powerdns, technitium, yadifa, twisted; BGP frr, gobgp, batfish; SMTP aiosmtpd, smtpd, opensmtpd. | H3 D |
+| P-ICEBERG | Iceberg, NSDI 2026 ([usenix.org PDF](https://www.usenix.org/system/files/nsdi26-xiang-iceberg.pdf)) [P] | [PART] | "an automated verification framework for DNS authoritative engines that holistically reduces manual effort ... just-in-time (JIT) summarization, a refinement-proof approach ... We apply Iceberg to four open-source DNS engines, identifying 12 new bugs while keeping manual effort low." Engines: CoreDNS (Go), Bind 9 (C), PowerDNS (C++), HickoryDNS (Rust). It says the "state-of-the-art solution, DNS-V, relies on extra manual specifications". | H3 H4 D |
+| P-TLSFUZZ | de Ruiter and Poll, "Protocol state fuzzing of TLS implementations" (USENIX Security 2015; [cs.ru.nl PDF](https://www.cs.ru.nl/~erikpoll/papers/tls_fuzzing.pdf)) [P] | [PART] | "we use state machine learning to infer state machines from protocol implementations, using only blackbox testing, and then inspect the inferred state machines to look for spurious behaviour ... in three of the TLS implementations analysed new security flaws were found (in GnuTLS, the Java Secure Socket Extension, and OpenSSL)." Nine implementations analysed. No formal spec is used as input; inferred models are inspected manually. | H3 D |
+| P-5G | Basin, Dreier, Hirschi, Radomirovic, Sasse, Stettler (author list as recalled; the text I read shows Basin, Dreier, Hirschi first), "A Formal Analysis of 5G Authentication" (CCS 2018; [arXiv 1806.10360](https://arxiv.org/pdf/1806.10360)) [P] | [PART] | "We provide the first comprehensive formal model of a protocol from the AKA family: 5G AKA. We also extract precise requirements from the 3GPP standards defining 5G and we identify missing security goals. Using the security protocol verification tool Tamarin ... we find that some critical security goals are not met, except under additional assumptions missing from the standard." Also: "we simplify our model by treating all parameters that do not directly influence the security of the protocol as abstract quantities". | H1 H2 D |
+| P-TLS13TAM | Cremers, Horvat, Scott, van der Merwe, "Automated Analysis and Verification of TLS 1.3: 0-RTT, Resumption and Delayed Authentication" (preprint dated 2016-02-10; [tls13tamarin.github.io PDF](https://tls13tamarin.github.io/TLS13Tamarin/docs/tls13tamarin.pdf)) [P] | [PART] | "we model and analyse the latest draft of the TLS 1.3 specification, namely revision 10, using the Tamarin prover ... for an unbounded number of concurrent TLS connections ... uncover a potential attack in which an adversary is able to successfully impersonate a client during a PSK-resumption handshake. This observation was reported to, and confirmed by, the IETF TLS Working Group." The text contains no occurrence of the word "heartbeat". The text lists "removal of renegotiation" among TLS 1.3 changes. | H1 H2 D |
+| P-VEILCAV | Veil, CAV 2025 ([Springer chapter PDF](https://link.springer.com/content/pdf/10.1007/978-3-031-98682-6_2.pdf)) [P] | [PART] | "Veil is implemented on top of the Lean proof assistant. It allows one to describe a transition system and its specification in a simple imperative language, producing verification conditions in first-order logic, to be discharged automatically via a range of SMT solvers. In case automated verification fails ..., Veil provides an interactive verification mode." "we collected 16 case studies ... Veil successfully verified all benchmarks in the set, while Ivy has failed to verify two benchmarks ... it succeeds in verifying Reliable Broadcast and Suzuki-Kasami and times out for Paxos and Vertical Paxos." Soundness: "The main Veil soundness theorem states the equivalence of the two transition semantics". | H1 H2 D |
+| P-NETSEM | Bishop, Fairbairn, Mehnert, Norrish, Ridge, Sewell, Smith, Wansbrough, "Engineering with Logic: Rigorous Test-Oracle Specification and Validation for TCP/IP and the Sockets API" (journal version; HOL4; [cl.cam.ac.uk PDF](https://www.cl.cam.ac.uk/~pes20/Netsem/paper3.pdf)) [P] | [PART] | Opening: "prose specifications cannot be used in test-and-debug development in any automated way". Specification in HOL4 with "operational semantics with nondeterminism, time, system calls, monadic relational programming"; "validating the specifications against several thousand traces captured from three implementations (FreeBSD, Linux, and WinXP). Many differences between these were identified, and a number of bugs." Paper notes the BSD implementation is "around 20 000 lines of C". | H1 H3 D |
+| P-MQTT | Porto and de Melo, "Foundations for Formally Verified Network Protocol Parsers in Lean 4: A Case Study with MQTT" (paper.pdf in the lean-mqtt repo; [SBLP 2026](https://sol.sbc.org.br/index.php/sblp/article/view/46205)) [P] | [PART] | Abstract: "(I) correct-by-construction modeling of the packet format, leveraging dependent types ...; (II) a layered, proof-carrying parser library utilizing state monads ...; and (III) formal verification of parser completeness (roundtrip) and soundness (reconstruction) with respect to a serializer." Scope: "we have implemented and verified most of components C1, C2, and C3 for the fixed and variable headers of MQTT control packets, leaving payloads as future work." | H1 H2 D |
+
+## 5. CVE-to-model-scope mapping
+
+Rule: a row lists only what the cited sources state. "Not mentioned" means a text search over the named model's README or paper found no match; it does not show the feature is absent from the full model sources. NVD columns are [P][FULL].
+
+| CVE (NVD record, publication date) | NVD description, abridged | Implementation(s) and language | Layer: spec flaw or implementation flaw (as the source states) | Models/specs read whose scope touches it | Result as stated by sources |
+|---|---|---|---|---|---|
+| CVE-2014-0160 (2014-04-07; CWE-125) | OpenSSL 1.0.1 before 1.0.1g mishandles Heartbeat Extension packets, "buffer over-read ... reading private keys" (d1_both.c, t1_lib.c) | OpenSSL, C | implementation flaw in an extension | L1 tls13-lean README, P-TLS13TAM paper, L3 flare `formal/`: "heartbeat" not mentioned in any | No read model includes the Heartbeat extension. |
+| CVE-2014-0224 (2014-06-05; CWE-326) | OpenSSL before 0.9.8za / 1.0.0m / 1.0.1h "does not properly restrict processing of ChangeCipherSpec messages" so a MitM can force a zero-length master key | OpenSSL, C | implementation state-machine flaw | Models read are TLS 1.3; the affected versions are earlier | Related technique in P-TLSFUZZ: state-machine learning of implementations found "spurious behaviour" in GnuTLS, JSSE and OpenSSL (2015); the paper's flaws are not tied to this CVE in what I read. |
+| CVE-2021-3449 (2021-03-25) | OpenSSL TLS server crash on a TLS 1.2 renegotiation ClientHello that omits signature_algorithms | OpenSSL, C | implementation flaw in renegotiation | P-TLS13TAM lists "removal of renegotiation" in TLS 1.3; L1 supports TLS 1.3 only | Renegotiation is outside the TLS 1.3 models read. |
+| CVE-2015-0204 (2015-01-09) | OpenSSL client accepts a weak ephemeral RSA key in ServerKeyExchange: RSA-to-EXPORT_RSA downgrade (FREAK) | OpenSSL, C | implementation flaw (accepting a message the protocol should not allow) | TLS 1.3 models read do not cover export suites | Not covered by models read. |
+| CVE-2023-48795 (2023-12-18; CWE-354) | "The SSH transport protocol with certain OpenSSH extensions ... allows remote attackers to bypass integrity checks such that some packets are omitted (from the extension negotiation message)" (Terrapin) | OpenSSH before 9.6 "and other products"; also an AsyncSSH flaw (P-TERRAPIN) | protocol-specification flaw (paper: "the underlying issues lie in the SSH specification") | P-TERRAPIN: earlier formal proofs (Cadé and Blanchet, CryptoVerif; Albrecht et al.) | Earlier proofs assumed sequence counters start at 0, "false for the cipher modes affected"; the paper proposes spec changes (sequence number reset, transcript verification) that make the real protocol match the models. |
+| CVE-2016-5696 (2016-08-06) | Linux net/ipv4/tcp_input.c before 4.7 "does not properly determine the rate of challenge ACK segments, which makes it easier for remote attackers to hijack TCP sessions via a blind in-window attack" | Linux kernel, C | implementation of a spec mechanism | P-NETSEM (HOL4 TCP spec validated on FreeBSD, Linux, WinXP traces) | I did not read whether NetSem covers challenge ACKs; unknown. |
+| CVE-2019-11477 (2019-06-19) | Linux: `tcp_gso_segs` integer overflow when handling TCP SACK; remote DoS | Linux kernel, C | implementation arithmetic flaw | P-NETSEM | Not checked against NetSem scope; unknown. |
+| CVE-2022-42898 (2022-12-25) | MIT krb5 before 1.19.4 / 1.20.1: PAC parsing integer overflows, possible RCE on 32-bit | krb5, C | implementation parser flaw | No Kerberos formal model was read | No model coverage established. |
+| CVE-2020-15802 (2020-09-11) | Bluetooth before 5.1: Cross Transport Key Derivation in Core Spec 4.2 and 5.0 "may permit an unauthenticated user to establish a bonding" (BLURtooth) | any compliant stack (BlueZ, NimBLE, Zephyr are C per Section 3) | specification flaw | No Bluetooth formal model was read | No model coverage established. |
+| CVE-2019-9506 (2019-08-14) | BR/EDR specification up to 5.1 "permits sufficiently low encryption key length and does not prevent an attacker from influencing the key length negotiation" (KNOB) | any compliant stack | specification flaw | none read | none established |
+| CVE-2020-10135 (2020-05-19) | Legacy and Secure Connections pairing in BR/EDR Core Spec 5.2 and earlier "may allow an unauthenticated user to complete authentication without pairing credentials" (BIAS) | any compliant stack | specification flaw | none read | none established |
+
+Further bug counts from model-driven or verification-driven work (all [PART], Section 4): P-SCALE 30 new bugs in 8 DNS implementations; P-EYWA 32 unique bugs (15 new) in DNS/BGP/SMTP implementations; P-ICEBERG 12 new bugs in 4 DNS engines; P-TLSFUZZ flaws in 3 of 9 TLS implementations; P-TLS13TAM one potential attack on a draft specification; L2 reports zero implementation bugs found by proof.
+
+## 6. Candidate protocol table (what the read sources say)
+
+Models are listed only where a source in this file records one. Implementation cells point to Section 3. "No source read" means this file has no read evidence, not that none exists (see Unverified leads for Phase-1 candidates).
+
+| Protocol | Formal models/specs with read evidence | Implementations (Section 3) | Bugs/CVEs with read evidence |
+|---|---|---|---|
+| TLS 1.3 | Tamarin on draft-10 (P-TLS13TAM); Lean implementation + key-schedule refinement + record laws (L1) | OpenSSL C; rustls Rust; Go crypto/tls; tls13-lean Lean | draft-level PSK-resumption impersonation (P-TLS13TAM); CVE-2014-0160, CVE-2014-0224, CVE-2021-3449 and CVE-2015-0204 are OpenSSL flaws in features outside the models read (Section 5) |
+| QUIC | Ivy model (P-IVYQUIC); Lean models of codecs/CC (L2); Lean models of QUIC frames/machines (L3) | quiche Rust; msquic C/C++; quic-go Go; ngtcp2 C; quinn Rust; aioquic Python | P-IVYQUIC pass-rate differences per implementation; L2 none found; L3 audit counts (138 issues, README claim) |
+| SSH | Cadé-Blanchet CryptoVerif; stateful-encryption proofs of Albrecht et al. (both as described in P-TERRAPIN) | OpenSSH C; Paramiko Python; russh Rust | CVE-2023-48795 (P-TERRAPIN, F5) |
+| Noise | no source read for models | snow Rust; flynn/noise Go; noise-c C | none read |
+| WireGuard | Tamarin handshake model (F2) | wireguard-go Go; boringtun Rust | none read; model excludes cookie MAC |
+| Signal / X3DH / Double Ratchet | game-based proof (Section 8); ProVerif/CryptoVerif model of simplified Signal in ProScript; ProVerif Double Ratchet analysis; Tamarin-compatible models with runtime monitor (Section 8) | libsignal Rust plus Java/Swift/TS/Kotlin bindings | 3 attacks on the Double Ratchet, 2 present in the main implementation; undocumented libsignal vs WhatsApp fork differences (Section 8) |
+| MQTT | Lean packet/parser model (L5) | mosquitto C; EMQX Erlang; paho Go; rumqtt Rust | none read |
+| Raft | TLA+ spec in Ongaro's dissertation and Verdi Coq proof (named on raft.github.io [EXT]); Lean/Veil spec with generated executable (L7) | etcd-io/raft Go; hashicorp Go; openraft Rust; logcabin C++ | none read |
+| Paxos | Veil first-order safety (L7, P-VEILCAV) | PaxosStore C++ | none read |
+| TCP | HOL4 NetSem (P-NETSEM) | lwIP C; smoltcp Rust; gVisor Go; Linux/BSD (not cloned) | CVE-2016-5696, CVE-2019-11477 (Linux); P-NETSEM "a number of bugs" |
+| BGP | no formal model read; executable-model testing in P-EYWA | FRR C; GoBGP Go; BIRD C; Batfish (named in P-EYWA) | P-EYWA bugs across DNS/BGP/SMTP; per-protocol split not read |
+| DNS | executable RFC model (P-SCALE); refinement verification (P-ICEBERG); Lean resolver (L4) | BIND C; CoreDNS Go; Hickory Rust; VeriDNS Lean | P-SCALE 30, P-ICEBERG 12, P-EYWA (DNS share unknown) |
+| Kerberos | no source read | krb5 C; Heimdal C; Kerby Java; gokrb5 Go | CVE-2022-42898 |
+| OAuth/OIDC | no source read | Authlib Python; Spring Authorization Server Java; node-oidc-provider JS | none read |
+| 5G AKA | Tamarin model (P-5G) | open5gs C; free5gc Go (launcher repo) | spec-level missing assumptions (P-5G) |
+| Bluetooth | no source read | BlueZ C; NimBLE C; Zephyr C | CVE-2020-15802, CVE-2019-9506, CVE-2020-10135 (all spec flaws per NVD text) |
+| EMV | no source read | none found | none read |
+
+## 7. Specification formats ([EXT] - passages returned by extraction, full pages not read by me)
+
+| ID | Format | URL | What the page states | Tag |
+|---|---|---|---|---|
+| X1 | ABNF | [RFC 5234](https://www.rfc-editor.org/rfc/rfc5234.html) [P] | "Internet technical specifications often need to define a formal syntax." Rule form: `name = elements crlf`. The extracted text had no statement that ABNF cannot express semantics. | [EXT] |
+| X2 | TLS presentation language | [RFC 8446 section 3](https://www.rfc-editor.org/rfc/rfc8446.html#section-3) [P] | "The following very basic and somewhat casually defined presentation syntax will be used." Constructs: numbers, vectors, enumerateds, constructed types, variants. | [EXT] |
+| X3 | P4_16 | [P4-16 spec 1.2.5](https://p4.org/wp-content/uploads/sites/53/2024/10/P4-16-spec-v1.2.5.html) [P] | "defines the syntax, semantic rules, and requirements for conformant implementations"; semantics given "in terms of abstract machines executing traditional imperative code"; compilers may reorganize code "as long as the externally visible behaviors ... are preserved". | [EXT] |
+| X4 | Protocol Buffers | [proto3 guide](https://protobuf.dev/programming-guides/proto3/) [P] | Binary wire format is "the preferred serialization format"; "Proto3 messages preserve unknown fields". | [EXT] |
+| X5 | EverParse | [project-everest/everparse](https://github.com/project-everest/everparse) [P] | "a framework for generating verified secure parsers from DSL format specification languages"; 3D frontend "in a style resembling type definitions in the C programming language, but with data dependencies"; QuackyDucky accepts "a style common to many RFCs" and "only produces F* files". | [EXT] |
+| X6 | Kaitai Struct | [user guide](https://doc.kaitai.io/user_guide.html) [P] | DSL "for dealing with arbitrary binary formats"; compiler targets include cpp_stl, csharp, java, javascript, perl, php, python, ruby. | [EXT] |
+| X7 | Spicy | [Spicy docs](https://docs.zeek.org/projects/spicy/en/latest/) [P] | "a parser generator that makes it easy to create robust C++ parsers for network protocols, file formats, and more." | [EXT] |
+| X8 | IETF UFMRG | [datatracker](https://datatracker.ietf.org/rg/ufmrg/about/) [P] | "The process by which the IETF develops protocol standards is centred around production of documents written primarily in English prose." Objectives include to "Explore and understand the strengths and limitations of formal methods" and to "Understand how formal methods can be incorporated into the development of technical standards". | [EXT] |
+| X9 | ASN.1 | [ITU-T X.680](https://www.itu.int/rec/T-REC-X.680) [P] | X.680 (02/21), "Abstract Syntax Notation One (ASN.1): Specification of basic notation", in force. | [EXT] |
+| X10 | Other pages in Section 1 | raft.github.io [P] | Page names Ongaro's TLA+ spec, the CPP 2016 paper "Planning for Change in a Formal Verification of the Raft Consensus Protocol" and the PLDI 2015 Verdi paper; its implementation table rendered with no rows in the fetched copy. | [EXT] |
+
+The `fetch_url` copy of the Noise wiki implementation page and wireguard.com home page listed no implementations or formal-verification statement (wireguard.com: "No statement about formal verification appears on the page"), so they add no evidence.
+
+## 8. Signal attribution check (ProVerif)
+
+- Cohn-Gordon, Cremers, Dowling, Garratt, Stebila, "A Formal Security Analysis of the Signal Messaging Protocol" ([eprint 2016/1013](https://eprint.iacr.org/2016/1013.pdf)) [P][EXT]: "a computational, game-based security proof"; the multi-stage AKE analysis uses a game-hopping proof, the Gap Diffie-Hellman assumption and random oracles; it covers X3DH and the Double Ratchet key-establishment core. Related-work quote: "Kobeissi, Bhargavan, and Blanchet use ProVerif and CryptoVerif to analyze a simplified variant of Signal specified in a JavaScript variant called ProScript ... From the ProScript code, they automatically extract ProVerif models that consider a finite number of sessions without loops. The CryptoVerif models are created manually." The extracted text did not mention Tamarin.
+- Cheval, Jacomme, Richards, "Automated formal analysis of Signal's Double Ratchet: attacks, fixes and security proofs" ([HAL hal-05589499](https://hal.science/hal-05589499/document)) [P][EXT], manuscript 2026-04-13: tool is ProVerif; "Our analysis uncovered three attacks on the protocol, two of which we confirmed to be present in the main implementation, and a third which exists in the specification ... the issues were reported to the Signal developers and subsequently fixed." They wrote Rust tests and prototypes against libsignal to confirm two attacks.
+- Said, Naska, Morio, Künnemann, "From Specs to Apps: Verifying and Monitoring Models of Signal and WhatsApp" ([arXiv 2609.11882](https://arxiv.org/abs/2609.11882), 2026-09-10) [P][EXT]: Tamarin-compatible multiset-rewrite models plus the SpecMon runtime monitor on instrumented WhatsApp Web and Signal Desktop; "Monitoring establishes that observed executions conform to these models, relative to the trusted event extraction and the symbolic abstraction"; "monitoring reveals previously undocumented differences between the original libsignal library and WhatsApp's fork"; effort "three person-weeks".
+- Result: the Phase-1 claim that a ProVerif model belonged to "the 2017 Signal analysis" came from a blog and is not supported; the ProVerif/CryptoVerif work is by Kobeissi-Bhargavan-Blanchet (as cited by the 2016 computational paper) and the ProVerif Double Ratchet work is Cheval-Jacomme-Richards 2026. I did not read the Kobeissi et al. paper itself.
+
+## 9. How the sources use "verify" and "check" (D)
+
+- Proof of a statement about a Lean model or program: L1, L2, L3, L4, L5, L7. Differences in what the statement is about: L1 a Lean implementation; L2 and L3 Lean models of external code linked by prose tables, tests or "anchors"; L4 Lean implementation against RFC-derived propositions; L7 specification-level transition systems.
+- "Verifying QUIC implementations using Ivy" (P-IVYQUIC title in running header): formal model used to generate randomised tests; result is pass percentages, not proof.
+- SCALE and Eywa: executable models used to generate tests; outcome is differential bug reports.
+- Iceberg: refinement proof of implementation code (via symbolic execution with summaries) for DNS engines; "verification" with automation, found 12 bugs.
+- SpecMon work: runtime monitoring; the paper limits the claim to "relative to the trusted event extraction and the symbolic abstraction".
+- Symbolic protocol provers (Tamarin, ProVerif): proofs about a model of the protocol; no implementation link except through the monitoring and test work above.
+
+## Conflicts
+
+- C1. Earlier statements versus repositories. My Phase-1 gap line said no Lean 4 models were found for TLS/QUIC/DNS and others; file 02 lists tls13-lean, quiche, flare, libp2p-fv and VeriDNS. Inspection: tls13-lean, VeriDNS, flare `formal/` and quiche `formal-verification/` do contain Lean code (Section 1). libp2p-fv contains no Lean file. Still true: none of these models a cryptographic handshake property (L1 states this), and none is linked to its external-language implementation by a proof (L2, L3: prose/tests/anchors; L1 and L4: the Lean code is the implementation).
+- C2. quiche counts. File 02 quotes "518 theorems across 24 Lean files with only 3 sorry" and "70 Lean files, 1348 theorems, 0 sorry"; the repo's CRITIQUE.md (2026-05-20) says the 70/1348 figure; the commit I inspected (2026-06-03) has 81 `.lean` files and 1,592 theorem tokens. Different dates; all counts are from the authors' text or my static count, none from a build. `native_decide` count 258 appears in none of the prose reports I read.
+- C3. Eywa bug counts. Phase 1 recorded 33 bugs from a search excerpt; the paper text I read states "32 unique bugs ... 15 of which were previously undiscovered". Version differences were not checked.
+- C4. VeriDNS scope. README says "TCP transport and TCP fallback. UDP only." (out of scope); the theorem `resolveWithIO_sound` in `VeriDNS/Proof/NameTree.lean:2018` has an `hnetTcp : NetworkConsistentTcp ...` hypothesis. The README text and the Lean statement point to different treatments of TCP; unresolved.
+- C5. LeanMqtt paper versus repo. Paper: payloads are "left as future work"; repo contains `Payload.roundtrip` at `LeanMqtt/Packets/Payload/Proofs.lean:9`. The repo (2026-09-21) is newer than the paper text I read.
+- C6. Signal ProVerif attribution: blog (Phase-1) versus the 2016 paper's related-work text (Section 8). Resolved in favour of the paper text for attribution, the blog unverified.
+- C7. Claim versus scope within one source: F2's abstract says "The end result is a formally verified secure network tunnel protocol", while the same paper formalises only the key exchange ("Leaving aside the cookie MAC system"). Both sides recorded; no resolution.
+
+## Gaps closed and remaining
+
+- Closed: the five Lean repo names from file 02 were inspected; RFC 9846 versus RFC 8446 resolved (obsoletes); Signal ProVerif attribution checked; implementation languages for 15 protocol areas recorded from repository trees; 11 CVEs mapped to model scope where models were read.
+- Remaining: (1) no formal-model source was read for Noise, Kerberos, OAuth/OIDC, Bluetooth, EMV, or BGP-as-formal-model; (2) no mainstream EMV implementation found; (3) CVE-to-model-scope rows for TCP, Kerberos, Bluetooth say "unknown/none established" because the models were not read in depth; (4) most papers in Section 4 are [PART]; (5) "IETF FMBF" was not found by name in any source read, only UFMRG; (6) 3GPP specification text (e.g. TS 33.501) was not fetched; (7) the Aeneas/hax Lean backends were not inspected, so no Lean extraction-from-Rust claim rests on this file; (8) all Lean theorem and `sorry` counts are static token counts, not build results.
+
+## Open Questions
+
+1. Which Lean artefacts link a Lean model to code in a mainstream language by anything stronger than prose tables, tests or "anchors" (Section 1, L2 and L3)?
+2. What does each source mean by "verified" when the artefact is tests or monitoring (Section 9)?
+3. Does any Lean artefact include an adversary model (Dolev-Yao or otherwise)? Only L7 (distributed-system models) and none of the cryptographic-protocol repos were found to.
+4. What do L2's 258 `native_decide` uses add to the trusted base, and is that discussed by the authors?
+5. Which of the Section 6 protocols have a Tamarin/ProVerif/TLA+ model published as source that a Lean pipeline could ingest or compare against? Only TLS 1.3, WireGuard, 5G AKA, Signal were confirmed in this file.
+6. How do spec-format toolchains (EverParse, Kaitai, Spicy, ABNF, P4) relate to Lean artefacts? L5 is the only Lean parser-with-proofs found; no source read compares the two.
+7. For each CVE in Section 5 marked "unknown" or "none established": is the flawed feature inside any existing formal model?
+8. What is the effort (person-hours) behind each Lean repository? Only figures such as "three person-weeks" (SpecMon, non-Lean) and the authors' run counts (L2) were found.
+9. Which of the AI-generated repositories (L2, L3, L4) have been reviewed by humans, and how?
+
+
+## Unverified leads (excluded from evidence)
+
+Everything below is the Phase-1 content of this file, written from search results and excerpts, not from full reads. Sub-headings were demoted one level. Items that Sections 1-9 above re-read (Terrapin, WireGuard, Ivy-QUIC, SCALE, Eywa, Iceberg, TLS fuzzing, 5G AKA, TLS 1.3 Tamarin, Veil, NetSem, MQTT) are superseded by those sections where they differ. Phase 2 should ignore this section. The Phase-1 "Open Questions" heading is retained only as part of the quoted old text.
+
+### Part A. Specification sources and formats a Lean-based pipeline would have to ingest
+
+#### A1. Summary table
 
 | Format / source | What it is (as stated by source) | Machine-readable? | Existing tooling/targets named by sources | Source(s) |
 |---|---|---|---|---|
@@ -32,7 +355,7 @@ Phase 1 evidence only. No analysis or conclusions. Hypothesis under test (not ev
 | 3GPP specifications | e.g. TS 33.501 "Security architecture and procedures for 5G System"; published as ETSI TS with release versions (v15.3.1 ... v19.6.0 seen) | Mixed (prose + ASN.1 + tables) | Tamarin models of 5G AKA extracted from TS 33.501 | [3GPP portal TS 33.501][P] https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3169 ; [ETSI TS 133 501 v19.6.0][P] https://www.etsi.org/deliver/etsi_ts/133500_133599/133501/19.06.00_60/ts_133501v190600p.pdf ; [3GPP 33-series index][P] https://www.3gpp.org/dynareport?code=33-series.htm |
 | Payment: EMV | "more than 2,000 pages across contact and contactless books" (secondary) | No (prose) | Directly formalized in Tamarin (slides: "Paper specification runs over 2,000 pages -> directly formalized in Tamarin") | [Summer school slides][P] https://summerschool-croatia.cs.ru.nl/2023/slides/Tamarin-Croatia2023-slides-4.pdf ; [Corebaseit summary][S] https://corebaseit.com/corebaseit_posts/emv-four-protocols-formal-verification/ |
 
-### A2. IETF formal-methods efforts
+#### A2. IETF formal-methods efforts
 
 - **Usable Formal Methods Research Group (UFMRG, IRTF).** Charter objectives include exploring "strengths and limitations of formal methods ... for specification and implementation of algorithms, protocols, and systems specified in the IETF" and "tools and techniques to help derive formal models from natural language and semi-structured specifications". Targets listed: algorithms, protocols at all layers, security protocols, cryptographic algorithms, APIs, distributed systems. [P] https://datatracker.ietf.org/rg/ufmrg/about/ ; charter doc: https://datatracker.ietf.org/doc/charter-irtf-ufmrg/ [P]
 - First met at IETF 116 (29 Mar 2023) per IETF blog: "aims to bring together the Internet protocol standards development community and the academic research community studying formal methods of protocol specification". [P] https://www.ietf.org/blog/ietf116-new-topics/
@@ -44,7 +367,7 @@ Phase 1 evidence only. No analysis or conclusions. Hypothesis under test (not ev
 - RFC 9000 (QUIC) itself: Proposed Standard, May 2021, 151 pages. [P] https://datatracker.ietf.org/doc/rfc9000/ ; WG documents: https://datatracker.ietf.org/group/quic/documents/
 - "FMBF" (as named in the task brief): **not found** in any source read; see Open Questions.
 
-### A3. Lean-adjacent artifacts that consume protocol formats (evidence only)
+#### A3. Lean-adjacent artifacts that consume protocol formats (evidence only)
 
 - **LeanMqtt** - "work-in-progress formally verified parser and serializer for the MQTT 5.0 network protocol, written in Lean 4"; dependent-type packet model; proofs of parser roundtrip (completeness) and reconstruction (soundness). [P] https://github.com/edusporto/lean-mqtt
 - SBLP 2026 paper (published 2026-09-08, pp. 179-184), Porto and de Melo: "Foundations for Formally Verified Network Protocol Parsers in Lean 4: A Case Study with MQTT". Stated verified properties: completeness (roundtrip) and soundness (reconstruction) w.r.t. a serializer. Stated aim: "generalized, embedded domain-specific language for generating verified network protocol parsers". Page does not list exclusions. [P] https://sol.sbc.org.br/index.php/sblp/article/view/46205
@@ -57,9 +380,9 @@ Phase 1 evidence only. No analysis or conclusions. Hypothesis under test (not ev
 
 ---
 
-## Part B. Candidate benchmark corpus
+### Part B. Candidate benchmark corpus
 
-### B1. Table
+#### B1. Table
 
 Legend: "Model" = existing formal model/spec in any tool. "Impl." = implementations named in the sources read (not exhaustive). "Findings" = bugs/CVEs/attacks reported in the sources, with where found (spec-level model vs implementation testing).
 
@@ -83,7 +406,7 @@ Legend: "Model" = existing formal model/spec in any tool. "Impl." = implementati
 | 16 | **Bluetooth** (BR/EDR, BLE, Mesh) | Tamarin: all key-agreement protocols https://link.springer.com/chapter/10.1007/978-3-031-51479-1_6 [P], https://hal.science/hal-04079883v1/document [P]; PE/NC pairing models https://github.com/OSUSecLab/bluetooth-pairing-formal-verification [P], NDSS'23 https://www.ndss-symposium.org/wp-content/uploads/2023/02/ndss2023_s119_paper.pdf [P]; BLE-SC (NDSS'26) 84 pairing cases https://www.ndss-symposium.org/ndss-paper/formal-analysis-of-ble-secure-connection-pairing-and-revelation-of-the-pe-confusion-attack/ [P]; BLE-SC model compliant with spec v5.3 https://dl.acm.org/doi/10.5555/3620237.3620240 [P] | "off-the-shelf implementations" validated attacks (specific stacks not retrieved) | Attacks reported as CVEs by Bluetooth SIG (pairing-mode confusion); new "PE confusion attack" (NDSS'26) [P] |
 | 17 | **EMV** | Tamarin (Basin, Sasse, Toro-Pozo): "The EMV Standard: Break, Fix, Verify" https://www.alphaxiv.org/@ralf-sasse [S]; "Getting Chip Card Payments Right" (kernel C8, FM'24) https://people.inf.ethz.ch/rsasse/pub/c8-fm24.pdf [P]; ETH collection https://www.research-collection.ethz.ch/server/api/core/bitstreams/3370324c-c961-474a-b7d4-bb3e148c766d/content [P]; Lübeck talk https://www.its.uni-luebeck.de/forschung/forschungsseminar/2022-10-25-david-basin-breaking-and-fixing-modern-payment-protocols-with-tamarin [S] | "over 9 billion cards" in use [S]; actual cards exploitable | "Tamarin was extremely effective in finding critical flaws ... in many cases exploitable on actual cards" (ETH abstract) [P]; attacker can use a victim's EMV card for high-value purchases without PIN [S]; secondary summary: 40 configurations analysed, Visa CTQ (tag 9F6C) unauthenticated [S] |
 
-### B2. Cross-cutting tool-side facts gathered (for the pipeline, not interpreted)
+#### B2. Cross-cutting tool-side facts gathered (for the pipeline, not interpreted)
 
 - **Tamarin** models protocols as "multiset rewriting systems" with "(temporal) first-order properties"; supports Diffie-Hellman; "falsification and unbounded verification". [P] https://people.cispa.io/cas.cremers/tools/tamarin/tutorial-EC2019.html ; publications list https://tamarin-prover.com/publications.html [P] ; IEEE article describing large real-world uses https://people.inf.ethz.ch/basin/pubs/tamarinIEEE2022.pdf [P]
 - **ProVerif**: applied pi calculus, Horn-clause translation; "Unbounded number of sessions" [P] https://bblanche.gitlabpages.inria.fr/talks/Rennes11.pdf . A 2026 translator Tamarin->ProVerif evaluated on 121 Tamarin models: ProVerif front end accepts 523 of 566 lemma tasks [P] https://arxiv.org/pdf/2608.06315v2
@@ -91,7 +414,7 @@ Legend: "Model" = existing formal model/spec in any tool. "Impl." = implementati
 - **LLM-assisted extraction of models from RFCs**: Eywa (DNS/BGP/SMTP), "Can LLMs help find Ambiguities in Protocol Specifications?" (5G ASN.1 + DNS) [P, excerpt] https://ar5iv.labs.arxiv.org/html/2609.38752 ; SpecFSM (extracting/repairing FSMs from specs) https://dl.acm.org/doi/10.1145/3832783.3834331 [P, excerpt]
 - Project Everest TOPLAS retrospective (2026): EverParse used in "Windows Networking"; 3D "used today in many products at Microsoft". [P] https://dl.acm.org/doi/full/10.1145/3805702
 
-### B3. Findings grouped by where the problem was reported (neutral ledger)
+#### B3. Findings grouped by where the problem was reported (neutral ledger)
 
 Counts only reflect the sources I read.
 
@@ -104,7 +427,7 @@ Counts only reflect the sources I read.
 | Protocol bug with both spec and implementation facets | Terrapin CVE-2023-48795: NVD says SSH BPP "mishandles the handshake phase and mishandles use of sequence numbers", affecting OpenSSH before 9.6 "and other products" |
 | Errors in the formal artifact itself | Raft TLA+ `logVars` bug unfixed until 2018 (issue thread); Noise Explorer SECURITY.md warns model-generation errors can mis-verify; EverParse/Noise Explorer/Netsem all described as depending on a trusted generator or validation by traces |
 
-### B4. Implementation-verification precedents (any tool) relevant to a corpus
+#### B4. Implementation-verification precedents (any tool) relevant to a corpus
 
 | Project | Tool | What the source says is covered | Source |
 |---|---|---|---|
@@ -119,7 +442,7 @@ Counts only reflect the sources I read.
 
 ---
 
-## Source index (distinct primary or secondary sources used; 70+)
+### Source index (distinct primary or secondary sources used; 70+)
 
 Primary: IETF datatracker (UFMRG about, charter, RFC 9000, RFC 8446, RFC 5234, QUIC WG docs, draft-farrell-ufmrg-sample, IETF 116/118 minutes, IETF 117 slides, IETF 123 slides, IETF 125 MAPRG slides), RFC Editor (ABNF index, RFC 9996), RFC 9700, ITU X.680, ETSI ASN.1 page, ETSI TS 133 501 / TS 132 436, 3GPP portal, ECN for RRC, protobuf.dev encoding + overview source, P4 spec + Developer Days, Zeek/Spicy docs and repo, Kaitai site/repo/news, EverParse site/3D/GitHub/PLDI'22 paper+slides/TOPLAS, Nail paper/repo/;login:, Scribble papers (FASE'16, Featherweight, Python, TypeScript, Mungo), SBLP'26 MQTT paper, LeanMqtt repo, Veil site/CAV paper/NFM slides, Aeneas repo/site/papers, Lean TPIL, Tamarin TLS 1.3 site and papers, Cremers pages, Noise Explorer site/paper/repo, WireGuard formal-verification page and paper, Signal docs, Cremers USENIX'23, HAL Double Ratchet, HAL PQ-Signal, Radboud SSH papers and TLS state fuzzing, USENIX'15 slides, NVD CVE-2014-0160 and CVE-2023-48795, Ivy SIGCOMM'19, UCLouvain/arXiv QUIC-Ivy, TQUIC docs, Galois ivy-quic-testing-demo, kenmcmil GitHub, Zhang et al QUIC analysis, Raft paper, ongardie/raft.tla, tlaplus Examples, etcd-io/raft TLA+, CCF ccfraft.tla, Verdi-Raft opam, Ironclad repo, Netsem pages/TOCS, UW BGP thesis/Weitz thesis, Minesweeper, SCALE (USENIX/MSR/eScholarship), Eywa (ACM/arXiv/USENIX slides), Iceberg (NSDI'26), Blanchet Kerberos slides, IEEE TSE timed protocols, Kerberos.org tutorial, Fett et al OAuth/OIDC/FAPI, Basin et al 5G arXiv, ERCIM News, Cremers & Dehnel-Wild 5G, BLE/Bluetooth Tamarin papers and repo, EMV papers (ETH, FM'24).
 
@@ -127,7 +450,7 @@ Secondary: Wikipedia (ABNF, Heartbleed), fullstack.wiki, Fox-IT SMACK note, HAL 
 
 ---
 
-## Open Questions
+### Open Questions
 
 1. **IETF FMBF**: no source found for an "FMBF" (formal methods BoF or framework) under that name. Is the intended item UFMRG, a past BoF, or something else? Not resolved.
 2. **ABNF to Lean**: no source read shows an ABNF-to-Lean (or ABNF-to-Coq/Isabelle) ingestion tool. Is there one, and does it handle `prose-val`?

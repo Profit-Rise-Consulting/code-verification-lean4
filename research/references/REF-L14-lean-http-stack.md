@@ -162,7 +162,7 @@ Static token counts, with `--` line comments stripped (block comments not stripp
 | Lean files / LOC | 47 / 13,726 | 60 / 33,247 | 51 / 15,113 | 108 / 38,581 |
 | theorem/lemma decls | 25 | 1,840 | 37 | 929 |
 | sorry | 0 | 0 | 0 | 2 tokens, both in comments/docs |
-| admit | 0 | 0 | 0 | 5 tokens, all the identifier `admit` (connection pool), not the tactic |
+| admit | 0 | 0 | 0 | 5 tokens, all the identifier `admit` (connection-pool function `TaskPool.admit` and its docs), not the tactic |
 | axiom | 0 | 0 | 0 | 5 real `axiom` declarations (listed in §3) |
 | native_decide | 0 | 25 tokens (Bridge 1, Real/Equiv 11, Real/Fixed 2, Real/Original 6, Real/URIEquiv 5) | 0 | 416 tokens; about 379 tactic uses |
 | implemented_by | 0 | 0 | 0 | 0 |

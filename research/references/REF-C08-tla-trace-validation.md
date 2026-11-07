@@ -1,0 +1,135 @@
+# REF-C08: TLA+ trace validation (CCF, MongoDB, etcd raft)
+
+Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
+
+## 1. Identity
+| Field | Value |
+|---|---|
+| Subject (protocol or algorithm) | Checking that logged executions of production distributed systems are behaviours of a TLA+ spec. Three deployments: Microsoft CCF consensus and client consistency (C++); MongoDB Server replication commit-point gossip (C++) and Realm Sync array OT (C++/Go); etcd-io/raft (Go). |
+| Spec it targets | Not an RFC. Each project's own TLA+ spec: CCF `ccfraft.tla` and consistency specs [S1]; MongoDB `RaftMongo.tla` (345 lines) and `array_ot.tla` (795 lines) [S2]; etcd `tla/etcdraft.tla` [S4]. |
+| Organisation / authors | CCF: Howard, Kuppe, Ashton, Chamayou, Crooks (Azure Research, Microsoft) [S1]. Method paper: Cirstea, Kuppe, Loillier, Merz (Inria/LORIA, Microsoft Research) [S3]. MongoDB: Davis, Hirschhorn, Schvimer [S2]. etcd: contribution by `joshuazh-x` (PR #113) [S6]. |
+| Primary URLs | https://www.usenix.org/system/files/nsdi25-howard.pdf ; https://arxiv.org/pdf/2404.16075 ; https://arxiv.org/pdf/2006.00915 ; https://github.com/etcd-io/raft/tree/main/tla |
+| Repo, commit SHA, last commit date, licence | etcd-io/raft `c51f010c851edd0dada5af41bafbf68e54617767`, 2026-10-23, Apache-2.0 [S4]. microsoft/CCF `6404230c2b1e0f1770f47ce95a4e3cb3a274c657`, 2026-11-06, Apache-2.0; TLA+ removed in `3bab46ef1b64dcb715db5b2e9a22b9e10e2bb3d8` (2026-11-05) [S5]. MongoDB tracing code and post-processor are referenced in [S2] but were not cloned. |
+| Lean toolchain (or other tool and version) | TLA+ with TLC (explicit-state model checker). Extensions added for trace validation: action composition, DFS, debugger, unsatisfied breakpoints [S1]. CCF's replacement in `lean/`: `leanprover/lean4:v4.35.0` plus Mathlib [S5]. |
+| Maturity | Production CI at CCF from about 2023 until 2026-11-05 [S1, S5]; etcd: in-tree spec and trace hooks behind the `with_tla` build tag, with no CI workflow running it at the inspected commit [S4]; MongoDB trace checking: "abandoned the project after 10 weeks" [S2]. |
+
+## 2. Claim as stated by the authors (verbatim)
+- CCF: "we have integrated our smart casual verification approach into CCF's CI pipeline, allowing contributors to continuously validate CCF as it evolves ... to find six subtle bugs in the design and implementation before they could impact production." [S1, abstract]
+- Method: "Although this approach does not provide formal correctness guarantees, even when the TLA+ specification has been extensively verified, we have found it very useful for discovering and analyzing discrepancies" [S3, sec 1]
+- Method: "The trace is compatible with the specification if S ∩ T ≠ ∅. Note in particular that we do not check for refinement of the high-level specification by the trace, expressed as T ⊆ S" [S3, sec 4.1]
+- MongoDB: "We found MBTC to be impractical for testing that the Server conformed to a highly abstract specification. MBTCG was highly successful for Realm Sync, however." [S2, abstract]
+- etcd: "The second one, adherence of the implementation to algorithm specification, is fortified through trace validation, which serves to bridge the gap between the model and its implementation." [S4, tla/README.md]
+
+Use of words (sub-claim D): CCF calls the approach "smart casual verification" while stating "Full formal verification ... requires a significant upfront investment" and choosing "a different approach" [S1]. The method paper says it "does not provide formal correctness guarantees" [S3].
+
+## 3. What is actually formalised
+- CCF consensus spec: "17 actions to describe the transitions over 13 variables"; key properties `LogInv` (committed logs pairwise prefix) and `AppendOnlyProp`, plus "a further 27 invariants/properties" [S1 sec 4]. Consistency spec: two variables (`history`, `logBranches`) with properties such as `PrevCommittedInv` and `ObservedRoInv` [S1 sec 5].
+- Trace spec: re-uses spec actions, enabled only when the current log line matches, e.g. `IsSendAppendEntries` conjoins `IsEvent(ln,"sndAE")`, `commitIndex[ln.snd] = ln.commit_idx` and `AppendEntries(ln.snd, ln.rcv)`; faults composed as `Spec = Init ∧ □[IsFault · Next]` [S1 Listing 5].
+- Generic library: `IsEvent(e) ≜ l ∈ 1..Len(Trace) ∧ l' = l + 1 ∧ ... ∧ UpdateVariables(Trace[l])` and `TraceAccepted ≜ TLCGet("stats").diameter - 1 = Len(Trace)` [S3 sec 4.2].
+- etcd: `tla/etcdraft.tla` 926 lines, `tla/Traceetcdraft.tla` 478 lines, `tla/MCetcdraft.tla` 119 lines [S4, wc -l]. Implementation hooks in `state_trace.go` (build tag `//go:build with_tla`), e.g. `state_trace.go:201` `func traceInitState(r *raft) {`, `:217` `func traceReplicate(r *raft, es ...*raftpb.Entry) {`, `:233` `func traceBecomeLeader(r *raft) {` [S4].
+- MongoDB `RaftMongo.tla`: four per-node variables (role, term, commitPoint, oplog), election abstracted as `BecomePrimaryByMagic`; TLC with 3 nodes, 3 terms, 3 entries: "371,368 distinct states" [S2 sec 4.1].
+- Environment: CCF spec makes "no assumptions about clock synchrony"; network abstraction varies (set vs multiset, ordering, loss) [S1]. No adversary model; Byzantine behaviour not covered (CCF is CFT here).
+
+## 4. Property classes covered
+| Class | Status | Evidence |
+|---|---|---|
+| Functional correctness | partial | Trace membership in spec behaviours for tested executions only [S3]. |
+| Safety invariant | yes (model-checked, bounded) on spec; tested on implementation | `LogInv`, `AppendOnlyProp`, 27 more in CCF [S1]; exhaustive checking needed "the strongest state constraints" [S1 sec 4]. |
+| Liveness | partial | CCF spec found the "Premature node retirement" liveness bug via simulation [S1]; trace validation itself ignores liveness: "we only analyze finite traces ... we ignore liveness properties" [S3]. |
+| Refinement | no (formally) | "we do not check for refinement ... T ⊆ S" [S3]. |
+| Symbolic security | no | Not addressed. |
+| Computational security | no | Not addressed. |
+| Parsing | no | Not addressed. |
+| Constant-time | no | Not addressed. |
+| Consistency model | yes (bounded) | CCF consistency spec, 12-step counterexample to `ObservedRoInv` found in four seconds [S1 sec 7]. |
+
+## 5. Link to implementation code
+Mechanism: trace validation (CCF, etcd, MongoDB MBTC) and model-based test-case generation (MongoDB Realm Sync).
+- CCF: deterministic scenario driver with a single global clock; "an additional 15 log statements" at side-effect-free linearization points; logging "disabled at compile time for production builds" [S1 sec 6.1]. Consistency traces collected from the REST API with no source instrumentation [S1].
+- etcd: 11 log statements (per Kuppe's TLA+ Conf 2024 slides) [S7]; `go build -tags=with_tla`, NDJSON traces, all instances on one machine "To preserve the causality of events" [S4].
+- MongoDB MBTC: `logTlaPlusTraceEvent` in 570 lines of C++, sleep until the millisecond clock ticks to obtain a total order, a 484-line Python post-processor that synthesises global states [S2].
+- MongoDB MBTCG: TLC state graph dumped to DOT, a 755-line Go program generated 4,913 C++ test cases [S2 sec 5.2].
+Guarantee: a passing trace shows S ∩ T ≠ ∅ for that execution only. "trace validation might incorrectly accept a trace if the trace provides incomplete information" [S3]. Later etcd issue #456 notes that if the implementation is more restrictive than the spec, trace validation cannot detect a spec bug "since any valid trace of the impl is also a valid trace of the model" [S8].
+
+## 6. Trusted computing base and soundness hygiene
+Lean-style counts not applicable to the TLA+ artefacts. TCB of a pass verdict:
+- TLC and the TLA+ CommunityModules JSON/IO operators [S3, S4].
+- Placement and correctness of logging statements (linearization points) and the clock/merge order [S1, S3].
+- Trace preprocessing: CCF excludes and de-duplicates bootstrap events [S1]; MongoDB post-processor fills in oplog entries, which raised concern that "a mistake in the Python script might mask a harmful transcription bug" [S2].
+- The trace spec's added non-determinism (fault composition, multiset network) [S1].
+- Bounded model checking or simulation of the spec itself, not proof [S1].
+CCF's Lean replacement (inspected statically, commit 6404230): `rg` over `lean/**/*.lean` (33,213 lines) found 0 `sorry`, 0 `admit`, 0 `axiom`, 0 `native_decide`, 0 `implemented_by`, 0 `@[extern`, 0 `opaque`, 0 `partial def` [S5]. Replay README: CI "checks the library and executable roots together, allowing only `propext`, `Classical.choice` and `Quot.sound`"; `lake check` "runs without sandboxing here, so build-time code must be trusted" [S5].
+
+## 7. Scale, effort, automation
+- CCF (Table 1): consensus spec 1,134 LoC, model checking 158, simulation 69, trace validation 369, versus implementation 2,174, functional tests 2,579, end-to-end tests 2,815; consistency spec 375 LoC, trace validation 111 [S1]. Instrumentation "approximately one day"; consensus trace spec "approximately two engineer-months, spread over four months"; consistency trace validation "approximately one engineer-week" [S1 sec 6.5]. 88 commits to the trace spec, 107 to the consensus spec [S1]. One exhaustive run: "48 hours ... on a 128 core machine" [S1 sec 7]. CCF implementation overall "63 kLoC in C++" [S1].
+- Bugs (CCF Table 2): five safety, one liveness; of these, trace validation directly found "Commit advance on AE-NACK" and "Truncation from early AE", the latter producing "a trace 305 events long at the point the bug manifests" [S1]. The others were found by model checking, simulation or spec alignment.
+- DFS vs BFS: consistency trace "less than a second using DFS, compared to about an hour with BFS" [S1 sec 6.4].
+- Method paper: state counts depend strongly on what is logged; e.g. Two-Phase Commit 16 RMs with only event names exceeded a 1-hour timeout under BFS [S3 Fig. 5].
+- MongoDB MBTC: 10 weeks for two engineers; 423 JS tests, 120 failed with tracing; 42,262 trace events; checking applied to 5 handwritten tests and one randomized test, of which one passed; spec edits "252 of the 345 lines" [S2]. MBTCG: 4 weeks, 100% branch coverage of 86 branches versus 21% for handwritten tests and 92% for AFL after about 8 million executions; found a non-terminating ArraySwap/ArrayMove merge, leading to ArraySwap deprecation [S2].
+- etcd: "It typically takes a few minutes to validate 3000 traces. And the time increases non-linearly after that." [S4]. PR author on bugs found: "No. I did not find bug so far." [S6]. Kuppe's slides list "Inefficiency: next index shall be larger than match index #149" under etcd-raft [S7].
+
+## 8. Limitations stated by the authors (verbatim)
+- "contrary to ordinary model checking, a failure to validate a trace had no counterexample." [S1 sec 6.3]
+- "We found exhaustive model checking too time-consuming to run with all but the strongest state constraints in our CI pipeline" [S1 sec 4]
+- "the driver records the length of the logs but not the log entries themselves, which would become impractically large." [S1]
+- "Although the technique does not provide formal correctness guarantees, mainly due to the necessary decisions on when to log an event corresponding to an atomic action" [S3 sec 6]
+- "too imprecise logs may even lead to erroneous traces being accepted because the model checker may be able to infer suitable values that do not correspond to the actual ones." [S3 sec 4.5]
+- "we found that MBTC is only practical if the specification is written with MBTC in mind." [S2 sec 4.2.3]
+- "No initial infrastructure investment can make the marginal cost of trace-checking additional specifications cheap." [S2 sec 6]
+- "the violation came only 4 steps from the trace's start and left the remaining 2,683 steps unchecked." [S2]
+- etcd: "etcdraft assumes atomic persisiting of states in Read action. This, however, may not apply in real-world application." [S4]
+
+## 9. Independent evidence
+- The method paper is co-authored by Kuppe, so it is not independent of CCF [S3]. Its own case studies (2PC, KV store, EWD998 implementation) found discrepancies "in all cases" [S3].
+- MongoDB is an independent industrial attempt and is mostly negative for MBTC on a large codebase [S2]. CCF authors attribute MongoDB's difficulty to "not leveraging TLA+'s non-determinism to infer implementation state, and action composition to align atomicity" [S1 sec 9]; this is CCF's interpretation.
+- etcd: external issue #456 (2026) reports a spec bug in `etcdraft.tla` permitting split brain during membership change, and states trace validation missed it because the Go code is more restrictive [S8].
+- Displacement in CCF: commit `3bab46e` "Remove TLA+ specifications and associated tooling (#8663)" deleted 75 files (7,040 lines), co-authored by Copilot, on 2026-11-05 [S5]. The repository now has `lean/` packages (common, consensus, consistency, disaster-recovery, kv; 33,213 Lean lines), with first Lean commit in the fetched history `ab11900` "Add the C++-aligned Lean disaster recovery model (#8277)" on 2026-09-09 [S5]. `lean/AGENT.md`: "We use agents to generate models and proofs that those models are correct. We use trace validation to align the models with the implementation. Formally, if B(X) is the set of behaviours permitted by X, then B(implementation) \subseteq B(Model) \subseteq B(Properties)." `Consensus/Properties.lean` states `committed_logs_prefix`, `single_node_committed_log_monotonic`, `election_safety`, `committed_frontier_is_signature`, each with a non-vacuity witness lemma. `lean/consensus/replay/README.md`: "Replay native `cft_driver` captures against the Lean model"; scope: "Node join and snapshot installation are not modeled. There are no liveness properties or fairness assumptions." [S5]. This is a candidate for its own Lean-side dossier; facts here come from static reading only.
+
+## 10. Reproducibility
+Not run: sandbox disk limit. A TLC run of the etcd example trace was started and killed before completion when the disk-limit instruction arrived; no result is recorded. Exact command (from `tla/README.md` and `validate.sh`): `cd /tmp/c08-etcd/tla && env JSON=example.ndjson java -XX:+UseParallelGC -cp tla2tools.jar:CommunityModules-deps.jar tlc2.TLC -config Traceetcdraft.cfg Traceetcdraft.tla -lncheck final -fpmem 0.9`. CCF Lean (not run): `cd lean/consensus && lake exe cache get && lake build --wfail consensus-replay && ./.lake/build/bin/consensus-replay path/to/trace.ndjson`. Static inspection only: shallow clones, `wc -l`, `rg` counts, blobless history fetch of CCF since 2025-01-01.
+
+## 11. Generalisation
+Pattern: log abstract state updates at chosen linearization points in a white-box implementation, merge into a total or causal order, then search for a matching spec behaviour with the model checker (S ∩ T ≠ ∅), using spec non-determinism to fill unlogged variables.
+Preconditions for an arbitrary codebase:
+- Source access to add logging (white-box; contrast black-box Ivy, REF-C07) [S3].
+- A spec whose actions correspond to implementation steps, or explicit composition/stuttering to bridge grain of atomicity; otherwise "MBTC is only practical if the specification is written with MBTC in mind" [S2].
+- A consistent snapshot of logged state at each event; MongoDB's hierarchical locking and MVCC made this "the single most difficult aspect" [S2].
+- A causal order: global clock in a deterministic driver (CCF), single machine and single file (etcd), or sleeps on a ms clock (MongoDB) [S1, S2, S4].
+- A test corpus that reaches interesting behaviours; coverage is bounded by the tests [S1 sec 9 on ShardStore, applies equally here].
+Language independence: CCF C++, etcd Go, MongoDB C++; the spec side is language-neutral.
+
+## 12. Bearing on sub-claims (facts only, no verdict)
+| Sub-claim | Fact from this reference | Source ID |
+|---|---|---|
+| H1 | CCF's Raft-variant consensus and fork-linearizable client consistency were expressed in TLA+ (1,134 and 375 LoC) with 29+ safety properties. | S1 |
+| H2 | No proofs in the TLA+ phase; properties checked by bounded model checking and simulation. CCF's 2026 Lean models state and prove four consensus safety theorems (static inspection). | S1, S5 |
+| H3 | Link to C++/Go is per-trace S ∩ T ≠ ∅, explicitly not refinement; found two CCF safety bugs directly; MongoDB MBTC abandoned; etcd PR author found none. | S1, S2, S3, S6 |
+| H4 | Needs source instrumentation, a causal order and spec/implementation step alignment; marginal cost per spec "nearly as costly as the first" at MongoDB. | S2, S3 |
+| H5 | Engineers obtained conformance evidence without a refinement proof; CCF later added Lean proofs of model properties plus Lean trace replay of C++ traces, and removed TLA+. | S1, S5 |
+| D | "smart casual verification" and "fortified through trace validation" are used for a method its designers say "does not provide formal correctness guarantees". | S1, S3, S4 |
+
+## 13. Conflicts
+- Number of CCF instrumentation points: NSDI paper says "an additional 15 log statements" [S1]; Kuppe's slides also say "CCF (15 log stmts total)" [S7]. Consistent. etcd 11 statements appears only in [S7].
+- MongoDB bug discovery: CCF and method papers say Davis et al. applied trace validation "discovering a non-trivial implementation bug" [S1 sec 9, S3 sec 5]. Davis et al. say the initial-sync violation was "a known violation of the specification" and "had we not already known about this behavior, it would have been a significant discovery" [S2]. The new bug MongoDB reports (ArraySwap non-termination) came from model checking a transcribed spec in the MBTCG case, not trace checking [S2].
+- etcd bug yield: Kuppe's slides list etcd-raft item "#149" (inefficiency) [S7]; PR #113 author: "No. I did not find bug so far." [S6]. Not contradictory if #149 came later or is classed as non-bug; not resolved.
+- CCF status: the NSDI paper (2025) describes TLA+ trace validation as part of CI [S1]; at commit 6404230 (2026-11-06) the TLA+ tree is gone and Lean replay is the CI check [S5].
+
+## 14. Sources
+| ID | Title | URL | P/S | Depth | Summary |
+|---|---|---|---|---|---|
+| S1 | Howard et al., "Smart Casual Verification of the Confidential Consortium Framework", NSDI 2025 | https://www.usenix.org/system/files/nsdi25-howard.pdf | P | FULL | TLA+ specs of CCF consensus and consistency, trace validation of C++ in CI, six bugs, effort and LoC table. |
+| S2 | Davis, Hirschhorn, Schvimer, "eXtreme Modelling in Practice", PVLDB 13(9) 2020 (arXiv 2006.00915) | https://arxiv.org/pdf/2006.00915 | P | FULL | MongoDB MBTC abandoned after 10 weeks; Realm Sync MBTCG succeeded with 4,913 generated tests. |
+| S3 | Cirstea, Kuppe, Loillier, Merz, "Validating Traces of Distributed Programs Against TLA+ Specifications", SEFM 2024 (arXiv 2404.16075v2) | https://arxiv.org/pdf/2404.16075 | P | FULL | Formal problem S ∩ T ≠ ∅, TLA+ trace library, partial logging trade-offs, case studies. |
+| S4 | etcd-io/raft `tla/` and `state_trace.go` (commit c51f010) | https://github.com/etcd-io/raft/tree/main/tla | P | CODE | etcd TLA+ spec, trace spec, Go trace hooks behind `with_tla`, README limitations. |
+| S5 | microsoft/CCF repository (commit 6404230; history to 2025-01-01) | https://github.com/microsoft/CCF | P | CODE | TLA+ removal commit, Lean models, proofs and C++ trace replay; AGENT.md. |
+| S6 | etcd-io/raft PR #113 "TLA+ Trace validation" | https://github.com/etcd-io/raft/pull/113 | P | ABSTRACT | Search excerpt: author states no bug found so far. |
+| S7 | Kuppe, "Validating System Executions with the TLA+ Tools", TLA+ Conf 2024 slides | https://conf.tlapl.us/2024/MarkusAKuppe-ValidatingSystemExecutionsWithTheTLAPlusTools.pdf | S | FULL | Case list, log statement counts, etcd items #111/#133/#149, CCF spec bugs. |
+| S8 | etcd-io/raft issue #456 "[Spec Bug] TLA+ Raft model permits split-brain ..." | https://github.com/etcd-io/raft/issues/456 | S | ABSTRACT | Search excerpt: spec weaker than Go code; trace validation cannot catch it. |
+
+## 15. Unverified leads (excluded from evidence)
+- Wang et al. and SandTable (replay of TLA+ behaviours against implementations) cited in [S1]; not read.
+- Niu et al. ZooKeeper trace validation cited in [S1]; not read.
+- Specula (arXiv 2607.25333, 2026) reports LLM-agent spec generation and checking for 48 systems including MongoDB and etcd; seen only in a search snippet.
+- MongoDB later trace-validation work (post-2020) not located.
+- etcd issue #149 content (inefficiency) not opened.
+- CCF PRs #8277, #8663 discussion threads not read; reasons for TLA+ removal not established.

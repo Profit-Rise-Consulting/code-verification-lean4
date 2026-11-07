@@ -19,7 +19,7 @@ REPORT.md (dated 2026-04-28):
 
 > "Validated **28 correspondence targets** via 625 `#guard` tests and Rust test functions"
 
-Blog (2026-04-20), describing the earlier 443-theorem state:
+Blog (2026-04-20), describing an earlier snapshot:
 > "The top-level formal result is raftReachable_safe: for any cluster state reachable via valid Raft transitions from an empty initial state, no two nodes ever apply different log entries at the same committed index. That's qualified state-machine safety for Raft, machine-checked by Lean 4 with zero "sorry"."
 
 > "I never selected a target, wrote a specification, suggested a proof strategy, or debugged a failing proof. I didn't need to know Lean."
@@ -101,7 +101,7 @@ Function-level components (e.g. `committedIndex_safety`, `committedIndex_maximal
 | Other: compile-time conformance tests | yes | 696 `#guard` lines across FVSquad (642 in correspondence files per CRITIQUE) |
 
 ## 5. Link to implementation code
-Mechanism: manual (agent) transcription plus differential example testing. The blog states: "In Lean Squad, it can do this either by "Path A" – using the automated tool Aeneas to translate Rust code to Lean, or "Path B" ... writing new Lean definitions that "correspond" to the implementation code. Unfortunately I was unable to get Aeneas to successfully process the codebases from the first two examples, so Path B was chosen for both." [S2]. A `Charon.toml` is present at the repo root, but no Aeneas-generated Lean exists in `formal-verification/lean`.
+Mechanism: manual (agent) transcription plus differential example testing. The blog states: "In Lean Squad, it can do this either by “Path A” – using the automated tool Aeneas to translate Rust code to Lean, or “Path B” – “Path A” – writing new Lean definitions that “correspond” to the implementation code." (the "Path B" – "Path A" duplication is in the original) and "Unfortunately I was unable to get Aeneas to successfully process the codebases from the first two examples, so Path B was chosen for both." [S2]. A `Charon.toml` is present at the repo root, but no Aeneas-generated Lean exists in `formal-verification/lean`.
 
 Correspondence: shared fixtures in `formal-verification/tests/<target>/cases.json` are mirrored (a) as Lean `#guard` checks, e.g. `FVSquad/FindConflictCorrespondence.lean` ("each `#guard` assertion runs the Lean model on a concrete test case and verifies the result at compile time"), and (b) as Rust unit tests, e.g. `src/raft_log.rs:2118 fn test_find_conflict_correspondence()`. 39 occurrences of "correspondence" across `src/`. Guarantee: agreement on finitely many hand-picked inputs (17 cases for `find_conflict`); CRITIQUE: "`#guard` tests are bounded to small inputs". Documented divergences include `JointCommittedIndex` returning 0 vs Rust `u64::MAX` on empty configs, an `UncommittedState` noLimit path divergence, and only the non-group-commit path being modelled.
 
@@ -111,7 +111,7 @@ Unverified assumptions: the faithfulness of each hand-written Lean model to its 
 
 ## 7. Scale, effort, automation
 - Lean: 80 files, 21,355 lines; 769 `theorem`/`lemma` declarations (matches CRITIQUE's 769; REPORT says 716); 696 `#guard` lines.
-- Process: 129 automated runs (REPORT); blog for the earlier 34-run, ~3-week phase: "approximately $240 total (this is estimating $7 per run × 34 runs, Claude Opus 4.6 pricing...)". Human input: three nudge comments.
+- Process: 129 automated runs (REPORT); blog for the earlier 34-run, ~3-week phase: "total token cost of this activity was (very approximately) $240 total (this is estimating $7 per run × 34 runs, Claude Opus 4.6 pricing, though in practice the much cheaper Claude Sonnet 4.6 may be been [used]...)". Human input: three nudge comments.
 - Automation: LLM coding agent via GitHub Agentic Workflows, scheduled every 8 hours, phase-weighted task selection over ten task types (Research, Informal Spec, Formal Spec, Implementation, Proof, Correspondence Review, Critique, CI, Report, Paper) [S2].
 - Build time: not measured (not built, Section 10).
 
@@ -129,7 +129,7 @@ CRITIQUE.md (2026-04-28):
 > "`HLogConsistency` ... is still taken as a conditional hypothesis in `LeaderCompleteness.lean` (LC7/LC8)."
 
 ## 9. Independent evidence
-No bugs found in raft-rs. CRITIQUE: "**No bugs found** in any modelled Rust function." Self-reported findings are formulation issues: an over-strict `VotersLearnersDisjoint` predicate, and RSS3/RSS4 "initially stated as universally quantified properties that are provably false". No independent external review was found. The author's own blog is the main critique: it identifies the "pseudo-completion" problem. The same workflow on other repos (cloudflare/quiche, PX4) is reported in the blog to have found an `Ord` antisymmetry violation and two PX4 edge-case bugs. Those are outside this dossier.
+No bugs found in raft-rs. CRITIQUE: "**No bugs found** in any modelled Rust function." Self-reported findings are formulation issues: an over-strict `VotersLearnersDisjoint` predicate, and RSS3/RSS4 "initially stated as universally quantified properties that are provably false". No independent external review was found. The author's own blog is the main critique: it identifies the "pseudo-completion" problem. The same workflow on other repos is reported in the blog to have found a Rust `Ord` contract violation in quiche ("both `a.cmp(b) = Greater` and `b.cmp(a) = Greater` hold simultaneously") and, for PX4, "259 Theorems, Two Bugs". Those are outside this dossier.
 
 ## 10. Reproducibility
 Not built. A stdlib-only build was started (`lake build` in `formal-verification/lean`), but I stopped it while it was still downloading the v4.28.0 toolchain. Shared sandbox disk was at 96-97% (under 1 GB free), and the orchestrator then set a no-build policy for this phase. The repo has CI workflow `.github/workflows/lean-ci.yml`, and the blog states "`lake build` passes in CI on every PR". That CI result was not independently observed.
@@ -152,7 +152,7 @@ Pattern: an AI agent writes a hand-transcribed Lean model of each implementation
 - Theorem count: REPORT 716 theorems vs CRITIQUE 769 theorem declarations. My static count is 769 `theorem`/`lemma` lines. Blog: 443 theorems across 23 files (an earlier snapshot).
 - Toolchain: REPORT/CRITIQUE "Lean 4.30.0-rc2" vs `lean-toolchain` file `leanprover/lean4:v4.28.0`.
 - `#guard` count: REPORT 625 vs CRITIQUE 642 (+54 in proof files). My grep count is 696 total.
-- Blog claim "zero sorry" for `raftReachable_safe` vs the blog's own later quote that the five step hypotheses were "axioms rather than proved facts" (both in S2; they describe different times).
+- Blog claim "zero sorry" for `raftReachable_safe` vs the blog's own quotation of an interim critique: "`raftReachable_safe` (RT2) is conditionally correct only: it proves safety *given* the hypotheses, but the hypotheses themselves are axioms rather than proved facts." Both are in S2 and describe different times.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |

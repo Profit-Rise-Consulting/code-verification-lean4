@@ -39,7 +39,7 @@ Protocols such as TLS, QUIC, MQTT and Raft are typically specified in prose, som
 | Metric | Baseline (Phase 1, first pass) | Target (Phase 1b) | How measured |
 |---|---|---|---|
 | Excerpt-only evidence entries outside quarantine | about 110 across 8 files | 0 | `scripts/check-research` NFR-001 |
-| Reference dossiers with all 15 sections | 0 | at least 20 (29 planned) | `scripts/check-research` FR-003 |
+| Reference dossiers with all 15 sections | 0 | at least 20 (28 planned) | `scripts/check-research` FR-003 |
 | Recorded conflicts | 1 | at least 5 | research/CONFLICTS.md |
 | Independent review findings with disposition | none | 100% | research/REVIEW-phase1.md |
 
