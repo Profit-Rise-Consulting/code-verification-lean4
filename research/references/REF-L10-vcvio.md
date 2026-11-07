@@ -87,7 +87,7 @@ Hopscotch case studies (`Hopscotch/Examples/Proofs/`): `secureGGM_of_securePRG` 
 | Constant-time | no | — |
 
 ## 5. Link to implementation code
-Mostly spec-level: theorems are about Lean definitions of schemes, not deployed code. Some schemes have executable Lean concrete implementations (`LatticeCrypto/*/Concrete`), tested against native C implementations through `Extern/` FFI (`@[extern]` bindings, "used in tests"). `Interop/` contains bridges to Lean emitted by Rust frontends hax and Aeneas, but `Interop/README.md`: "Lean 4.31 baseline: Interop is dormant. Neither backend is resolved by Lake, and CI intentionally excludes the `Interop` aggregate target." The 2026 paper: "We also plan to link Lean specifications to efficient executable code, connecting design-level security with implementation-level correctness." Hopscotch: spec-level only.
+impl_link=none (spec-level). Theorems are about Lean definitions of schemes, not deployed code. Some schemes have executable Lean concrete implementations (`LatticeCrypto/*/Concrete`), tested against native C implementations through `Extern/` FFI (`@[extern]` bindings, "used in tests"). `Interop/` contains bridges to Lean emitted by Rust frontends hax and Aeneas, but `Interop/README.md`: "Lean 4.31 baseline: Interop is dormant. Neither backend is resolved by Lake, and CI intentionally excludes the `Interop` aggregate target." The 2026 paper: "We also plan to link Lean specifications to efficient executable code, connecting design-level security with implementation-level correctness." Hopscotch: spec-level only.
 
 ## 6. Trusted computing base and soundness hygiene
 VCVio counts (rg over `*.lean`, excluding `third_party/`; tokens in comments/docstrings filtered by hand):

@@ -19,7 +19,7 @@
   "parsing": "yes",
   "constant_time": "no"
  },
- "impl_link": "same-language",
+ "impl_link": "extraction",
  "impl_language": "C# (compiled from Dafny); Rust (Verus)",
  "tcb": {
   "sorry": 0,
@@ -38,7 +38,7 @@
   "note": "IronFleet Figure 12 totals; Verus IronKV port: trusted 1613, proof 4509, code 1533"
  },
  "built": "no",
- "pattern": "three-layer refinement (spec / protocol state machine / implementation) with TLA embedding for liveness in an SMT-based verifier",
+ "pattern": "three-layer refinement (spec / protocol state machine / implementation) with TLA embedding for liveness in an SMT-based verifier [impl_link: Dafny compiled to C#; Verus ghost code erased, rustc compiles the verified Rust]",
  "subclaims": [
   "H1",
   "H2",

@@ -1,0 +1,46 @@
+{
+ "id": "REF-L12",
+ "name": "Clean (Verified-zkEVM / zkSecurity)",
+ "subject": "Lean 4 DSL for ZK arithmetic circuits with soundness/completeness proofs; Keccak, SHA-256, BLAKE3, Poseidon gadgets; multi-AIR ensembles via channels",
+ "kind": "lean",
+ "tool": "Lean 4 v4.35.0 + Mathlib + CompPoly",
+ "org": "zkSecurity (Verified-zkEVM org)",
+ "repo": "https://github.com/Verified-zkEVM/clean",
+ "commit": "f8a4194c604488cb732024890aebd083968222ab",
+ "toolchain": "leanprover/lean4:v4.35.0",
+ "maturity": "research",
+ "properties": {
+  "functional": "yes",
+  "safety": "partial",
+  "liveness": "no",
+  "refinement": "yes",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "no",
+  "constant_time": "no"
+ },
+ "impl_link": "lean-is-impl",
+ "impl_language": "Lean 4 circuit DSL, exported to R1CS/Circom, AIR/Plonky3 by unverified backends",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 111,
+  "unverified_translator": "Backends (Circom/R1CS, WASM, Plonky3 print) unverified; circomlib hand-modelled"
+ },
+ "loc": {
+  "spec": null,
+  "proof": null,
+  "impl": 54500
+ },
+ "built": "no",
+ "pattern": "Circuits as Lean monadic programs; per-gadget Spec + soundness + completeness; channel-based local-to-global ensemble soundness",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 3
+}
