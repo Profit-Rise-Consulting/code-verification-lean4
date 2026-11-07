@@ -59,4 +59,4 @@ See [SUPPORT.md](SUPPORT.md).
 
 ## License
 
-Apache-2.0 — see [LICENSE](LICENSE). Copyright (c) 2026 Ron Ng.
+Apache-2.0 — see [LICENSE](LICENSE). Copyright (c) 2026 Profit Rise Consulting.

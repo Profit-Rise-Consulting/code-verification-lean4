@@ -1,7 +1,7 @@
 ---
 status: accepted
-date: 2026-MM-DD
-decision-makers: TODO
+date: 2026-11-07
+decision-makers: Profit Rise Consulting (owner)
 decision-scope: repository
 decision-type: process
 ---

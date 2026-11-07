@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""scripts/check-research: validates the Phase 1 research corpus and handoff package.
+
+Each check maps to a PRD requirement ID. Exit 1 on any error. Stdlib only.
+Usage: scripts/check-research [--output text|json]
+"""
+import json
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+R = ROOT / "research"
+errors, warnings, info = [], [], []
+
+
+def err(req, msg):
+    errors.append(f"[{req}] {msg}")
+
+
+def warn(req, msg):
+    warnings.append(f"[{req}] {msg}")
+
+
+def read(p):
+    return p.read_text(encoding="utf-8") if p.exists() else None
+
+
+# FR-001: hypothesis recorded verbatim and decomposed.
+conv = read(R / "CONVENTIONS.md")
+HYP = "LEAN4 cannot verify protocols AND therefore unable to check code implementation of these protocols."
+if conv is None:
+    err("FR-001", "research/CONVENTIONS.md missing")
+else:
+    if HYP not in conv:
+        err("FR-001", "verbatim hypothesis missing from CONVENTIONS.md")
+    for sid in ("H1", "H2", "H3", "H4", "H5"):
+        if not re.search(rf"^\| {sid} \|", conv, re.M):
+            err("FR-001", f"sub-claim {sid} not defined in CONVENTIONS.md table")
+
+# FR-002: topic files carry depth header and quarantine excerpt-only material.
+LEAD_HDR = re.compile(r"^#+ .*unverified leads", re.I | re.M)
+EXCERPT = re.compile(r"snippet[- ]only|excerpt[- ]only|search excerpt|\(extractor\)|snippet only|excerpt only", re.I)
+topic_files = sorted(R.glob("0[1-8]-*.md"))
+if len(topic_files) != 8:
+    err("FR-002", f"expected 8 topic files, found {len(topic_files)}")
+for f in topic_files:
+    t = read(f)
+    head = "\n".join(t.splitlines()[:15])
+    if not re.search(r"FULL", head) or not re.search(r"CODE", head):
+        err("FR-002", f"{f.name}: missing FULL/CODE count header in first 15 lines")
+    m = LEAD_HDR.search(t)
+    body = t[: m.start()] if m else t
+    # Lines that merely define the convention are allowed.
+    hits = [ln for ln in body.splitlines() if EXCERPT.search(ln) and not re.search(r"rule|convention|excluded|moved to|policy|header|count", ln, re.I)]
+    if hits:
+        err("NFR-001", f"{f.name}: {len(hits)} excerpt-only marker(s) outside the Unverified leads section")
+    if not re.search(r"^#+ .*Conflicts", t, re.M | re.I):
+        err("FR-005", f"{f.name}: no Conflicts section")
+    info.append(f"{f.name}: FULL={len(re.findall(r'\[FULL\]', t))} CODE={len(re.findall(r'\[CODE\]', t))}")
+
+# FR-003: reference dossiers complete, each with index JSON.
+SECTIONS = ["## 1. Identity", "## 2. Claim", "## 3. What is actually formalised", "## 4. Property classes",
+            "## 5. Link to implementation", "## 6. Trusted computing base", "## 7. Scale", "## 8. Limitations",
+            "## 9. Independent evidence", "## 10. Reproducibility", "## 11. Generalisation",
+            "## 12. Bearing on sub-claims", "## 13. Conflicts", "## 14. Sources", "## 15. Unverified leads"]
+REQUIRED_KEYS = {"id", "name", "kind", "tool", "properties", "impl_link", "tcb", "built", "pattern", "subclaims", "full_read_sources"}
+refs = sorted((R / "references").glob("REF-*.md"))
+if len(refs) < 20:
+    err("FR-003", f"expected at least 20 reference dossiers, found {len(refs)}")
+index = {}
+for f in refs:
+    t = read(f)
+    rid = re.match(r"(REF-[LC]\d{2})", f.name).group(1)
+    for s in SECTIONS:
+        if s not in t:
+            err("FR-003", f"{f.name}: missing section '{s}'")
+    j = R / "references" / "_index" / f"{rid}.json"
+    if not j.exists():
+        err("FR-003", f"{f.name}: no index file {j.relative_to(ROOT)}")
+        continue
+    try:
+        d = json.loads(j.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        err("FR-003", f"{j.name}: invalid JSON ({e})")
+        continue
+    missing = REQUIRED_KEYS - set(d)
+    if missing:
+        err("FR-003", f"{j.name}: missing keys {sorted(missing)}")
+    if isinstance(d.get("full_read_sources"), int) and d["full_read_sources"] < 3:
+        warn("NFR-001", f"{j.name}: only {d['full_read_sources']} fully read sources")
+    index[rid] = d
+
+# FR-004: catalogue generated and current.
+cat = read(R / "references" / "README.md")
+if cat is None:
+    err("FR-004", "research/references/README.md (catalogue) missing; run scripts/build-catalogue")
+else:
+    for rid in index:
+        if rid not in cat:
+            err("FR-004", f"catalogue is stale: {rid} not listed; run scripts/build-catalogue")
+
+# FR-005: aggregated conflict register.
+conf = read(R / "CONFLICTS.md")
+if conf is None:
+    err("FR-005", "research/CONFLICTS.md missing")
+elif len(re.findall(r"^### CF-\d{3}", conf, re.M)) < 5:
+    err("FR-005", "CONFLICTS.md has fewer than 5 CF-NNN entries")
+
+# FR-006: council kit.
+kit = read(ROOT / "docs" / "phase2" / "council-kit.md")
+KIT_H = ["## Motion", "## Definitions", "## Sub-claims", "## Roles and model families", "## Rules of evidence",
+         "## Debate protocol", "## Scoring rubric", "## Evidence packets", "## Output template"]
+if kit is None:
+    err("FR-006", "docs/phase2/council-kit.md missing")
+else:
+    for h in KIT_H:
+        if h not in kit:
+            err("FR-006", f"council-kit.md missing heading '{h}'")
+
+# FR-007: handoff package.
+ho = read(ROOT / "handoff.md")
+HO_H = ["## Objective", "## Original requests", "## Decision log", "## What exists", "## Phase 2 execution steps", "## Known limits"]
+if ho is None:
+    err("FR-007", "handoff.md missing")
+else:
+    for h in HO_H:
+        if h not in ho:
+            err("FR-007", f"handoff.md missing heading '{h}'")
+if read(ROOT / "docs" / "handoff" / "original-requests.md") is None:
+    err("FR-007", "docs/handoff/original-requests.md missing")
+
+# FR-008: independent review recorded with dispositions.
+rev = read(R / "REVIEW-phase1.md")
+if rev is None:
+    err("FR-008", "research/REVIEW-phase1.md missing")
+elif "## Dispositions" not in rev:
+    err("FR-008", "REVIEW-phase1.md has no '## Dispositions' section")
+
+# NFR-003: relative links resolve in all markdown files.
+LINK = re.compile(r"\[[^\]]*\]\((?!https?://|mailto:|#)([^)#\s]+)")
+for md in ROOT.rglob("*.md"):
+    if ".git" in md.parts or "node_modules" in md.parts:
+        continue
+    for target in LINK.findall(md.read_text(encoding="utf-8", errors="ignore")):
+        if not (md.parent / target).exists():
+            err("NFR-003", f"{md.relative_to(ROOT)}: broken relative link -> {target}")
+
+out = "--output" in sys.argv and sys.argv[sys.argv.index("--output") + 1] == "json"
+if out:
+    print(json.dumps({"errors": errors, "warnings": warnings, "info": info}, indent=2))
+else:
+    for i in info:
+        print(f"info:  {i}")
+    for w in warnings:
+        print(f"warn:  {w}")
+    for e in errors:
+        print(f"error: {e}")
+    print(f"\n{len(errors)} error(s), {len(warnings)} warning(s)")
+sys.exit(1 if errors else 0)

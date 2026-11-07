@@ -2,16 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# script/test — runs the test suite. Accepts an optional path to narrow the run.
-# Linting is a form of testing, so it runs first and fails fast.
-
-scripts/bootstrap
-
-npm lint
-npm exec tsc --noEmit
-
-if [ "$#" -gt 0 ]; then
-  exec npm test -- "$@"
-fi
-
-exec npm test
+# scripts/test: the full local gate, identical to CI.
+scripts/check-docs
+scripts/build-catalogue >/dev/null
+git diff --quiet -- research/references/README.md 2>/dev/null || echo "note: catalogue regenerated; commit research/references/README.md"
+scripts/check-research

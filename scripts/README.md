@@ -1,21 +1,12 @@
 # scripts/
 
-Named after GitHub's "Scripts To Rule Them All" pattern, so the entry points are predictable across
-projects. Each script is idempotent and safe to run repeatedly.
+All scripts are stdlib Python 3 or bash, idempotent, and safe to run locally.
 
-| Script | Responsibility |
-|---|---|
-| `bootstrap` | Fulfils dependencies. Nothing else. |
-| `setup` | Puts a fresh clone into a working state, or resets it back to one. Runs `bootstrap`. |
-| `update` | Brings the project up to date after a fresh pull. Runs `bootstrap`. |
-| `server` | Starts the application. Runs `update` first. |
-| `test` | Runs the suite. Lint and typecheck first, then tests. Optional path argument. |
-| `cibuild` | CI entry point. Not intended for local use. |
-| `console` | Opens a console. Optional environment-name argument. |
-| `check-docs` | Validates the document spine. Called by CI and the PR checklist. |
+| Script | Responsibility | Requirement |
+|---|---|---|
+| `test` | Full local gate, identical to CI: check-docs, build-catalogue, check-research | all |
+| `check-docs` | Validates the PRD/TRD document spine and traceability matrix | PRD sections 8-9 |
+| `check-research` | Validates the research corpus and handoff package (sub-claims, depth headers, excerpt quarantine, dossier sections, index JSON, catalogue freshness, conflicts, council kit, handoff, review, relative links) | FR-001 to FR-008, NFR-001, NFR-003 |
+| `build-catalogue` | Regenerates `research/references/README.md` from `research/references/_index/*.json` | FR-004 |
 
-`bin/` is deliberately separate and holds release gating only, so "which of these can I safely run
-locally?" is answerable at a glance.
-
-Every script starts with `set -euo pipefail` and is checked by `shellcheck` in CI. `package.json`
-aliases these, so `npm test` and `scripts/test` do the same thing.
+No Lean toolchain is installed by the repo yet. The implementation stack is decided after the Phase 2 council (see [ADR-0002](../docs/adr/0002-research-first-scope.md)).
