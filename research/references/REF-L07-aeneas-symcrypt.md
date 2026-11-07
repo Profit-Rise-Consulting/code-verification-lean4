@@ -1,36 +1,59 @@
 # REF-L07: Aeneas (Rust to Lean via Charon) and Microsoft SymCrypt Lean proofs
 
-Access date for all sources: 2026-11-07. Source IDs refer to section 14.
+Access date for all sources: 2026-11-07. Source IDs refer to section 14. Admissible sources: [FULL] 6 (A1, A3, A4, A6, A7, A8), [CODE] 4 (C1, C2, C3, C4). Phase 1c (2026-11-07): abstract-only sources A2 and A5 moved to section 15; A6 re-read as the full PDF text without an extractor; `spec` semantics anchored to the pinned Aeneas revision d71d2e3f (C4); section 3a added.
 
 ## 1. Identity
 | Field | Value |
 |---|---|
 | Subject (protocol or algorithm) | (a) Aeneas: a general Rust-to-Lean (and F*, Coq/Rocq, HOL4) functional translator, consuming Charon's LLBC. (b) SymCrypt verified Rust: cryptographic primitives SHA-3/SHAKE (FIPS 202) and ML-KEM (FIPS 203) in the public release; the paper also reports AES/AES-GCM, SHA-2, HMAC/HKDF, ML-DSA, FrodoKEM, HPKE (most marked "experimental"). These are algorithms/primitives, not interactive protocols. HPKE (RFC 9180) is the most protocol-like component and is not in the public release. |
 | Spec it targets | FIPS 202 (SHA-3), FIPS 203 (ML-KEM); paper adds FIPS 197 / SP 800-38D, FIPS 180-4, RFC 2104/5869, FIPS 204, draft-frodokem-02, RFC 9180 [A1, Fig. 4]. |
-| Organisation / authors | Aeneas/Charon: Son Ho, Jonathan Protzenko, Aymeric Fromherz, Guillaume Boisseau and others (Inria, Microsoft) [A2, A3]. SymCrypt paper: Son Ho, Cédric Fournet, Jonathan Protzenko, Michael Naehrig, Joshua Clune, Patrick Longa, Guillaume Boisseau, Fernando Leal Sánchez, Aymeric Fromherz, Antoine Delignat-Lavaud (Microsoft, Google, CMU, Inria, ENS Paris-Saclay) [A1]. |
+| Organisation / authors | Aeneas/Charon: Son Ho, Jonathan Protzenko, Aymeric Fromherz, Guillaume Boisseau and others (Inria, Microsoft) [A3, A6]. SymCrypt paper: Son Ho, Cédric Fournet, Jonathan Protzenko, Michael Naehrig, Joshua Clune, Patrick Longa, Guillaume Boisseau, Fernando Leal Sánchez, Aymeric Fromherz, Antoine Delignat-Lavaud (Microsoft, Google, CMU, Inria, ENS Paris-Saclay) [A1]. |
 | Primary URLs | https://arxiv.org/abs/2609.15648 ; https://github.com/microsoft/SymCrypt/tree/feature/verifiedcrypto ; https://github.com/AeneasVerif/aeneas ; https://github.com/AeneasVerif/charon |
-| Repo, commit SHA, last commit date, licence | SymCrypt `feature/verifiedcrypto` @ `c2e575ace0ea4b6b7a4184c1f19b81d1d5b2b5be`, 2026-07-12, MIT (single squashed commit "Merged PR 16147371: Publish ML-KEM and SHA3 proofs", author Samuel Lee). Aeneas `main` @ `c5eb4a28cef65e0aa27743105308243e535a2a2b`, 2026-11-07, Apache-2.0. Charon `main` @ `f070bb9233091640c777447cdaef594845d6c3b8`, 2026-11-06. |
+| Repo, commit SHA, last commit date, licence | SymCrypt `feature/verifiedcrypto` @ `c2e575ace0ea4b6b7a4184c1f19b81d1d5b2b5be`, 2026-07-12, MIT (single squashed commit "Merged PR 16147371: Publish ML-KEM and SHA3 proofs", author Samuel Lee). Aeneas `main` @ `c5eb4a28cef65e0aa27743105308243e535a2a2b`, 2026-11-07, Apache-2.0. Charon `main` @ `f070bb9233091640c777447cdaef594845d6c3b8`, 2026-11-06. Aeneas pinned revision used by SymCrypt @ `d71d2e3f2cb763f7faf15ab606ac9cf32da8dead`, 2026-07-11 ("Update Charon (#1202)"), `lean-toolchain` = `leanprover/lean4:v4.31.0` [C4]. |
 | Lean toolchain | SymCrypt: `leanprover/lean4:v4.31.0`, pinned to Aeneas `d71d2e3f`, Charon `5a501733`, rustc `nightly-2026-06-01` (`SymCRust/lean/Symcrust/Code/EXTRACTION.md`). Aeneas main backend: `leanprover/lean4:v4.35.0`; `charon-pin` = `8cae8fd1905946de61147a65ecdd7122cc6b491b`. |
 | Maturity | Aeneas: research tool used in production verification. SymCrypt SHA-3 and ML-KEM: production code; the MSR blog says it is "being used in insiders builds of Windows today" [A4]. Other algorithms in the paper: "experimental", "we do not claim our experimental code is production-ready" [A1 §1]. Proofs are largely AI-agent-generated but kernel-checked, with human review of specs and top-level statements (stated by the authors, see section 7). |
+| AI provenance | `author-reported`. Basis: A1 §8.1 states that "agents generated ∼5.1k theorems for a total of 125 KLOC of proofs" and names the models used (section 7). Not independently established. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "Our 237 KLOC Lean development establishes safety, panic-freedom, and functional correctness of 16.7 KLOC of Rust code supporting post-quantum cipher suites for x86-64 and ARM platforms." [A1, abstract]
 - "We verify its implementations of algorithms such as SHA-3 and ML-KEM, which were ported from C to Rust." [A1, abstract]
 - "Verified means that every public function is equipped with a theorem that specifies it in terms of the algorithms in the spec, that their proofs are complete and valid, and that the formal specification itself has been tested and reviewed against the standard." [C1 README-VERIFIEDCRYPTO.md §2]
 - "This first release includes complete proofs for the Rust ML-KEM and SHA3 code that is being used in insiders builds of Windows today." [A4]
-- Aeneas: "We leverage Rust's rich region-based type system to eliminate memory reasoning for many Rust programs, as long as they do not rely on interior mutability or unsafe code." [A2, abstract]
-- Aeneas soundness (ICFP 2024): "We prove that LLBC ... is sound with regards to a low-level pointer-based language à la CompCert ... that LLBC's symbolic semantics act as a borrow-checker for LLBC, i.e. that symbolically-checked LLBC programs do not get stuck when executed on a heap-and-addresses model of execution." [A5 abstract, read via the abstract page and A6]
+- Aeneas soundness (ICFP 2024), as summarised by a secondary source read in full: "Ho, Fromherz and Protzenko prove that LLBC, a borrow-centric model of Rust, can be equipped with a symbolic semantics that plays the role of a borrow-checker. They also prove that LLBC is a sound model with respect to an operational semantics over a standard memory model à la CompCert." [A6, abstract]. The ICFP 2022/2024 papers themselves were read only at abstract level (section 15).
 
 ## 3. What is actually formalised
 ### 3.1 Aeneas pipeline and semantics of the Lean model
 - Charon drives rustc and exports MIR as ULLBC/LLBC; Aeneas symbolically executes LLBC, computing a borrow graph, and emits a pure functional program; mutable borrows become values returned to the caller, and borrows returned from functions become "backward functions" [A1 §5.1; A3 §4.3].
-- Every Rust function returns `Result`. At Aeneas main the Lean `Result` is now an interaction-tree type (`Aeneas/Std/Primitives.lean`, `inductive RustEffect ... | fail (e : Error)`, `abbrev Result := ITree RustEffect`), with constructors ok, fail (panic) and div (divergence) [C2].
-- The Hoare-triple notation `⦃ ⦄` used in all SymCrypt theorems is `spec`, defined at `backends/lean/Aeneas/Std/WP.lean:56`:
+- Paper's intended semantics: "The monadic postcondition notation also asserts that the extracted computation terminates without panic." [A1 App. C]. The paper describes `Result` as an exception monad in which `←` propagates failure [A1 §5.1].
+- Code semantics at the pinned revision d71d2e3f (the revision SymCrypt's EXTRACTION.md names) [C4]. `Result` is a plain inductive with three constructors, `backends/lean/Aeneas/Std/Primitives.lean:63-67`:
   ```lean
-  def spec (m : Result α) (p : Post α) : Prop :=
-    DWP effectWP m (fun value _ => p value) ()
+  inductive Result (α : Type u) where
+    | ok (v: α): Result α
+    | fail (e: Error): Result α
+    | div
+  deriving Repr, BEq
   ```
-  with `theorem spec_fail (e : Error) : spec (fail e) p ↔ False` (WP.lean:103) and `theorem spec_div : spec div p ↔ False` (WP.lean:106). So a proved `spec` is a total-correctness statement: it excludes panic and divergence [C2]. (This file is at Aeneas main; SymCrypt pins the older Aeneas `d71d2e3f`, which was not inspected. The paper states the same meaning: "The monadic postcondition notation also asserts that the extracted computation terminates without panic." [A1 App. C].)
+  where `Error` (Primitives.lean:51-58) is `assertionFailure | integerOverflow | divisionByZero | arrayOutOfBounds | maximumSizeExceeded | panic | undef`. The triple is defined in `backends/lean/Aeneas/Std/WP.lean:11-29`:
+  ```lean
+  def Post α := (α -> Prop)
+  def Pre := Prop
+  def Wp α := Post α → Pre
+  def wp_return (x:α) : Wp α := fun p => p x
+  def theta (m:Result α) : Wp α :=
+    match m with
+    | ok x => wp_return x
+    | fail _ => fun _ => False
+    | div => fun _ => False
+  def spec {α} (x:Result α) (p:Post α) :=
+    theta x p
+  def dspec {α} (x:Result α) (p:Post α) :=
+    match x with
+    | ok x => p x
+    | fail _ => False
+    | div => True
+  ```
+  The notation `e ⦃ x => p ⦄` expands to `Aeneas.Std.WP.spec e post` and `e ⦃ x => p ⦄div` to `dspec` (three `macro_rules` blocks at WP.lean:354, 363 and 372). `theorem spec_ok (x : α) : spec (ok x) p ↔ p x` is in WP.lean within lines 50-60. So, at d71d2e3f, a proved `f args ⦃ post ⦄` states that the Lean term `f args` reduces to `ok v` with `post v`: it is neither `fail e` (any of the seven `Error` cases) nor `div`. This is the code semantics; it matches the paper's stated intent, but it is a statement about the Aeneas-generated Lean model, not about rustc-compiled machine code (section 5). All SymCrypt theorems quoted below use the `⦃ ⦄` (not `⦃ ⦄div`) form. Note that `div` is the Lean model's representation of divergence (for `partial_fixpoint` definitions); a theorem excluding `div` is a termination statement about the model.
+- Aeneas `main` (c5eb4a2, Lean v4.35.0) has since replaced this with an interaction-tree `Result` (`abbrev Result := ITree RustEffect`) and a `DWP`-based `spec` at `WP.lean:56`, with `spec_fail ... ↔ False` (WP.lean:103) and `spec_div ... ↔ False` (WP.lean:106) [C2]. That main-branch definition is not the one SymCrypt's proofs were checked against and is recorded here only to show that the two revisions differ.
 - Rust scalars are subtypes, e.g. U32 as `{x : Nat // x ≤ U32.max}`; arrays as subtypes of `List`; `assert!` becomes `massert`, so dynamic assertions must be discharged statically [A1 §5.5].
 
 ### 3.2 SymCrypt: how the algorithm is modelled
@@ -126,6 +149,54 @@ Specification-level properties: `theorem KECCAK_f_bijective : Function.Bijective
 
 Hardware intrinsics: Rust shims in `src/verify/intrinsics/` (lane-array models of SSE2, SSSE3, AVX2, AES-NI, SHA-NI, PCLMULQDQ, NEON, Armv8 AES), verified like other code, plus Lean axioms in `Intrinsics/Axioms/` for AES/SHA round instructions. Paper Fig. 3: 122 shims with Rust bodies, 11 opaque [A1 §6]. Multi-target: Charon is run once per target and LLBC merged, turning `cfg` into a dynamic branch on an underspecified `get_target` [A1 §5.7, App. A].
 
+## 3a. Predicate semantics
+All files are under `SymCRust/lean/` at SymCrypt c2e575a [C1]; the triple `⦃ ⦄` means `Aeneas.Std.WP.spec` at d71d2e3f (section 3.1) [C4].
+
+Conclusion predicate of `mlkem.decapsulate.spec` (Decaps.lean:1701-1733): `MLKEM.Decaps`, defined at `Spec/MLKEM/Spec.lean:676-684`:
+```lean
+def Decaps (p : ParameterSet) (dk : 𝔹 (768 * k p + 96))
+    (c : 𝔹 (32 * (dᵤ p * k p + dᵥ p))) : Option (𝔹 32) :=
+  if Decaps.KeyCheck p dk then some (Decaps_internal p dk c)                      -- Alg. 21, steps 1–2
+  else none
+```
+(comment lines omitted), with `Decaps.KeyCheck` (Spec.lean:666-669) `H ek = h  -- Eq. (7.2)` and `Decaps_internal` (Spec.lean:593-603) following FIPS 203 Alg. 18 steps 1-12 line by line, ending `if c ≠ c' then «K̄» else K'`. The `.MemoryAllocationFailure` arm concludes `out_of_memory`, which is `axiom out_of_memory : Prop` (`Symcrust/Properties/Axioms/System.lean:98`), documented as an "Opaque OOM witness"; the catch-all arm is `| _ => False`.
+
+Strongest premise of decapsulate: `wfDecapKey` (`Symcrust/Properties/MLKEM/Sampling/ExpandMatrix.lean:1253-1257`):
+```lean
+structure wfDecapKey (self : mlkem.key.Key) (p : ParameterSet) : Prop extends wfEncapKey self p where
+  has_private_key : self.has_private_key = true
+```
+which extends `wfEncapKey` (ExpandMatrix.lean:1209-1231):
+```lean
+structure wfEncapKey (self : mlkem.key.Key) (p : ParameterSet) : Prop extends Bridges.wfKey self p where
+  hash_pinned : keyHashPinned self p
+  byte_form_t : ∃ v_t : MLKEM.PolyVector q (k p),
+    keyEncodedTPrefix self p =
+      (MLKEM.PolyVector.ByteEncode 12 v_t).cast
+        (Bridges.polyVector_byteEncode_size_cast 12)
+    ∧ Bridges.keyT self p = v_t
+  matrix_form_a : ∀ (i j : ℕ)
+                    (hi : i < (k p : ℕ)) (hj : j < (k p : ℕ)),
+    Bridges.keyAHat self p ⟨i, hi⟩ ⟨j, hj⟩ =
+      MLKEM.SampleNTT
+        (self.public_seed.toSpec ‖
+          #v[(i : Byte)] ‖ #v[(j : Byte)])
+```
+(docstrings omitted), which extends `wfKey` (`Symcrust/Properties/MLKEM/Bridges/KeyView.lean:75-86`): `params_ok : wfInternalParams self.params p`, `n_rows_ok : self.n_rows.val = (k p : ℕ)`, `data_wf : ∀ i (h_end : i < dataEnd p), wfPoly (self.data.val[i]' ...)`. The theorem's comment says the dk validation required by FIPS 203 §7.3 is enforced "at key-creation- or key-load-time, which both establish the wfDecapKey condition".
+
+`mlkem.encapsulate.spec` (Encaps.lean:656-690): premise `wfEncapKey`; `NoError` concludes `∃ (tape : MLKEM.RandomTape) ..., match MLKEM.Encaps params (pk_mlkem_key.toPubKey params) tape with | some (K, c, _) => K = ... ∧ c = ... | none => False`. `MLKEM.Encaps` (Spec.lean:648-659) reads 32 bytes from the tape and returns `none` iff `Encaps.KeyCheck` (ByteEncode₁₂∘ByteDecode₁₂ round-trip, Spec.lean:636-640) fails. `RandomTape` is `def RandomTape := ℕ → Byte` (Spec.lean:610).
+
+`mlkem.key_generate.spec` (KeyGen.lean:261-): premise `wfKey`; `NoError` concludes `wfPrivateSeed key' params ∧ ∃ (tape : MLKEM.RandomTape), let (ek, dk, _) := MLKEM.KeyGen params tape; ek = key'.toEncapKey params ∧ dk = key'.toDecapKey params`. `wfPrivateSeed` (`Symcrust/Properties/MLKEM/Encoding/KeySetValue/Prelude.lean:72`) extends `wfDecapKey` per the ExpandMatrix.lean:1179 docstring; its body was not quoted.
+
+The tape existential is fed by the trusted axiom `random.spec` (`Axioms/System.lean:45-52`), which fixes `err = .NoError` and states `∃ (tape : Spec.MLKEM.RandomTape), ∀ (i : ℕ) (h_i : i < s'.length), s'.val[i] = tape i`.
+
+`ShakeState.extract.spec` (`Symcrust/Properties/SHA3/StatefulXof.lean:71-84`): premise `absorbing self.state g ∨ squeezing self.state g` (ghost-state machine); conclusion `r.2.val = (extractOutput g result.length).toList` plus the next ghost state. The definitions of `absorbing`, `squeezing` and `extractOutput` were not quoted in this dossier.
+
+Plain-language reading (facts about the statements, no verdict):
+- Guaranteed, in the Lean model at d71d2e3f and given the trusted base in section 6: for any key satisfying the well-formedness structure, each public ML-KEM call terminates in the model without any Aeneas `Error` (no panic, overflow, out-of-bounds, assertion failure) and without `div`; on `NoError` the output bytes equal those computed by the Lean spec functions transcribing FIPS 203 Algs. 19-21; other error codes occur only in the listed arms (length mismatch, `out_of_memory`).
+- For KeyGen and Encaps the statement is existential over the random tape: some tape exists that makes the output agree with the spec. Nothing is stated about the distribution or quality of randomness, and the RNG is axiomatised never to fail.
+- Not guaranteed: fidelity of the Lean spec to the FIPS text (established by tests and review, not proof); correctness of Charon/Aeneas translation, rustc/LLVM and the C FFI layer; side-channel or constant-time behaviour; anything for keys that do not satisfy `wfDecapKey`/`wfEncapKey`/`wfKey` (those are established by other `key_set_value`/`key_generate` theorems, per comments); cryptographic security (IND-CCA).
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
@@ -166,7 +237,12 @@ Selected trusted axioms, verbatim:
 
 Aeneas Lean backend at main (275 files, 49,782 lines): 7 `axiom` declarations (`core.pin.Pin`, `PinHelper`, `PanicInfo`, `AtomicBool`, `AtomicU32`, `core.slice.Slice.get_unchecked_SliceIndexUsizeSlice_spec`, one in a test file); 35 `sorry` hits (not individually classified); 33 `native_decide`; 5 `implemented_by`; 1 `extern`.
 
-Unverified translators: Charon (MIR to LLBC) and Aeneas (LLBC to Lean) are trusted. "We trust that Charon correctly extracts MIR into LLBC and that Aeneas correctly translates LLBC into Lean" [A1 §3]. The ICFP 2024 soundness results are pen-and-paper: "The proofs of the article by Ho et al. are only done with pen and paper; sometimes, the authors only sketch the reasoning over large case analyses" [A6]. A Rocq mechanisation (about 10k lines) is ongoing, covers "a very minimal subset of LLBC. It only contains integers and mutable references", and "found a flaw in the proofs of some of their fundamental lemmas. We repair their methodology using techniques from rewriting theory" [A6]. These results concern LLBC semantics, not the Aeneas implementation: "The actual symbolic interpreter relies on heuristics to select the rules" [A6]. Also trusted: rustc and LLVM back-ends, the Lean kernel, `native_decide`/`bv_decide`, Aeneas std-library models, intrinsic models, that callers meet preconditions, and that the Lean spec matches the standard [A1 §3; C1 §3].
+Unverified translators: Charon (MIR to LLBC) and Aeneas (LLBC to Lean) are trusted. "We trust that Charon correctly extracts MIR into LLBC and that Aeneas correctly translates LLBC into Lean" [A1 §3]. The ICFP 2024 soundness results are pen-and-paper: "The proofs of the article by Ho et al. are only done with pen and paper; sometimes, the authors only sketch the reasoning over large case analyses" [A6 §1]. A Rocq mechanisation is ongoing ("approximately 10,000 lines of Rocq (excluding comments and blank lines)" [A6 §4]), covers "a very minimal subset of LLBC. It only contains integers and mutable references", and "found a flaw in the proofs of some of their fundamental lemmas. We repair their methodology using techniques from rewriting theory" [A6]. These results concern LLBC semantics, not the Aeneas implementation: "The actual symbolic interpreter relies on heuristics to select the rules" [A6 §2]. A6 §4 adds that the mechanised fragment "does not contain loops, it does not even contain if-then-else structures". Also trusted: rustc and LLVM back-ends, the Lean kernel, `native_decide`/`bv_decide`, Aeneas std-library models, intrinsic models, that callers meet preconditions, and that the Lean spec matches the standard [A1 §3; C1 §3].
+
+Lean checker version and known kernel bugs. SymCrypt and the pinned Aeneas both use `leanprover/lean4:v4.31.0` [C1, C4]. The hax 0.4 release post states that "Lean v4.31.0, which has some known soundness bugs" (REF-L08 B5, [FULL]); it does not name the bugs. Two kernel soundness issues read in full:
+- lean4#14484 (opened 2026-07-22, closed by #14498): "The checked kernel path for `Declaration.opaqueDecl` does not reject free or metavariables in the declaration body", allowing "an adversarial metaprogram" to prove `False` with `#print axioms` reporting no axioms [A7]. A maintainer comment (marked "AI generated") dates the omission to 2020-12-24, so v4.31.0 predates the fix; maintainers state that export-format/comparator checking cannot express the exploit ("those following the 'gold standard' for proof checking are not affected") [A7].
+- lean4#14576 (opened 2026-07-28, fix #14577 listed under release v4.34.0): "Kernel accepts wrong-structure projections, allowing an axiom-free proof of False", reproduced on 4.34.0-nightly via `addDecl` in a metaprogram [A8]. The issue does not state the first affected version; whether v4.31.0 is affected is unknown.
+Impact on this artefact: unknown. Both exploits need a metaprogram that calls `addDecl` with crafted terms; a lexical `rg addDecl` over `SymCRust/lean` at c2e575a returned no hits, but the Aeneas library, Mathlib and the `step`/`grind` tactics were not audited, and the development has not been replayed through an external checker (section 10). This is a lexical observation, not an audit. Separately, the 76 `native_decide` uses trust the Lean compiler and `Lean.ofReduceBool`, and the 60 `bv_decide` uses trust their LRAT-checking pipeline, independently of the kernel.
 
 ## 7. Scale, effort, automation
 - Paper Fig. 4 totals: standard text 25,729 lines; spec core 2,827; spec properties 15,194; Rust 16,680; implementation properties 51,688; proofs 124,777. "the formalization comprises 237,160 lines of Lean, of which 30,253 are Aeneas-generated Lean definitions and 206,907 are source definitions and proofs." Per row: SHA-3 Rust 1,741 / spec core 140; ML-KEM Rust 2,349 / spec core 308 / properties 10,963 / proofs 25,389 [A1].
@@ -227,22 +303,27 @@ Case-specific preconditions: crypto primitives are sequential, deterministic (ra
 3. NTT ring isomorphism and decryption-failure bounds. Paper §4: "Our formal development proves that the specified NTT realizes the intended ring isomorphism and establishes the claimed decryption-failure bounds" [A1]. A grep of the public branch's `Spec/` (`RingEquiv`, `≃+*`, failure terms) found no such theorem; the release may be a subset ("We have released a significant subset" [A1 Public Release]). Not resolved.
 4. Aeneas supported subset. Aeneas README (main): nested loops are supported except `return` in nested loops and labelled `break`/`continue` [C2]. `docs/user/src/README.md` in the same repo: "loops: no nested loops for now", "no functions pointers/closures", "no nested borrows in function signatures" [C2]. The paper adds that it extended Aeneas with "a large class of nested (mutable) borrows" [A1 §1].
 5. Paper Appendix C shows the `.MemoryAllocationFailure =>` branch empty; code has `out_of_memory` (Decaps.lean:1726-1730). Likely an HTML rendering loss.
-6. The paper describes the Lean `Result` as an exception monad with `←` propagating failure [A1 §5.1]; Aeneas main now defines `Result := ITree RustEffect` [C2]. SymCrypt pins an earlier Aeneas, so the two need not match.
+6. `Result` and `spec` differ across Aeneas revisions. The paper describes an exception monad [A1 §5.1] and the pinned d71d2e3f defines `inductive Result ... | ok | fail | div` with `spec := theta` [C4]; Aeneas main c5eb4a2 defines `Result := ITree RustEffect` and a `DWP`-based `spec` [C2]. The Phase 1b version of this dossier quoted the main-branch definition as if it applied to SymCrypt; section 3.1 now separates the two.
+7. Paper's description of soundness proofs vs. secondary account. A1 §3 lists Charon and Aeneas as trusted; A6 §1 states the ICFP 2024 proofs are pen-and-paper and that a "lacking argument ... could have invalidated their strategy" was found and repaired.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| A1 | Scaling Verification of Cryptographic Software with Aeneas, Rust, and Lean (arXiv 2609.15648v1, draft TR, Sept 2026) | https://arxiv.org/html/2609.15648v1 | P | FULL | Methodology, Aeneas extensions, intrinsics modelling, SymCrypt case study, trust assumptions, AI-agent costs, bugs found, performance. |
-| A2 | Aeneas: Rust Verification by Functional Translation (ICFP 2022, arXiv 2206.07185) | https://arxiv.org/abs/2206.07185 | P | abstract only | LLBC value-based semantics and backward-function translation; restricted to code without interior mutability or unsafe. Abstract page only; used only for the verbatim abstract quote. |
-| A3 | Charon: An Analysis Framework for Rust (CAV 2025, arXiv 2410.18042v2) | https://arxiv.org/html/2410.18042v2 | P | FULL | MIR-to-(U)LLBC driver, sizes, unsupported features, Aeneas and Eurydice as clients. |
-| A4 | Verifying Rust cryptography in SymCrypt, from standards to code (MSR blog, 2026-07-13) | https://www.microsoft.com/en-us/research/blog/verifying-rust-cryptography-in-symcrypt-from-standards-to-code/ | P | FULL | Release announcement: ML-KEM and SHA-3 proofs; code used in Windows Insider builds; dashboards; agentic proofs. |
-| A5 | Sound Borrow-Checking for Rust via Symbolic Semantics (ICFP 2024, arXiv 2404.02680) | https://www.arxiv.org/abs/2404.02680 | P | abstract only | Soundness of LLBC and its symbolic semantics w.r.t. a CompCert-style model; adds loop joins. Abstract only. |
-| A6 | Formal Verification of Borrow-Checking by Local Commutation Diagrams (Reynaud Michez, JFLA 2026) | https://hal.science/hal-05428143/document | S | FULL (via LLM extraction of full PDF) | Rocq mechanisation in progress of A5; states A5 proofs are pen-and-paper; found and repaired a flaw; minimal LLBC subset. |
-| C1 | SymCrypt feature/verifiedcrypto @ c2e575a: README-VERIFIEDCRYPTO.md, SymCRust/lean (Spec, Symcrust/Properties, Intrinsics, EXTRACTION.md, VERIFIED.md, REPORT.md) | https://github.com/microsoft/SymCrypt/tree/feature/verifiedcrypto | P | CODE | Specs, top-level theorems, axioms, hygiene counts, build instructions, trust assumptions. |
-| C2 | AeneasVerif/aeneas @ c5eb4a2 (README, docs/user, backends/lean) | https://github.com/AeneasVerif/aeneas | P | CODE | Supported subset, Lean backend `Result`/`spec` definitions, backend axioms and size. |
-| C3 | AeneasVerif/charon @ f070bb9 | https://github.com/AeneasVerif/charon | P | CODE | Checked only for commit and layout. |
+| A1 | Scaling Verification of Cryptographic Software with Aeneas, Rust, and Lean (arXiv 2609.15648v1, draft TR, Sept 2026) | https://arxiv.org/html/2609.15648v1 | [P] | [FULL] | Methodology, Aeneas extensions, intrinsics modelling, SymCrypt case study, trust assumptions, AI-agent costs, bugs found, performance. |
+| A3 | Charon: An Analysis Framework for Rust (CAV 2025, arXiv 2410.18042v2) | https://arxiv.org/html/2410.18042v2 | [P] | [FULL] | MIR-to-(U)LLBC driver, sizes, unsupported features, Aeneas and Eurydice as clients. |
+| A4 | Verifying Rust cryptography in SymCrypt, from standards to code (MSR blog, 2026-07-13) | https://www.microsoft.com/en-us/research/blog/verifying-rust-cryptography-in-symcrypt-from-standards-to-code/ | [P] | [FULL] | Release announcement: ML-KEM and SHA-3 proofs; code used in Windows Insider builds; dashboards; agentic proofs. |
+| A6 | Formal Verification of Borrow-Checking by Local Commutation Diagrams (Reynaud Michez, JFLA 2026) | https://hal.science/hal-05428143/document | [S] | [FULL] | Full PDF text (HAL v2, 31 Mar 2026) re-read in Phase 1c without an extractor. Rocq mechanisation in progress of the ICFP 2024 LLBC results; states those proofs are pen-and-paper; found and repaired a flaw; mechanised fragment has only integers and mutable references. |
+| A7 | Missing check apparently allows proof of False after adversarial metaprogram (lean4 issue #14484, 2026-07-22) | https://github.com/leanprover/lean4/issues/14484 | [P] | [FULL] | Kernel `add_opaque` lacked the fvar/mvar closure check; fixed by #14498; maintainers note export-format checkers are unaffected. |
+| A8 | Kernel accepts wrong-structure projections, allowing an axiom-free proof of False (lean4 issue #14576, 2026-07-28) | https://github.com/leanprover/lean4/issues/14576 | [P] | [FULL] | Reproduced on 4.34.0-nightly via `addDecl`; fix #14577 listed under release v4.34.0; first affected version not stated. |
+| C1 | SymCrypt feature/verifiedcrypto @ c2e575a: README-VERIFIEDCRYPTO.md, SymCRust/lean (Spec, Symcrust/Properties, Intrinsics, EXTRACTION.md, VERIFIED.md, REPORT.md) | https://github.com/microsoft/SymCrypt/tree/feature/verifiedcrypto | [P] | [CODE] | Specs, top-level theorems, axioms, hygiene counts, build instructions, trust assumptions. |
+| C2 | AeneasVerif/aeneas @ c5eb4a2 (README, docs/user, backends/lean) | https://github.com/AeneasVerif/aeneas | [P] | [CODE] | Supported subset (README, docs), main-branch `Result`/`spec` definitions, backend axioms and size. Not the revision SymCrypt pins. |
+| C4 | AeneasVerif/aeneas @ d71d2e3f2cb763f7faf15ab606ac9cf32da8dead (2026-07-11), the revision pinned by SymCrypt EXTRACTION.md | https://github.com/AeneasVerif/aeneas/tree/d71d2e3f2cb763f7faf15ab606ac9cf32da8dead | [P] | [CODE] | `backends/lean/Aeneas/Std/Primitives.lean` (`Error`, `Result`) and `Std/WP.lean` (`theta`, `spec`, `dspec`, `⦃ ⦄` macros); `lean-toolchain` v4.31.0. Inspected via `git fetch --depth 1 --filter=blob:limit=1m`, then deleted. |
+| C3 | AeneasVerif/charon @ f070bb9 | https://github.com/AeneasVerif/charon | [P] | [CODE] | Checked only for commit and layout. |
 
 ## 15. Unverified leads (excluded from evidence)
+- A2 (moved in Phase 1c, abstract only): Aeneas: Rust Verification by Functional Translation (ICFP 2022), https://arxiv.org/abs/2206.07185. Abstract: "We leverage Rust's rich region-based type system to eliminate memory reasoning for many Rust programs, as long as they do not rely on interior mutability or unsafe code."
+- A5 (moved in Phase 1c, abstract only): Sound Borrow-Checking for Rust via Symbolic Semantics (ICFP 2024), https://www.arxiv.org/abs/2404.02680. Abstract states that LLBC is proved sound w.r.t. a CompCert-style pointer model and that its symbolic semantics acts as a borrow-checker. The same content is cited in this dossier only through A6.
+- Search results mention third-party commits bumping toolchains to v4.32.2 alongside the #14484/#14576 fixes, suggesting backports; no Lean release notes for v4.32.x were read, so the fixed-in versions below v4.34.0 are not established.
 - Topic file 02 cites an Aeneas `documentation/crypto-verification.md` chain "Nist spec ⟷₁ Lean spec ⟷₂ Auxiliary spec ⟷₃ Aeneas translation"; the file exists in C2 but was not read in full here.
 - `septract/aeneas-vcvio-demos` (linking Aeneas-extracted Rust to VCVio games) is mentioned in topic file 02; not inspected.
 - The SymCrypt verification dashboards mentioned in A4 were not located.

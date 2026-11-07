@@ -2,6 +2,8 @@
 
 Kind: comparator (non-Lean). Access date for all sources: 2026-11-07. Static inspection only; no tool was installed or run (see Section 10).
 
+Source depth counts (Section 14): [FULL] 4 (S1, S3, S5, S6), [SECT] 2 (S8, S9), [CODE] 3 (S2, S4, S5b).
+
 ## 1. Identity
 | Field | Value |
 |---|---|
@@ -105,16 +107,44 @@ lemma auth_to_terminal_minimal: //non-injective agreement with one card session
 - Theorem 2 (Soundness): "Suppose Assumption 1 holds and that we have verified, for each role i, the Hoare triple ⊢π′ext {ψi(rid)} ci(rid) {true}. Then (|||i,rid πint(Ci(rid))) ‖Λ′ E ≼t R." [C05-S8, Section 5.2]. Consequence: "any trace property Φ proven for the protocol model, i.e., Trt(R) ⊆ Φ, is inherited by the implementation." [C05-S8, Section 3]
 - Assumption 1 (Verifier assumption): "⊢α {φ} c {true} ⟹ α(C) ≼ φ." Assumption 2 (Cryptographic operations): γ injective on names, image disjointness and pattern injectivity for cryptographic function symbols [C05-S8, Sections 4.1, 4.3.3].
 
+## 3a. Predicate semantics
+
+### Meaning of a Tamarin lemma (all three case studies)
+- Verbatim, from the Tamarin manual [C05-S9, "Trace Properties"]: "A *trace property* is a set of traces. We define a set of traces in Tamarin using first-order logic formulas over action facts and timepoints." "The application of the rule is recorded in the *trace* by appending the instantiated action facts to the trace." A lemma "expresses that the property must hold for all traces of the protocol". `exists-trace` lemmas instead assert that some trace satisfies the formula.
+- Adversary knowledge predicate `K`, verbatim [C05-S9, "Secrecy"]: "Tamarin's built-in message deduction rule `rule isend: [ !KU(x) ] --[ K(x) ]--> [ In(x) ]` allows us to reason about the Dolev-Yao adversary's knowledge." So `not Ex #j. K(t)@j` means that in no trace does the symbolic adversary deduce the term `t` and send it to a protocol input.
+- Restrictions narrow the trace set: "Restrictions restrict the set of traces to be considered in the protocol analysis" [C05-S9, "Restrictions"]. Every lemma is therefore conditional on the model's restrictions (e.g. `Eq`, `Once`, `NEq` actions in EMVerify).
+
+### TLS 1.3 headline: `secret_session_keys` (`lemmas/lemma.m4:174-182`, quoted in Section 3.2)
+- Conclusion predicate: `not Ex #j. K(kr)@j`, where `K` is defined as above.
+- Strongest premise: `SessionKey(tid, actor, peer, <pas, 'auth'>, <kw, kr>)@i`. This action is emitted by the client rule at `model/client_basic.m4i:319` together with `app_keyc = keygen(cats, app_key_label())` and `app_keys = keygen(sats, app_key_label())` (`:307-308`), and by the server at `model/server_basic.m4i:315`. The other premises are the absence of `RevLtk(peer)` before `#i`, of `RevDHExp` for either party before `#i`, and of `RevealPSK` for either party at any time. These actions come only from the compromise rules in `model/adversary.m4i:1-9`.
+- Guaranteed: in the symbolic model with perfect cryptography and an unbounded number of sessions, an authenticated party's application read key is never deducible by the adversary unless one of the listed reveals happened.
+- Not guaranteed: anything about computational security, code, parsing or side channels (Sections 4-5). `K` is symbolic deducibility over terms, not bitstrings. The predicate refers to the model's `keygen(...)` term, not to the key bytes of an implementation.
+
+### EMV headline: `bank_accepts` and `auth_to_terminal_minimal` (`Contactless.spthy:935-950`)
+- Conclusion predicates: `not (Ex #j. BankDeclines(t)@j) | Ex A #k. Honest(A)@i & Compromise(A)@k`, and `(Ex #j. Running(P, T, <r, 'Terminal', t>)@j) | Ex A #k. Honest(A)@i & Compromise(A)@k`.
+- `BankDeclines(transaction)` is emitted by rule `Bank_Receives_AC_Failed` when `NEq(correctAC, AC)` (`Contactless.spthy:470-481`). `TerminalAccepts(transaction)` is emitted with `Honest($CA), Honest($Bank), Honest($Terminal), Honest(~PAN)` (e.g. `:453-455`). `Compromise(...)` is emitted only by the four compromise rules (`:67-86`).
+- Guaranteed (when verified for a configuration): if the terminal accepts, the bank does not decline the same transaction term, unless an honest-labelled agent was compromised. `auth_to_terminal_minimal` additionally assumes a single card session (`OneCard` restriction in the premise).
+- Not guaranteed: the property is per generated target model (kernel, ODA method, CVM, value). The stored Visa EMV High proof records `auth_to_terminal_minimal` as "falsified - found trace (11 steps)" (Section 3.4). Nothing is stated about terminal or card code.
+
+### 5G AKA headline: secrecy lemma (`5G_AKA.spthy:2702-2706`, quoted in Section 3.3)
+- Conclusion predicate: `not (Ex #j. K(t)@j) | (Ex X #r. Rev(X, 'secureChannel')@r & Honest(X)@i) | (Ex X key #r. Rev(X, <'k',key>)@r & Honest(X)@i)`. It is a disjunction, so the guarantee is conditional on the absence of the listed reveals.
+- Not guaranteed: the conclusion holds only under the listed non-reveal conditions. Other goals fail without extra assumptions, e.g. `noninjectiveagreement_seaf_ue_kseaf_keyConf_noRev` stores an attack (Section 3.3). Bit lengths are omitted [C05-S3, line 980].
+
+### Arquint et al. Theorem 2 (quoted in Section 3.5)
+- Conclusion: `(|||i,rid πint(Ci(rid))) ‖Λ′ E ≼t R`, i.e. trace inclusion of the composed implementations into the Tamarin model's traces. Strongest premises: Assumption 1 (the code verifier is sound), Assumption 2 (injectivity and disjointness of the cryptographic encoding γ), and a verified Hoare triple for each role [C05-S8, Sections 4.1, 4.3.3, 5.2].
+- Guaranteed: every trace property proved in Tamarin for the model is inherited by the verified code, under those assumptions.
+- Not guaranteed: the correctness of the trusted library stubs (crypto, network). The guarantee covers only the 608 verified lines of wireguard-go, not the unverified rest [C05-S8, Section 8].
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
 | Functional correctness | partial | Only "executability"/reachability sanity lemmas (EMV Definition 4 [C05-S5]; TLS `tests/reachability.m4`). No functional spec of code. |
-| Safety invariant | yes (as trace properties) | Helper invariants, e.g. SQN monotonicity "strictly increasing (respectively monotonically increasing)" proved by induction [C05-S3, lines 1014-1019]; TLS `tid_invariant`, `invariant_post_hs`. |
+| Safety invariant | proved (as trace properties in the model) | Helper invariants, e.g. SQN monotonicity "strictly increasing (respectively monotonically increasing)" proved by induction [C05-S3, lines 1014-1019]; TLS `tid_invariant`, `invariant_post_hs`. |
 | Liveness | no | Tamarin trace properties are prefix-closed safety-style formulas in these studies; none of the three papers states a liveness property. |
-| Refinement | no (case studies); yes (Arquint) | Arquint Theorem 2 is trace inclusion implementation ≼t model [C05-S8]. |
-| Symbolic security | yes | Secrecy, PFS, KCI, Lowe agreement levels (TLS Table 1 [C05-S1]; 5G Tables 1-3 [C05-S3]; EMV Tables I-II [C05-S5]). Privacy as observational equivalence in 5G [C05-S3, lines 852-858, 1369-1393]. |
+| Refinement | partial: no for the three case studies; proved for 608 lines of wireguard-go under trusted stubs (Arquint) | Arquint Theorem 2 is trace inclusion implementation ≼t model [C05-S8]. |
+| Symbolic security | proved (in the symbolic model; some goals falsified with attacks) | Secrecy, PFS, KCI, Lowe agreement levels (TLS Table 1 [C05-S1]; 5G Tables 1-3 [C05-S3]; EMV Tables I-II [C05-S5]). Privacy as observational equivalence in 5G [C05-S3, lines 852-858, 1369-1393]. |
 | Computational security | no | "We assume perfect cryptography" [C05-S1, line 734]; downgrade "does not accurately capture the spirit ... due to the fact that we assume all cryptographic primitives are perfect" [C05-S1, lines 914-916]. |
-| Parsing | no (case studies); partial (Arquint) | 5G: "we omit message bit lengths" [C05-S3, line 980]. Arquint requires formats proved "unambiguous and non-overlapping" as proof obligations [C05-S8, Section 4]. |
+| Parsing | assumed (case studies); partial (Arquint) | 5G: "we omit message bit lengths" [C05-S3, line 980]. Arquint requires formats proved "unambiguous and non-overlapping" as proof obligations [C05-S8, Section 4]. |
 | Constant-time | no | Not addressed in any source read. |
 
 ## 5. Link to implementation code

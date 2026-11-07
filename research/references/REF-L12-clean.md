@@ -9,7 +9,7 @@
 | Primary URLs | https://github.com/Verified-zkEVM/clean ; https://clean.zksecurity.xyz ; https://blog.zksecurity.xyz/posts/clean-verified-zkvms/ ; https://blog.zksecurity.xyz/posts/poseidon-clean/ |
 | Repo, commit SHA, last commit date, licence | `f8a4194c604488cb732024890aebd083968222ab`, 2026-11-05T18:59:53+01:00, MIT (the `Clean/Circomlib/` folder is LGPL, per its README, because circomlib is LGPL). |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.35.0`, Mathlib, CompPoly. |
-| Maturity (research prototype / production / abandoned / AI-generated) | Active industrial research framework (5,168 commits since 2024-07-30; 504 since 2026-08-01); heavily AI-assisted (see §9). |
+| Maturity (research prototype / production / abandoned / AI-generated) | research (active industrial framework; 5,168 commits since 2024-07-30; 504 since 2026-08-01). AI provenance: `commit-trailers` (see §9). |
 
 ## 2. Claim as stated by the authors (verbatim)
 Project site (clean.zksecurity.xyz):
@@ -59,20 +59,62 @@ Ensemble level (blog and `Clean/Air/FlatEnsemble.lean`): `Statement ens publicIn
 
 What is not modelled: the polynomial IOP / proof system itself (channel balance is assumed to be "what the proof system enforces"), the cryptographic soundness of the SNARK/STARK, the prover/verifier code, and the backend translation to R1CS/AIR/PLONK.
 
+## 3a. Predicate semantics
+Headline: every `FormalCircuit` (e.g. Keccak-f, `Clean/Gadgets/Keccak/Permutation.lean:41`, `theorem soundness : Soundness (F p) main Assumptions Spec`). Conclusion predicate, `Clean/Circuit/Formal.lean:198-211` (at `f8a4194`):
+```lean
+def Soundness (F : Type) [FiniteField F] (main : Var Input F → Circuit F (Var Output F))
+    [elaborated : ElaboratedCircuit F Input Output main]
+    (Assumptions : Input F → Prop) (Spec : Input F → Output F → Prop) :=
+  ∀ offset : ℕ, ∀ env : Environment F,
+  ∀ input_var : Var Input F, ∀ input : Input F, eval env input_var = input →
+  Assumptions input →
+  ConstraintsHold.Soundness env (main input_var |>.operations offset) →
+  let output := eval env (ElaboratedCircuit.output main input_var offset)
+  Spec input output ∧
+  Operations.Requirements env (main input_var |>.operations offset)
+```
+Its key premise, `Clean/Circuit/Operations.lean:709-715`:
+```lean
+def ConstraintsHold.Soundness (env : Environment F)
+    (ops : Operations F) : Prop := ops.forAllNoOffset {
+  assert e := env e = 0
+  lookup l := l.Soundness env
+  interact i := i.Guarantees env
+  subcircuit s := s.Assumptions env → s.Spec env
+}
+```
+Completeness, `Clean/Circuit/Formal.lean:214-223`:
+```lean
+def Completeness (F : Type) [FiniteField F] (main : Var Input F → Circuit F (Var Output F))
+    (Assumptions : Input F → Prop) :=
+  ∀ offset : ℕ, ∀ env : ProverEnvironment F, ∀ input_var : Var Input F,
+  env.UsesLocalWitnessesCompleteness offset (main input_var |>.operations offset) →
+  ∀ input : Input F, eval env input_var = input →
+  Assumptions input →
+  ConstraintsHold.Completeness env (main input_var |>.operations offset)
+```
+Keccak instance, `Permutation.lean:17-21`: `Assumptions state := state.Normalized`; `Spec state out_state := out_state.Normalized ∧ out_state.value = keccakPermutation state.value`.
+
+Plain meaning (soundness): for every witness assignment, if the inputs satisfy `Assumptions` and every equality constraint evaluates to zero, then the output satisfies `Spec`. The premise also assumes, for each lookup, the lookup table's declared `Soundness` predicate on the looked-up row, and, for each channel interaction, that channel's `Guarantees`. These are discharged only at the ensemble level (channel balance), per the blog: "pulls become assumptions, pushes become proof obligations". Completeness: with the circuit's own witness generators and inputs satisfying `Assumptions`, all constraints are satisfiable.
+
+Ensemble level (blog S2 verbatim, matching `Clean/Air/FlatEnsemble.lean`): `Soundness ens Assumptions Spec := ∀ publicInput, Assumptions publicInput → ens.Statement publicInput → Spec publicInput`, where `Statement` requires `witness.BalancedChannels`. Channel balance is the interface to the proof system and is assumed, not proved.
+
+Guaranteed: the Lean constraint system is semantically equivalent (soundness plus completeness) to the spec under the stated assumptions, over the abstract field. Not guaranteed: that the exported R1CS/AIR equals the Lean operations; that the SNARK/STARK enforces channel balance or is sound/zero-knowledge; global (ensemble) completeness.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | yes (circuit level) | Every `FormalCircuit` proves constraints ⇒ `Spec` (soundness) and honest witness ⇒ constraints (completeness); Keccak, SHA-256, BLAKE3, Poseidon gadgets. |
+| Functional correctness | proved (circuit level) | Every `FormalCircuit` proves constraints ⇒ `Spec` (soundness) and honest witness ⇒ constraints (completeness); Keccak, SHA-256, BLAKE3, Poseidon gadgets. |
 | Safety invariant | partial | VM state-channel reasoning proves "there exists a valid trace from the public initial state to the public final state" (blog). |
 | Liveness | no | — |
-| Refinement | yes (circuit ↔ spec) | Site: "proving the equivalence between low-level, usually optimized circuits and their high-level desired behavior"; `DeterministicFormalCircuit.uniqueness`. |
+| Refinement | proved (circuit ↔ spec) | Site: "proving the equivalence between low-level, usually optimized circuits and their high-level desired behavior"; `DeterministicFormalCircuit.uniqueness`. |
 | Symbolic security | no | — |
-| Computational security | no | Proof-system soundness and zero-knowledge are outside scope. |
+| Computational security | assumed | Proof-system soundness is assumed through the premise that channels are balanced; zero-knowledge is outside scope. |
 | Parsing | no | (Poseidon blog: "the proof does not mechanically parse `poseidon.circom`".) |
 | Constant-time | no | — |
 
 ## 5. Link to implementation code
-Lean is the circuit implementation: the gadget written in Lean is the object proved. Deployment requires compiling to a backend constraint system: `Clean/Backends/` (Circom/R1CS export with WASM witness compile, Plonky3 printing; 3,705 lines). Static inspection found 1 `theorem` in `Clean/Backends/`; the backend compilers are not verified and are validated by tests (e.g. `Clean/Backends/Circom/TestWasmCompile.lean`). Circomlib ports are hand models: Poseidon blog: "The Clean circuit is a direct hand model of the same optimized arity-1 structure. The correspondence is small and explicit, but it is not a verified compiler pipeline from Circom source to R1CS." Guarantee holds for the Lean circuit model; the exported constraint system and any external prover are outside the proof.
+impl_link=lean-is-impl (impl_links: lean-is-impl, differential-testing). Lean is the circuit implementation: the gadget written in Lean is the object proved. Deployment requires compiling to a backend constraint system: `Clean/Backends/` (Circom/R1CS export with WASM witness compile, Plonky3 printing; 3,705 lines). Static inspection found 1 `theorem` in `Clean/Backends/`; the backend compilers are not verified and are validated by tests (e.g. `Clean/Backends/Circom/TestWasmCompile.lean`). Circomlib ports are hand models: Poseidon blog: "The Clean circuit is a direct hand model of the same optimized arity-1 structure. The correspondence is small and explicit, but it is not a verified compiler pipeline from Circom source to R1CS." Guarantee holds for the Lean circuit model; the exported constraint system and any external prover are outside the proof.
 
 ## 6. Trusted computing base and soundness hygiene
 Counts (rg over 213 `.lean` files, comments filtered):
@@ -97,7 +139,7 @@ Counts (rg over 213 `.lean` files, comments filtered):
 ## 9. Independent evidence
 - zkSecurity is itself an audit firm; the blog index lists "Checking the Checkers and Auditing the Ironwood FV" (2026-10-05, three-week audit of a formalization) and a Zero Knowledge podcast episode on Clean and zkGolf (2026-10-21) — titles only (see §15).
 - No independent third-party audit of Clean located.
-- AI assistance (Conventions rule 7): commit history (tree-less clone) shows 571 `Co-Authored-By: Claude` trailers, 542 "Generated with [Claude" lines, plus Claude Fable 5 (107), Opus 4.6 (81), Opus 4.7 (34), Sonnet 4.5 (33), Opus 4.8 (21), Opus 5 (15), Copilot (13); bot authors "Gregor's Bot" (448) and "Gregor's Bots" (112). The project site states: "LLMs allow "scaling engineering effort", because they generate implementations *and* proofs" and "the part of the code that requires review is the specification". The repo contains `CLAUDE.md` agent instructions.
+- AI provenance (Conventions rule 7): category `commit-trailers`. Basis: 890 of 5,168 commits carry an AI co-author trailer, a "Generated with Claude" line or a Claude session link (tree-less clone, regex over messages). Trailer lines by model: `Co-Authored-By: Claude` 571, "Generated with [Claude" 542, Claude Fable 5 107, Claude Opus 4.6 81, Opus 4.7 34, Sonnet 4.5 33, Opus 4.8 21, Opus 5 15, Copilot 13. Bot authors "Gregor's Bot" (448 commits) and "Gregor's Bots" (112). The repo also contains `CLAUDE.md`. Separately, the project site states: "LLMs allow "scaling engineering effort", because they generate implementations *and* proofs" and "the part of the code that requires review is the specification".
 
 ## 10. Reproducibility
 Not built: sandbox disk limit; queued for CI reproducibility job. Exact commands:
@@ -119,20 +161,20 @@ To apply to an arbitrary circuit codebase (Circom, Halo2, Plonky3 AIR): the exis
 | H4 | Applies to arithmetic-circuit code once re-expressed in Clean; not to arbitrary software. | S1, S2 |
 | H5 | Circuit correctness is proved separately from proof-system cryptographic soundness, which is assumed via "channels are balanced". | S2 |
 | D | Authors use "formally verified", "Perfect by Construction", "guaranteed to behave exactly as you described", while blogs state explicit trust boundaries. | S2, S3, S4 |
-| AI | Over a thousand commits carry Claude/Copilot trailers; authors position LLMs as generating implementations and proofs with humans reviewing specs. | S2, S5 |
+| AI | 890 of 5,168 commits carry Claude/Copilot trailers; authors position LLMs as generating implementations and proofs with humans reviewing specs. | S2, S5 |
 
 ## 13. Conflicts
-- `Clean/Circomlib/Poseidon.md:162` states "`instance : Fact (Nat.Prime BN254_PRIME)` is declared with `by sorry`", and the Poseidon blog (2026-05-04) calls primality "the only remaining `sorry`". At `f8a4194`, `Clean/Specs/Poseidon.lean:27` instead proves it via CompPoly's Pratt certificate, and no such `sorry` remains. Resolved in favour of the code at the stated commit; the `.md` note is stale.
+- `Clean/Circomlib/Poseidon.md:162` states "`instance : Fact (Nat.Prime BN254_PRIME)` is declared with `by sorry`", and the Poseidon blog (2026-05-04) calls primality "the only remaining `sorry`". At `f8a4194`, `Clean/Specs/Poseidon.lean:27` instead proves it via CompPoly's Pratt certificate, and static inspection finds no such `sorry` there. Both sides recorded; not resolved here.
 - Site claim "guaranteed to behave exactly as you described" versus blog trust boundaries (hand-modelled Circom, unverified export, unproved `poseidon1Opt = poseidon1`). Recorded, not resolved.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | Clean source code @ f8a4194 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/clean | P | CODE | Definitions of Soundness/FormalCircuit, gadgets, Backends, counts, Poseidon primality. |
-| S2 | Mitscha-Baude, "Clean: From Verified Circuits to Verified zkVMs", ZK/SEC Quarterly, 2026-06-05 (accessed 2026-11-07) | https://blog.zksecurity.xyz/posts/clean-verified-zkvms/ | P | FULL | Channels, ensemble soundness, VM state channels, completeness caveat. |
-| S3 | Ochoa, "Verifying Poseidon in Clean: Why the Last 'sorry' Is About Primality", 2026-05-04 (accessed 2026-11-07) | https://blog.zksecurity.xyz/posts/poseidon-clean/ | P | FULL | Poseidon arity-1 soundness/completeness, explicit trust boundaries. |
-| S4 | Clean project site (accessed 2026-11-07) | https://clean.zksecurity.xyz | P | FULL | Positioning claims, backends, LLM "spec compilation" vision. |
-| S5 | Clean commit history (tree-less clone, accessed 2026-11-07) | https://github.com/Verified-zkEVM/clean/commits/main | P | CODE | 5,168 commits; AI co-author trailer counts. |
+| S1 | Clean source code @ f8a4194 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/clean | P | [CODE] | Definitions of Soundness/FormalCircuit, gadgets, Backends, counts, Poseidon primality. |
+| S2 | Mitscha-Baude, "Clean: From Verified Circuits to Verified zkVMs", ZK/SEC Quarterly, 2026-06-05 (accessed 2026-11-07) | https://blog.zksecurity.xyz/posts/clean-verified-zkvms/ | P | [FULL] | Channels, ensemble soundness, VM state channels, completeness caveat. |
+| S3 | Ochoa, "Verifying Poseidon in Clean: Why the Last 'sorry' Is About Primality", 2026-05-04 (accessed 2026-11-07) | https://blog.zksecurity.xyz/posts/poseidon-clean/ | P | [SECT] | Read sections: "What We Proved" (incl. trust-boundary bullets) and the title/abstract. Only claims quoted from these are used. |
+| S4 | Clean project site (accessed 2026-11-07) | https://clean.zksecurity.xyz | P | [FULL] | Positioning claims, backends, LLM "spec compilation" vision. |
+| S5 | Clean commit history (tree-less clone, accessed 2026-11-07) | https://github.com/Verified-zkEVM/clean/commits/main | P | [CODE] | 5,168 commits; AI co-author trailer counts. |
 
 ## 15. Unverified leads (excluded from evidence)
 - zkSecurity, "Checking the Checkers and Auditing the Ironwood FV" (2026-10-05) — title/teaser only; relevant to auditing Lean formalizations.

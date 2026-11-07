@@ -42,7 +42,7 @@
   "H5",
   "D"
  ],
- "full_read_sources": 2,
+ "full_read_sources": 0,
  "ai_provenance": "commit-trailers",
  "impl_links": [
   "lean-is-impl",

@@ -1,1 +1,60 @@
-{"id": "REF-L21", "name": "Microsoft CCF Lean consensus specs and C++ trace replay", "subject": "CCF consensus (CFT), consistency, KV store and disaster recovery protocols", "kind": "lean", "tool": "Lean 4 + Mathlib; Lean trace replay executables (consensus-replay, kv-replay, consistency-replay, DR replayer)", "org": "Microsoft (CCF team)", "repo": "https://github.com/microsoft/CCF", "commit": "6404230c2b1e0f1770f47ce95a4e3cb3a274c657", "toolchain": "leanprover/lean4:v4.35.0, Mathlib v4.35.0", "maturity": "production CI gate (since 2026-09)", "properties": {"functional": "partial", "safety": "yes", "liveness": "no", "refinement": "no", "symbolic_security": "no", "computational_security": "no", "parsing": "no", "constant_time": "no"}, "impl_link": "trace-validation", "impl_language": "C++", "tcb": {"sorry": 0, "axiom": 0, "native_decide": 0, "unverified_translator": "hand/agent-written model (no extraction); C++ trace emission and msgpack/Fluentd sink (can drop events); Python scenario runner; Lean replay parser and reduction rules (4 partial defs); FIFO delivery policy"}, "loc": {"spec": 9423, "proof": 23790, "impl": 2988}, "built": "no", "pattern": "executable Lean transition-system model + safety theorems over all traces + CI replay of instrumented C++ driver/e2e traces with read-only state observations", "subclaims": ["H1", "H2", "H3", "H4", "H5", "D"], "full_read_sources": 6}
+{
+ "id": "REF-L21",
+ "name": "Microsoft CCF Lean consensus specs and C++ trace replay",
+ "subject": "CCF consensus (CFT), consistency, KV store and disaster recovery protocols",
+ "kind": "lean",
+ "tool": "Lean 4 + Mathlib; Lean trace replay executables (consensus-replay, kv-replay, consistency-replay, DR replayer)",
+ "org": "Microsoft (CCF team)",
+ "repo": "https://github.com/microsoft/CCF",
+ "commit": "6404230c2b1e0f1770f47ce95a4e3cb3a274c657",
+ "toolchain": "leanprover/lean4:v4.35.0, Mathlib v4.35.0",
+ "maturity": "production CI gate (since 2026-09)",
+ "properties": {
+  "functional": "partial",
+  "safety": "proved",
+  "liveness": "no",
+  "refinement": "tested",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "no",
+  "constant_time": "no"
+ },
+ "impl_link": "trace-validation",
+ "impl_language": "C++",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 0,
+  "unverified_translator": "hand/agent-written model (no extraction); C++ trace emission and msgpack/Fluentd sink (can drop events); Python scenario runner; Lean replay parser and reduction rules (4 partial defs); FIFO delivery policy"
+ },
+ "loc": {
+  "spec": 9423,
+  "proof": 23790,
+  "impl": 2988
+ },
+ "built": "no",
+ "pattern": "executable Lean transition-system model + safety theorems over all traces + CI replay of instrumented C++ driver/e2e traces with read-only state observations",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 6,
+ "impl_links": [
+  "model-only",
+  "trace-validation"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "author-reported",
+ "property_notes": {
+  "safety": "proved for the Lean model over all finite and infinite model traces; C++ correspondence only tested by replaying finite cft_driver/e2e traces in CI",
+  "refinement": "no refinement proof; finite-trace replay under a FIFO policy",
+  "functional": "proved for KV model lemmas only",
+  "model-only": "Lean safety theorems about the model",
+  "trace-validation": "CI replay of C++ traces through the Lean model",
+  "ai_provenance": "lean/AGENT.md:3 author statement; 36 of 40 lean/ commits carry Copilot trailers"
+ }
+}

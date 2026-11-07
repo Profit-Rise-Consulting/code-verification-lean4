@@ -11,7 +11,7 @@ This dossier covers three subjects. verified-consensus is primary. iris-lean is 
 | Primary URLs | https://github.com/fradamt/verified-consensus | https://github.com/leanprover-community/iris-lean | https://github.com/leanprover/cslib (`Cslib/Computability/Distributed/FLP/`) |
 | Repo, commit SHA, last commit date, licence | `d379754762ccd69cec2fcaf94d18481a0600ef78`, 2026-10-12, CC0-1.0 | `8293092f09bd32ec60640f4267e7b7cd98bfe024`, 2026-11-05, Apache-2.0 | `76b7943d0b8d4673b207b82fea86610e7f74d625`, 2026-11-05, Apache-2.0 |
 | Lean toolchain | `leanprover/lean4:v4.34.1` + Mathlib | `v4.35.0` (Iris, IrisMath) | `v4.36.0-rc2` + Mathlib |
-| Maturity | Research, review-oriented, AI-assisted. Determined from: `CITATION.cff` (date-released 2026-09-23); `docs/AI_AUDIT.md` "Brief for an AI reviewer"; commit trailers in the last 100 commits include `Co-Authored-By: Claude Opus 5.5` (1) and two `Claude-Session:` links | Community library, active (dependabot commit 2026-11-05; 247 stars) | Community library; FLP merged via PRs #556, #619, #718, #755, #765 |
+| Maturity | Research, review-oriented. AI provenance: `commit-trailers`. Determined from: `CITATION.cff` (date-released 2026-09-23); `docs/AI_AUDIT.md` "Brief for an AI reviewer"; commit trailers in the last 100 commits include `Co-Authored-By: Claude Opus 5.5` (1) and two `Claude-Session:` links | Community library, active (dependabot commit 2026-11-05; 247 stars) | Community library; FLP merged via PRs #556, #619, #718, #755, #765 |
 
 ## 2. Claim as stated by the authors (verbatim)
 verified-consensus README:
@@ -54,6 +54,50 @@ theorem Consensus.one_not_exists [Fintype P] (hc : 2 ≤ card P) :
 with a generalisation `Consensus.ge_one_not_exists` for any `f ≥ 1`. `ZeroConsensus.lean` gives a simple algorithm that achieves consensus with no faults.
 
 CSLib Raft port: none found. In the clone at `76b7943` a search for `raft` (word match) in Lean sources finds nothing. `gh search prs --repo leanprover/cslib raft` and `gh search issues ... raft` both return empty. The BaDaaS overview README claims "A Lean port is in progress in cslib", but no supporting artifact was found (Section 15).
+
+## 3a. Predicate semantics
+All paths are under `DecoupledConsensusStatements/Generic/` @ `d379754`. The headline `concreteConsensus` (`DecoupledConsensusProofs/ReviewTheorem.lean:288`) proves `Statements.Instantiation.Consensus S`. That instantiates the generic bundle `Consensus` (`Claims.lean:48-75`). Each field pairs a regime premise with a conclusion, for example:
+```lean
+  finalizedSafe : ∀ rho, AccountableRegime E I rho → AgreeFrom P rho I.finalized 0
+  ...
+  confirmedLive : ∀ rho t₀ gap, LiveSleepyRegime P E I C rho t₀ gap →
+    LiveFrom P I rho I.confirmed t₀ (C.growthDelay gap)
+```
+Conclusion predicates (`Properties.lean:27-38, 105-110`):
+```lean
+def ConsistentFrom ... (g₁ g₂ : Output P) (t₀ : Time) : Prop :=
+  ∀ u ∈ rho.honest, ∀ v ∈ rho.honest, ∀ t t' : Time,
+    t₀ ≤ t → t ≤ rho.horizon → t₀ ≤ t' → t' ≤ rho.horizon →
+    Block.Compatible (readAt P rho g₁ u t) (readAt P rho g₂ v t')
+def AgreeFrom ... (g : Output P) (t₀ : Time) : Prop :=
+  ConsistentFrom P rho g g t₀
+def LiveFrom ... (g : Output P) (t₀ D : Time) : Prop :=
+  ∀ t : Time, t₀ ≤ t → t + D ≤ rho.horizon →
+    ∃ B : Block V, honestAfter I rho t B ∧
+      (∀ v ∈ rho.honest, Block.Prec (readAt P rho g v t) B) ∧ InBy P rho g B (t + D)
+```
+Strongest premises:
+- `AccountableRegime` (`Regimes.lean:83-87`) extends `RunWellFormed` with `slashableBound : SlashableBound I rho`.
+- `RunWellFormed` (`Conditions.lean:97-102`) is `horizon_nonneg`, `sorted`, and `idealization : I.idealization rho`. The interface docstring (`Interface.lean:54`) calls the last field "The hash idealization the protocol assumes on the blocks of a run".
+- `SlashableBound` (`Conditions.lean:104-107`):
+```lean
+/-- No evidence occurs between two certificates assembled from the run. -/
+def SlashableBound (I : Interface P)
+    (rho : DecoupledConsensusModel.Generic.Run V P.Object) : Prop :=
+  ∀ c c', I.inRun rho c → I.inRun rho c' → ¬ I.evidence c c'
+```
+- Liveness and availability fields take `SleepyRegime`/`LiveSleepyRegime` (`Regimes.lean:89ff`). Their docstring says these include "partial synchrony after GST ≤ t₀, honest committees, a fresh-window majority at every time from `t₀`, and a sound start". `PartialSynchrony` is at `Conditions.lean:110`.
+
+Plain language. Guaranteed, within the Lean model and up to a finite `rho.horizon`:
+- Honest nodes' finalized reads are pairwise compatible (non-conflicting chains) in any well-formed run where no two in-run certificates carry slashable evidence.
+- Separately, accountability (`certificatesAccountable`, `finalizedAccountable`): any conflict yields evidence.
+- Under the sleepy and partial-synchrony regimes, confirmed and stable outputs grow within the stated delays.
+
+Not guaranteed:
+- The safety field assumes absence of evidence. It does not assume a stake-weighted bound, although the `AccountableRegime` docstring says "without one-third-slashable evidence". I did not trace whether `SlashableBound` is derived from a weight bound in the concrete instantiation (the legacy `Assumptions/Weight.lean:30` has a separate `SlashableBound`).
+- Hash collision freedom is an assumed idealization.
+- Liveness is bounded by a finite horizon and conditioned on synchrony and honest-majority regimes.
+- Nothing about any client implementation.
 
 ## 4. Property classes covered
 | Class | verified-consensus | iris-lean | CSLib FLP |
@@ -117,19 +161,19 @@ iris-lean is infrastructure only. CSLib provides LTS/ω-execution foundations (u
 
 ## 13. Conflicts
 - verified-consensus paper version: README "Paper: `consensus.tex` at commit `9f5ed717ffac`" vs `docs/PROTOCOL.md` "Source: `consensus.tex` at commit `2f4b9d1c5e1a`".
-- CSLib Raft: the BaDaaS `replication-algorithm-overview` README says "A Lean port is in progress in cslib". No Raft content appears in CSLib code, PRs or issues as of `76b7943` / 2026-11-07.
+- CSLib Raft: the BaDaaS `replication-algorithm-overview` README (a lead from a search snippet, §15) says "A Lean port is in progress in cslib". No Raft content appears in CSLib code, PRs or issues as of `76b7943` / 2026-11-07.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | fradamt/verified-consensus @ d379754 (README, docs/AI_AUDIT.md, docs/MODELING_CHOICES.md, docs/PROTOCOL.md, Lean sources, scripts, CI) | https://github.com/fradamt/verified-consensus | P | CODE | Executable Lean model of a decoupled PoS consensus protocol with a 13-claim review theorem. 0 sorry, 0 axiom, axiom set checked by script. Premise ledger and limitations stated |
-| S2 | leanprover-community/iris-lean @ 8293092 | https://github.com/leanprover-community/iris-lean | P | CODE | Lean 4 port of Iris (MoSeL, IProp, HeapLang, WP/adequacy). No distributed-systems layer |
-| S3 | leanprover/cslib @ 76b7943, `Cslib/Computability/Distributed/FLP/` | https://github.com/leanprover/cslib | P | CODE | FLP impossibility (Völzer proof), 1,503 lines, 0 sorry. No Raft content, and no Raft PRs or issues |
-| S4 | BaDaaS replication-algorithm-overview, 0033-raft README (search snippet) | https://github.com/BaDaaS/replication-algorithm-overview/blob/main/0033-raft/README.md | S | SNIPPET | Claims "A Lean port is in progress in cslib". Unsupported by S3 |
+| S1 | fradamt/verified-consensus @ d379754 (README, docs/AI_AUDIT.md, docs/MODELING_CHOICES.md, docs/PROTOCOL.md, Lean sources, scripts, CI) | https://github.com/fradamt/verified-consensus | P | [CODE] | Executable Lean model of a decoupled PoS consensus protocol with a 13-claim review theorem. 0 sorry, 0 axiom, axiom set checked by script. Premise ledger and limitations stated |
+| S2 | leanprover-community/iris-lean @ 8293092 | https://github.com/leanprover-community/iris-lean | P | [CODE] | Lean 4 port of Iris (MoSeL, IProp, HeapLang, WP/adequacy). No distributed-systems layer |
+| S3 | leanprover/cslib @ 76b7943, `Cslib/Computability/Distributed/FLP/` | https://github.com/leanprover/cslib | P | [CODE] | FLP impossibility (Völzer proof), 1,503 lines, 0 sorry. No Raft content, and no Raft PRs or issues |
 
 Access date for all: 2026-11-07.
 
 ## 15. Unverified leads (excluded from evidence)
+- BaDaaS `replication-algorithm-overview`, `0033-raft/README.md` (search snippet only): https://github.com/BaDaaS/replication-algorithm-overview/blob/main/0033-raft/README.md claims "A Lean port is in progress in cslib". It is not supported by S3.
 - `solanaqubits/lean-verification-components` (Reservoir) says v0.4.3 "adds the Raft network induction and complete bridge, with eleven new Lean files". Not inspected.
 - `nocaptheorem/RaftFormalModel`: "Lean 4 executable model of the Raft consensus algorithm"; its README says "the mathematical proofs (the `sorry` blocks) are left unimplemented for now". Not inspected.
 - arXiv 2606.02019 "Federated Formal Verification ..." describes a TLAPS Raft proof tree with Lean 4 as one of six cross-check backends. Not read.

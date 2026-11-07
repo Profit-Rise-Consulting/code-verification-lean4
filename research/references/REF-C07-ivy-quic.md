@@ -12,6 +12,7 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Repo, commit SHA, last commit date, licence | `microsoft/ivy` master, commit `9f3c7ecc0b2383129fdd0953e10890d98d09a82d`, 2020-09-04, licence file `license.txt` ("IVy-tool", Microsoft licence text) [S3]. Galois demo `GaloisInc/ivy-quic-testing-demo` commit `d1571b79422b04df6985b069535e62afeca33300`, 2021-03-16, no licence file found [S5]. |
 | Lean toolchain (or other tool and version) | Ivy (Python tool) compiling the spec to a C++ tester that calls the Z3 SMT solver; TLS 1.3 handshake supplied by a real TLS implementation (picotls in the Galois account) [S2, S4]. |
 | Maturity | Research prototype. Galois: "this is definitely a research tool rather than something ready for deployment to customers" [S4]. Spec in master has not been updated since 2020 [S3]. |
+| AI provenance | `none-found`: no agent configuration, co-author trailers or author statements on AI use were seen in the sources read or in the inspected Ivy QUIC files. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "We develop a formal specification of the wire protocol, and use this specification to generate automated randomized testers for implementations of QUIC. The testers effectively take one role of the QUIC protocol, interacting with the other role to generate full protocol executions, and verifying that the implementations conform to the formal specification." [S1, abstract]
@@ -58,13 +59,13 @@ Plain language.
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | partial | Wire-level conformance of observable events only ("extensional"), tested not proved [S1 sec 4.1]. |
-| Safety invariant | yes (tested) | "Our formal specification captures only safety properties of the protocol." [S1 sec 6.1] |
+| Functional correctness | tested | Wire-level conformance of observable events only ("extensional"), tested not proved [S1 sec 4.1]. |
+| Safety invariant | tested (not proved) | No protocol property is proved; the `require` guards are checked on each test run (see 3a). "Our formal specification captures only safety properties of the protocol." [S1 sec 6.1] |
 | Liveness | no | "An important class of properties that we do not cover is liveness." Progress failures were recorded heuristically as "anomalously low transfer of data" [S1]. |
 | Refinement | no | Spec "is not an abstract implementation of the protocol, but is instead an executable monitor" [S1]. Authors suggest internal statements might need "formal proof of refinement rather than testing" [S1 sec 6.2]. |
 | Symbolic security | no | No adversary model; vulnerabilities found "as a side effect" [S1]. |
 | Computational security | no | Crypto is a black box; "cryptographic randomness ... not testable externally" [S1]. |
-| Parsing | partial | Serialiser/deserialiser exist (`quic_ser.ivy`, `quic_deser.ivy`; README: "packet encoding and decoding are currently implemented in C++") but are part of the trusted shim, not specified [S3]. Galois: "does not specify serialization formats and SSL protocol logic" [S4]. |
+| Parsing | no | Serialiser/deserialiser exist (`quic_ser.ivy`, `quic_deser.ivy`; README: "packet encoding and decoding are currently implemented in C++") but are part of the trusted shim, not specified [S3]. Galois: "does not specify serialization formats and SSL protocol logic" [S4]. |
 | Constant-time | no | Not addressed. |
 | Real time / congestion control | no | "we do not cover any statement in the QUIC document on recovery and congestion control" [S1]. |
 | Error handling | no in [S1]; partial in [S6] | [S1]: "we do not capture protocol error handling requirements"; [S6] added transport-error-code tests by deliberately non-conforming generation. |
@@ -140,12 +141,12 @@ Language independence: the method is independent of the implementation language 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | McMillan and Zuck, "Formal specification and testing of QUIC", SIGCOMM 2019 | https://www.mcmil.net/pubs/SIGCOMM19.pdf | P | FULL | Ivy wire spec of QUIC used as randomized tester; 27 errors in server implementations; safety only, 4 weeks testing. |
-| S2 | McMillan and Zuck, "Compositional Testing of Internet Protocols", SecDev 2019 | https://www.mcmil.net/pubs/SECDEV19.pdf | P | FULL | Formal foundations: process model, global specs, Theorems 1-3, mirrors, SMT sampling with UNSAT cores, dependent field extraction. |
-| S3 | microsoft/ivy repository, doc/examples/quic (commit 9f3c7ec) | https://github.com/microsoft/ivy/tree/master/doc/examples/quic | P | CODE | Ivy source of the QUIC spec, shim, test drivers; 6,906 lines of .ivy. |
-| S4 | Bauer and Dodds, "QUIC Testing, a Quick Replication", Galois blog, 2021-03-22 | https://www.galois.com/articles/quic-testing-a-quick-replication | S | FULL | Independent replication on picoquic; found ACK-of-ACK non-conformance; usability limits. |
-| S5 | GaloisInc/ivy-quic-testing-demo (commit d1571b7) | https://github.com/GaloisInc/ivy-quic-testing-demo | S | CODE | Docker demo, README and the patch adding the ACK-eliciting rule. |
-| S6 | Crochet et al., "Verifying QUIC implementations using Ivy", EPIQ'21 (arXiv 2503.01374) | https://arxiv.org/pdf/2503.01374 | P | FULL | Extends Ivy QUIC spec to draft-29, tests 7 servers and 7 clients, adds error-code tests, documents spec ambiguities. |
+| S1 | McMillan and Zuck, "Formal specification and testing of QUIC", SIGCOMM 2019 | https://www.mcmil.net/pubs/SIGCOMM19.pdf | P | [FULL] | Ivy wire spec of QUIC used as randomized tester; 27 errors in server implementations; safety only, 4 weeks testing. |
+| S2 | McMillan and Zuck, "Compositional Testing of Internet Protocols", SecDev 2019 | https://www.mcmil.net/pubs/SECDEV19.pdf | P | [FULL] | Formal foundations: process model, global specs, Theorems 1-3, mirrors, SMT sampling with UNSAT cores, dependent field extraction. |
+| S3 | microsoft/ivy repository, doc/examples/quic (commit 9f3c7ec) | https://github.com/microsoft/ivy/tree/master/doc/examples/quic | P | [CODE] | Ivy source of the QUIC spec, shim, test drivers; 6,906 lines of .ivy. |
+| S4 | Bauer and Dodds, "QUIC Testing, a Quick Replication", Galois blog, 2021-03-22 | https://www.galois.com/articles/quic-testing-a-quick-replication | S | [FULL] | Independent replication on picoquic; found ACK-of-ACK non-conformance; usability limits. |
+| S5 | GaloisInc/ivy-quic-testing-demo (commit d1571b7) | https://github.com/GaloisInc/ivy-quic-testing-demo | S | [CODE] | Docker demo, README and the patch adding the ACK-eliciting rule. |
+| S6 | Crochet et al., "Verifying QUIC implementations using Ivy", EPIQ'21 (arXiv 2503.01374) | https://arxiv.org/pdf/2503.01374 | P | [FULL] | Extends Ivy QUIC spec to draft-29, tests 7 servers and 7 clients, adds error-code tests, documents spec ambiguities. |
 
 ## 15. Unverified leads (excluded from evidence)
 - CACM "It takes a village: bridging the gaps between current and formal specifications for protocols" discusses this work: https://cacm.acm.org/research/it-takes-a-village-bridging-the-gaps-between-current-and-formal-specifications-for-protocols/ (not read).
