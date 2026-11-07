@@ -1,29 +1,13 @@
 # Architecture Building Blocks
 
-<!-- TOGAF ADM: Phases B–E. Architecture Building Blocks (ABBs) describe capability; Solution
-     Building Blocks (SBBs) name the concrete implementation. Keeping both columns is what makes the
-     table useful — it separates "what we need" from "what we picked". -->
-
-## Architecture Building Blocks
-
-| ID | Capability | Owns | Realised by |
-|---|---|---|---|
-| ABB-01 | TODO | TODO | SBB-01 |
-
-## Solution Building Blocks
-
-| ID | Component | Technology | Configuration | ADR |
-|---|---|---|---|---|
-| SBB-01 | TODO | TODO | TODO | — |
-
-## Interactions
-
-```mermaid
-flowchart LR
-  ABB01[ABB-01 TODO] --> ABB02[ABB-02 TODO]
-```
-
-## Reuse and provenance
-
-TODO — which blocks are bought, borrowed, or built, and where the licence obligations for each are
-recorded.
+| Block | Location | Responsibility |
+|---|---|---|
+| Conventions | research/CONVENTIONS.md | Sub-claims, evidence rules |
+| Topic files | research/01-08 | Breadth evidence per research area |
+| Reference dossiers | research/references/REF-*.md | Depth evidence per prior work, 15-section template |
+| Index and catalogue | research/references/_index, scripts/build-catalogue | Machine-readable dossier metadata; generated matrices |
+| Conflict register | research/CONFLICTS.md | Aggregated disagreements (CF-NNN) |
+| Independent review | research/REVIEW-phase1.md | Cross-family skeptical audit with dispositions |
+| Council kit | docs/phase2/council-kit.md | Motion, roles, rules, rubric, evidence packets |
+| Gates | scripts/check-docs, scripts/check-research, .github/workflows | Enforce PRD requirements in CI |
+| Phase 3 candidates (not built) | to be decided | Lean toolchain, extractors (Aeneas, hax), conformance harness |

@@ -9,8 +9,9 @@ links to the other instead.
 | How will it be built? | [TRD.md](../TRD.md) |
 | What did we decide, and why? | [adr/](adr/) |
 | What is the architecture context? | [architecture/](architecture/) |
-| What does it look like? | [WIREFRAME.md](../WIREFRAME.md) |
-| What are the visual rules? | [DESIGN.md](../DESIGN.md) |
+| Where do I start? | [handoff.md](../handoff.md) |
+| What counts as evidence? | [research/CONVENTIONS.md](../research/CONVENTIONS.md) |
+| How does the council run? | [phase2/council-kit.md](phase2/council-kit.md) |
 | How do I contribute? | [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | What must an agent know? | [AGENTS.md](../AGENTS.md) |
 
@@ -33,8 +34,7 @@ repository.
 
 ## Traceability
 
-Five ID families, assigned once and never renumbered: `FR-`/`NFR-` (PRD), `US` (stories), `SCR-`
-(screens), `ADR-` (decisions), `T` (tasks). The single matrix lives in TRD section 4 and is validated
+ID families, assigned once and never renumbered: `FR-`/`NFR-` (PRD), `US` (stories), `ADR-` (decisions), `REF-L`/`REF-C` (reference dossiers), `CF-` (conflicts), `H1`-`H5`/`D` (sub-claims). The single matrix lives in TRD section 4 and is validated
 in CI by `scripts/check-docs`.
 
 ## Unresolved points

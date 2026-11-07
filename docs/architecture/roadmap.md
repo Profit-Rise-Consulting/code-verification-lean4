@@ -1,32 +1,8 @@
-# Architecture Roadmap and Migration Plan
+# Architecture Roadmap
 
-<!-- TOGAF ADM: Phases E and F, reduced to what a single repository can own.
-     Capability increments map to delivery sprints. -->
-
-## Baseline
-
-TODO — what exists today. For a greenfield repo, say "none" and delete this section later.
-
-## Target
-
-TODO — the state the vision describes.
-
-## Gap analysis
-
-| Gap | Capability needed | Priority |
-|---|---|---|
-| TODO | TODO | P1 |
-
-## Transition architectures
-
-| Increment | Delivers | Depends on | Exit criteria |
+| Phase | Output | Exit gate | Status |
 |---|---|---|---|
-| T1 | TODO | — | TODO |
-| T2 | TODO | T1 | TODO |
-
-Each increment should be independently deployable and independently valuable. If an increment cannot
-ship on its own, merge it into its predecessor.
-
-## Implementation and migration plan
-
-TODO — sequencing, data migration, cutover, rollback. Detailed rollback lives in TRD section 11.
+| 1 | 8 topic files (first pass) | Files exist | done (on main) |
+| 1b | Full-read upgrade, 29 reference dossiers, catalogue, conflict register, cross-family review, council kit, handoff | `scripts/test` exits 0; branch merged | in progress (branch phase1b-wip) |
+| 2 | Council debate per sub-claim H1-H5, D and the compound motion; phase2-council-report.md | FR-009 gate; report has verdict, confidence and dissent per sub-claim | not started |
+| 3 | Decision ADR on toolchain; CI reproducibility job building selected reference repos; pilot on one protocol from research/07 corpus | FR-010 | not started; contingent on Phase 2 |

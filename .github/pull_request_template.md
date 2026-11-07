@@ -12,26 +12,22 @@ Closes #
 |---|---|
 | Requirement | `FR-` / `NFR-` |
 | Design section | `TRD.md#` |
-| Screen | `SCR-` |
 | Decision | `docs/adr/` |
 
 ## How it was verified
 
-<!-- Name the failing test you wrote first, and paste the command you ran. Show evidence rather than
-     asserting success. -->
+<!-- Paste the scripts/test output. Show evidence rather than asserting success. -->
 
 ```
 ```
 
 ## Checklist
 
-- [ ] A failing test was written first, and it now passes
-- [ ] `npm check` passes locally
-- [ ] `scripts/check-docs` passes, if any spine document changed
+- [ ] `scripts/test` passes locally
+- [ ] New evidence is [FULL] or [CODE]; excerpts are under Unverified leads
 - [ ] The traceability matrix in `TRD.md` section 4 is updated
 - [ ] An ADR was added for any architecturally significant decision
-- [ ] A changeset was added, if this is user-visible
-- [ ] No secrets, `.env` or `.dev.vars` files are included
+- [ ] No secrets are included
 - [ ] Conventional Commits format, scoped with the requirement id where one applies
 
 ## Notes for reviewers

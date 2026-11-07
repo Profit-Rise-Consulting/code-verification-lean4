@@ -20,32 +20,19 @@ claim it so two people do not duplicate work.
 ```bash
 git clone https://github.com/Profit-Rise-Consulting/code-verification-lean4.git
 cd code-verification-lean4
-scripts/setup
+scripts/test
 ```
 
-`scripts/setup` installs dependencies and creates local configuration from the committed examples. If
-that command fails on a clean clone, that is a bug — please report it.
+Requires only Python 3 and bash. There is no Lean toolchain yet ([ADR-0002](docs/adr/0002-research-first-scope.md)).
 
-Requires Node 22 (`.nvmrc`) and npm.
+## Evidence-first workflow
 
-## Test-driven development
+This is a research repository; its "tests" are the corpus gates.
 
-This project is test-first. The loop:
-
-1. Write a test for the next piece of functionality.
-2. Write the code until the test passes.
-3. Refactor both new and old code so it is well structured.
-
-Weighting follows the testing trophy — static checks, unit, integration, end-to-end — with the bulk
-of the value in **integration** tests. Write tests, not too many, mostly integration.
-
-Name tests with the requirement id they cover, so coverage maps back to the PRD:
-
-```ts
-describe('FR-001 email validation', () => { /* ... */ });
-```
-
-Coverage thresholds are enforced per file. A well-covered file cannot mask an untested one.
+1. Read [research/CONVENTIONS.md](research/CONVENTIONS.md) before adding evidence.
+2. Add evidence only from fully read sources or inspected code at a recorded commit.
+3. For a new reference, copy [research/references/TEMPLATE.md](research/references/TEMPLATE.md), add its `_index` JSON, and run `scripts/build-catalogue`.
+4. Run `scripts/test` until it exits 0.
 
 ## Commits
 
@@ -66,20 +53,18 @@ Use the requirement id as the scope where one applies: `feat(FR-001): add email 
 - Open a draft pull request early if you want feedback on direction; mark it ready when it is.
 - Keep the diff narrow — one concern per pull request. Large refactors go in their own PR.
 - Fill in the [pull request template](.github/pull_request_template.md), including `Closes #NNN`.
-- Run the same gate CI runs before pushing: `npm check`.
+- Run the same gate CI runs before pushing: `scripts/test`.
 - Expect a first review within a few working days. Ping the thread once after that; do not ping
   repeatedly.
 - A stalled pull request may be taken over or closed for inactivity after a comment asking about it.
 
 ## Pull request checklist
 
-- [ ] A failing test was written first, and it now passes
-- [ ] `npm check` passes locally
-- [ ] `scripts/check-docs` passes if any document in the spine changed
-- [ ] Documentation updated: PRD, TRD matrix, WIREFRAME or DESIGN as applicable
+- [ ] `scripts/test` passes locally
+- [ ] New evidence is [FULL] or [CODE]; excerpts are under Unverified leads
+- [ ] Documentation updated: PRD, TRD matrix as applicable
 - [ ] An ADR added if an architecturally significant decision was made
-- [ ] A changeset added if the change is user-visible
-- [ ] No secret values, `.env` or `.dev.vars` files committed
+- [ ] No secret values committed
 
 ## Documentation changes
 
