@@ -11,7 +11,7 @@ Access date for all sources: 2026-11-07. Source IDs refer to section 14.
 | Primary URLs | https://github.com/verse-lab/veil ; https://veil.dev/ ; CAV 2025 paper https://doi.org/10.1007/978-3-031-98682-6_2 (PDF https://ilyasergey.net/assets/pdf/papers/veil-cav25.pdf); CAV artefact https://doi.org/10.5281/zenodo.15208271 |
 | Repo, commit SHA, last commit date, licence | verse-lab/veil @ `57447722e7f25f06c75cff8735d10d41697afc14`, 2026-11-07 06:15:53 +0800, Apache-2.0. The public `main` history is a single squashed commit (`git log` shows 1 commit). |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.35.0`. Dependencies pinned in `lake-manifest.json`: lean-smt (rev tag `v4.35.0-veil-no-mathlib`), Loom (verse-lab/loom @ `f0ea9100bec2e48afad7193053d6a89db3d57335`, a non-master snapshot dated 2026-11-06), Lentil (@ `1ddf1fc`), Lasso, VerifiedHAMT. SMT back ends: cvc5 (via lean-smt) and Z3. CAV 2025 evaluation used Lean 4.16, cvc5 1.2.1, Z3 4.14.0 (S1). |
-| Maturity | Research prototype under active development ("Veil 2.0"; Veil 1.0 tagged `v1.0.0`). (A Lean FRO use-case page exists but was not read; see section 15.) Not AI-generated as far as can be determined: human-authored paper, named authors, though the squashed history prevents commit-pattern analysis. |
+| Maturity | Research prototype under active development ("Veil 2.0"; Veil 1.0 tagged `v1.0.0`). (A Lean FRO use-case page exists but was not read; see section 15.) AI provenance: `agent-config-present` (`.claude/CLAUDE.md`; `.agents/skills/tla-to-veil/SKILL.md`, a skill for translating TLA+ into Veil; README section "Agent skills"). This does not show who wrote the proofs, and the single squashed commit hides any trailers. Evidence level: `author-reported` for paper numbers, `static-inspected` for repository facts. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - README (S4): "Veil is a _foundational_ framework for (1) specifying, (2) implementing, (3) model-checking, and (4) proving safety and liveness properties of state transition systems, with a focus on distributed protocols." and "provides push-button verification for transition systems and their properties expressed in decidable fragments of first-order logic, with the full power of a modern higher-order proof assistant for when automation falls short."
@@ -90,18 +90,44 @@ Case-study statements (verbatim, `Examples/` at the commit above):
 
 The CAV 2025 Rabia and SuzukiKasamiInts case studies are not present in the current `Examples/` tree (searched with `rg -il rabia`).
 
+## 3a. Predicate semantics
+Headline results are the `#check_invariants` outcomes for each case study (S4 @ 57447722e7f25f06c75cff8735d10d41697afc14). Conclusion predicates, verbatim:
+- Reachability and invariance, `Veil/Core/Tools/ModelChecker/TransitionSystem.lean:49-51` and `Veil/Core/Tools/Synthesizer/Soundness.lean:32,38`:
+  ```lean
+  inductive reachable (sys : RelationalTransitionSystem ρ σ l) (th : ρ) : σ → Prop where
+    | init : ∀ (s : σ), sys.assumptions th → sys.init th s → sys.reachable th s
+    | step : ∀ (s s' : σ), sys.reachable th s → sys.next th s s' → sys.reachable th s'
+  def Invariant (p : ρ → σ → Prop) : Prop := ∀ th s, sys.reachable th s → p th s
+  theorem invariant_of_inductive (hinit : ∀ th s, sys.assumptions th → sys.init th s → p th s)
+      (hstep : ∀ th s lbl s', sys.assumptions th → p th s → sys.tr th s lbl s' → p th s') :
+      sys.Invariant p
+  ```
+- Per-action VC predicates, `Veil/Frontend/DSL/Action/Semantics/Definitions.lean:206-243`:
+  ```lean
+  def VeilM.succeedsAndMeetsSpecification (act : VeilM m ρ σ α) (pre : SProp ρ σ) (post : RProp α ρ σ) : Prop :=
+    [DemonFail| triple pre act post]
+  def VeilM.doesNotThrowAssuming (act : VeilM m ρ σ α) (assu : ρ → Prop) (pre : SProp ρ σ) : Prop :=
+    VeilM.succeedsAndMeetsSpecification act (fun th st => assu th ∧ pre th st) ⊤
+  def VeilM.succeedsAndPreservesInvariantsAssuming (act : VeilM m ρ σ α) (assu : ρ → Prop) (inv : SProp ρ σ) : Prop :=
+    VeilM.succeedsAndMeetsSpecification act (fun th st => assu th ∧ inv th st) (fun _ => inv)
+  ```
+- What `#check_invariants` emits (docstring, `Veil/Frontend/DSL/Module/Syntax.lean:412-415`): "Theorems use the VC names in the current namespace, e.g. `keep_excluded` for action `keep` and invariant `[excluded]`, or `keep_doesNotThrow` for its assertion check. VCs without a successful proof witness are skipped".
+- Strongest premises: the module's `assumption`s, which are background axioms on immutable state. One example is quorum intersection, `assumption ∀ (Q1 : quorum) (Q2 : quorum), ∃ (N : node), member N Q1 ∧ member N Q2` (`Examples/Ivy/PaxosFirstOrder.lean:27`). Abstract sorts may have any cardinality. Unless `veil.smt.trust false` is set, the SMT solver's `unsat` answers are also premises (section 6). `trusted invariant` is a language feature that assumes facts about mutable state (`Syntax.lean:290-299`); `rg` found no use of it in `Examples/`.
+
+Plain language. Guaranteed, modulo the trust items in section 6: in every state reachable from an initial state through the modelled actions, under the stated assumptions, the safety property holds. This holds for every instantiation of the abstract sorts. Not guaranteed: anything about deployed code; liveness, unless proved separately; and properties of models that are only model checked, because `#model_check` covers one finite instance such as `{ node := Fin 4 }`. Static inspection found no single top-level theorem of the form `sys.Invariant Invariants` emitted per module. The recorded result is the set of per-VC theorems. Assembling them into `Invariant` would follow the `invariant_of_inductive` rule; this was not confirmed by a build.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
 | Functional correctness | no (protocol-level only) | Specs are abstract transition systems. |
-| Safety invariant | yes | Inductive invariants for 16 CAV case studies (S1); current `#check_invariants` files listed in section 3. |
-| Liveness | partial | WF1-based proofs for small examples (Consensus, one FloodSet property) via Lentil (S4, S5). Fairness is "stated directly as a premise" (S5). No liveness proof for Paxos/Raft-class protocols found in the repo. |
+| Safety invariant | proved (SMT trusted by default) | Inductive invariants for 16 CAV case studies (S1); current `#check_invariants` files listed in section 3. |
+| Liveness | proved for 2 small examples only | WF1-based proofs for small examples (Consensus, one FloodSet property) via Lentil (S4, S5). Fairness is "stated directly as a premise" (S5). No liveness proof for Paxos/Raft-class protocols found in the repo. |
 | Refinement | no | No refinement theorem between models or to implementations found. S5 footnote: "Refinement is an important topic in TLA+, but it is orthogonal to what we focus on in this post." |
 | Symbolic security | partial | Byzantine-fault models (reliable broadcast, SCP) with `is_byz` relations and quorum assumptions; no Dolev-Yao cryptographic attacker. |
 | Computational security | no | |
 | Parsing | no | |
 | Constant-time | no | |
-| Other | yes | Explicit-state and symbolic bounded model checking, invariant synthesis (`#updr`), temporal model checking (`#temporal_check`), randomised simulation verified sound in Loom (S3 section 7). |
+| Other | tested (model checking, simulation) | Explicit-state and symbolic bounded model checking, invariant synthesis (`#updr`), temporal model checking (`#temporal_check`), randomised simulation verified sound in Loom (S3 section 7). |
 
 ## 5. Link to implementation code
 Category: none to external code; the model itself is executable in Lean.
@@ -172,11 +198,11 @@ Pattern: an Ivy-style, SMT-backed, decidable-fragment protocol verifier shallowl
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | Veil: A Framework for Automated and Interactive Verification of Transition Systems (CAV 2025) | https://ilyasergey.net/assets/pdf/papers/veil-cav25.pdf | P | FULL | Design of Veil 1.0, soundness of VC generation, 16 case studies, comparison with Ivy. |
-| S2 | Lessons from Building an Auto-Active Verifier in Lean (Dafny 2026 workshop) | https://verse-lab.org/papers/veil-dafny26.pdf | P | FULL | Experience report: 18 months, performance engineering, TCB, 3-5x reconstruction cost, >10x slower than Ivy. |
-| S3 | Foundational Multi-Modal Program Verifiers (Loom, POPL 2026) | https://dl.acm.org/doi/10.1145/3776719 (PDF https://ilyasergey.net/assets/pdf/papers/loom-popl26.pdf) | P | FULL | Loom framework; section 7 rebuilds Veil as Veil 2.0, semantics zoo, NOPaxos case study and bug. Sections 4-6 (formal development) read more lightly than 1-3 and 7-10. |
-| S4 | verse-lab/veil repository @ 5744772 | https://github.com/verse-lab/veil | P | CODE | Source of all file:line quotes, counts and options. |
-| S5 | Liveness Proofs in Veil, Part I: The First Step (Zhao, Sergey, 2026-06-24) | https://proofsandintuitions.net/2026/06/24/liveness-proofs-in-veil-part-1/ | P | FULL | Walkthrough of WF1-based liveness proof of a one-step consensus model in Veil using Lentil. |
+| S1 | Veil: A Framework for Automated and Interactive Verification of Transition Systems (CAV 2025) | https://ilyasergey.net/assets/pdf/papers/veil-cav25.pdf | P | [FULL] | Design of Veil 1.0, soundness of VC generation, 16 case studies, comparison with Ivy. |
+| S2 | Lessons from Building an Auto-Active Verifier in Lean (Dafny 2026 workshop) | https://verse-lab.org/papers/veil-dafny26.pdf | P | [FULL] | Experience report: 18 months, performance engineering, TCB, 3-5x reconstruction cost, >10x slower than Ivy. |
+| S3 | Foundational Multi-Modal Program Verifiers (Loom, POPL 2026) | https://dl.acm.org/doi/10.1145/3776719 (PDF https://ilyasergey.net/assets/pdf/papers/loom-popl26.pdf) | P | [SECT] sections read: 1 Introduction, 2 Overview, 7 Veil 2.0 (incl. the NOPaxos case study), 8 Velvet, 9 Related work, 10 Conclusion; claims used here come from section 7 | Loom framework; section 7 rebuilds Veil as Veil 2.0, with a semantics zoo and the NOPaxos case study and bug. |
+| S4 | verse-lab/veil repository @ 5744772 | https://github.com/verse-lab/veil | P | [CODE] @ 57447722e7f25f06c75cff8735d10d41697afc14 | Source of all file:line quotes, counts and options. |
+| S5 | Liveness Proofs in Veil, Part I: The First Step (Zhao, Sergey, 2026-06-24) | https://proofsandintuitions.net/2026/06/24/liveness-proofs-in-veil-part-1/ | P | [FULL] | Walkthrough of WF1-based liveness proof of a one-step consensus model in Veil using Lentil. |
 
 ## 15. Unverified leads (excluded from evidence)
 - Lean FRO use-case page "Veil: Multi-Modal Verification of Distributed Protocols", https://lean-lang.org/use-cases/veil/ (search result only).

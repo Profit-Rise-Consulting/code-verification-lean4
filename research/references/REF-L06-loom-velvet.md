@@ -11,7 +11,7 @@ Access date for all sources: 2026-11-07. Source IDs refer to section 14.
 | Primary URLs | https://github.com/verse-lab/loom ; https://github.com/verse-lab/velvet ; Loom paper https://doi.org/10.1145/3776719 (PACMPL 10, POPL, Article 77; PDF https://ilyasergey.net/assets/pdf/papers/loom-popl26.pdf); Velvet paper https://doi.org/10.1007/978-3-032-32526-6_11 (CAV 2026, LNCS pp. 228-242) |
 | Repo, commit SHA, last commit date, licence | Loom default branch `master` @ `78928abc9054b31d0bea85985496490baae95244`, 2026-02-21, Apache-2.0. Loom snapshot pinned by Veil: `f0ea9100bec2e48afad7193053d6a89db3d57335`, 2026-11-06 (not on `master`; fetched by SHA). Velvet `main` @ `b2a349a57021b6d4e24ab403365b404db1ce7e08`, 2026-11-05, Apache-2.0. Other Loom branches include `popl26-artifact` (`c582e97`). |
 | Lean toolchain (or other tool and version) | Loom master: `leanprover/lean4:v4.24.0`, requires Mathlib, lean-auto, lean-smt (for SMT). Loom pinned snapshot: `v4.35.0`, no Mathlib. Velvet main: `v4.35.0`, only dependency `plausible`; `CaseStudies/` is a separate Lake package requiring Mathlib `v4.35.0`. Velvet CAV 2026 evaluation: Lean 4.24.0, cvc5 1.3.1, Z3 4.15.4, lean-auto `f62266d` (S3). |
-| Maturity | Research prototypes. Velvet paper reports external use (first place in a VeHa 2025 competition category; a ChinaSoft 2025 contest task) (S3). Not AI-generated as far as can be determined. |
+| Maturity | Research prototypes. Velvet paper reports external use (first place in a VeHa 2025 competition category; a ChinaSoft 2025 contest task) (S3). AI provenance: `none-found` (neither repository has agent configuration files beyond `.github/`; no AI trailers were seen in the commits inspected). Evidence level: `static-inspected`. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - Loom (S1, abstract): "We present a framework that facilitates and streamlines construction of program verifiers that are both foundational and multi-modal." Conclusion: "With the help of two non-toy verifiers built on top of Loom, Veil (Sec. 7) and Velvet (Sec. 8), we have implemented, tested, and verified correctness of more than 25 case studies, combining SMT-powered automation with interactive Lean proofs."
@@ -22,7 +22,7 @@ Access date for all sources: 2026-11-07. Source IDs refer to section 14.
 ## 3. What is actually formalised
 Loom core (pinned snapshot `f0ea910`, S2):
 - `Loom/MonadAlgebras/Defs.lean:89`: `class MAlgOrdered (m : Type u -> Type v) (l : outParam (Type u)) [Monad m] [CompleteLattice l]` (an ordered monad algebra from which `wp` is derived).
-- `Loom/MonadAlgebras/WP/Basic.lean:27`: `def wp (c : m α) (post : α -> l) : l := liftM (fun x => post x) c |> MAlg.μ`.
+- `Loom/MonadAlgebras/WP/Basic.lean:25` (@ f0ea910): `def wp (c : m α) (post : α -> l) : l := liftM (n := Cont l) c post`; `triple` is at line 27 (section 3a). (Corrected in Phase 1c; an earlier version misquoted this line.)
 - Instances for state, exceptions, nondeterminism (`NonDetT'`), divergence (`Control/Div.lean`), etc. The paper introduces "partial monad algebras" to handle divergence soundly (S1 sec. 4: "To resolve this unsoundness, we introduce partial monad algebras.").
 - Velvet's total-correctness split as given in S1 sec. 8.1:
   ```lean
@@ -49,18 +49,40 @@ plus 6 helper theorems (lines 76-145) proved interactively.
 
 Sparse-matrix case study (S1 sec. 8.2): `method SpMSpV (spm: SpM) (spv: SpV) return (out: arrVal) ensures size out = size spm ensures ∀ i < spm.size, out[i] = ∑ j ∈ spv.size, spv[j] * spm[i][j]`, with a nondeterministic scheduler interleaving row iterations.
 
+## 3a. Predicate semantics
+Loom (S2 @ f0ea910; the lines are the same on master for these definitions). `Loom/MonadAlgebras/WP/Basic.lean:25-28`:
+```lean
+def wp (c : m α) (post : α -> l) : l := liftM (n := Cont l) c post
+def triple (pre : l) (c : m α) (post : α -> l) : Prop :=
+  pre ≤ wp c post
+```
+The premise is the instance `[MAlgOrdered m l]` (class at `Loom/MonadAlgebras/Defs.lean:89`), which fixes how effects are interpreted in the assertion lattice `l`. Whether a triple means partial or total correctness, or angelic or demonic nondeterminism, depends on which instance is chosen (S1 sections 2-3).
+
+Velvet (S4 @ b2a349a). `method` elaboration (`Velvet/Frontend/Method.lean:125-145`) generates:
+```lean
+public abbrev <name>.spec_triple :=
+  ∀ $allBinderStxs*, Std.WP.Triple
+    (($(ctx.name) $ids* : $monadStack'))
+    ($pre : assertion_type% $monadStack')
+    ($post : $(ctx.retType) → assertion_type% $monadStack')
+    ($sigs : exception_assertion_type% $monadStack')
+```
+`prove_correct foo` produces "the registered theorem `foo.spec`" (`Velvet/Frontend/ProveCorrect.lean:16-18`). `Std.WP.Triple` comes from Lean core `Std.WP` (toolchain v4.35), which was not inspected. Velvet's own comment says "`Triple` is a one-field structure around the wp entailment" (`Velvet/Core/Partial/Defs.lean:109`).
+
+Plain language. Guaranteed: for all inputs satisfying `pre`, the Lean program, interpreted through the chosen monad-algebra instance, satisfies `post` on normal return and `sigs` on exceptions. In partial-correctness mode, divergence is allowed. Not guaranteed: termination, unless the total-correctness instance and `decreasing` measures are used; behaviour of compiled code beyond what Lean's compiler preserves; and any property of code outside Lean.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | yes | Hoare triples / `requires`-`ensures` contracts for Lean programs (S1, S3, S4). |
-| Safety invariant | yes (via Veil) | Loom underlies Veil 2.0 invariant checking (REF-L04). |
+| Functional correctness | proved | Hoare triples / `requires`-`ensures` contracts for Lean programs (S1, S3, S4). |
+| Safety invariant | proved (via Veil) | Loom underlies Veil 2.0 invariant checking (REF-L04). |
 | Liveness | partial | Total correctness / termination via `decreasing` measures (S1, S4); no temporal liveness. |
 | Refinement | partial | `eraseEq` relates programs differing only in annotations (S1); no data refinement to external code. |
 | Symbolic security | no | |
 | Computational security | no | |
 | Parsing | no | |
 | Constant-time | no | |
-| Other | yes | Property-based testing of contracts (`#derive_tester_for`), angelic/demonic nondeterminism, incorrectness-style reachability (S1 sec. 6.1). |
+| Other | tested | Property-based testing of contracts (`#derive_tester_for`), angelic/demonic nondeterminism, incorrectness-style reachability (S1 sec. 6.1). |
 
 ## 5. Link to implementation code
 Category: verified code is the Lean program itself (shallow embedding), executable via the Lean compiler.
@@ -123,10 +145,10 @@ Pattern: write the program directly as monadic Lean code; derive a weakest-preco
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | Foundational Multi-Modal Program Verifiers (Loom, POPL 2026) | https://dl.acm.org/doi/10.1145/3776719 (PDF https://ilyasergey.net/assets/pdf/papers/loom-popl26.pdf) | P | FULL | Monad transformer algebras, WP derivation, partial algebras for divergence; Veil 2.0 (sec. 7) and Velvet (sec. 8). Sections 4-6 read more lightly than 1-3 and 7-10. |
-| S2 | verse-lab/loom @ 78928ab (master) and @ f0ea910 (Veil pin) | https://github.com/verse-lab/loom | P | CODE | Definitions, toolchains, `trust_smt` axiom on master, counts. |
-| S3 | Velvet: A Foundational Multi-modal Verifier for Imperative Programs in Lean (CAV 2026) | https://doi.org/10.1007/978-3-032-32526-6_11 | P | FULL | Velvet design, 27-problem comparison with Dafny, limitations, adoption. |
-| S4 | verse-lab/velvet @ b2a349a | https://github.com/verse-lab/velvet | P | CODE | Current implementation (forked Lean vcgen, grind), case studies, counts, README claims. |
+| S1 | Foundational Multi-Modal Program Verifiers (Loom, POPL 2026) | https://dl.acm.org/doi/10.1145/3776719 (PDF https://ilyasergey.net/assets/pdf/papers/loom-popl26.pdf) | P | [SECT] sections read: 1 Introduction, 2 Overview, 3 (monad algebras, WP), 6.1, 7 Veil 2.0, 8 Velvet, 9 Related work, 10 Conclusion; sections 4-5 skimmed only | Monad transformer algebras, WP derivation, partial algebras for divergence; Veil 2.0 (sec. 7) and Velvet (sec. 8). Sections 4-6 read more lightly than 1-3 and 7-10. |
+| S2 | verse-lab/loom @ 78928ab (master) and @ f0ea910 (Veil pin) | https://github.com/verse-lab/loom | P | [CODE] @ 78928ab and f0ea910 | Definitions, toolchains, `trust_smt` axiom on master, counts. |
+| S3 | Velvet: A Foundational Multi-modal Verifier for Imperative Programs in Lean (CAV 2026) | https://doi.org/10.1007/978-3-032-32526-6_11 | P | [FULL] | Velvet design, 27-problem comparison with Dafny, limitations, adoption. |
+| S4 | verse-lab/velvet @ b2a349a | https://github.com/verse-lab/velvet | P | [CODE] @ b2a349a | Current implementation (forked Lean vcgen, grind), case studies, counts, README claims. |
 
 ## 15. Unverified leads (excluded from evidence)
 - LeetProof / "Certified Program Synthesis with a Multi-Modal Verifier", https://arxiv.org/html/2604.16584v1 (search result only).

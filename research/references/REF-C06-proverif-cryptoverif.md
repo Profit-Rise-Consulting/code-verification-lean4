@@ -102,6 +102,41 @@ query c:principal, m:bitstring, sid_a:sessionid, sid_b:sessionid, s:stage, b:bit
 - Session-ID approximation, stated limitation: generated queries use separate `sida`/`sidb` "due to performance limitations", which is "less accurate than the queries described previously" [C06-S6, lines 917-925].
 - Forgery attack on the invalid pattern KXS (zero DH share plus AEAD nonce reuse) led to clarified validity-rule wording in Noise revision 34 [C06-S6, lines 1179-1284].
 
+## 3a. Predicate semantics
+
+### Tool-level meaning of the conclusion predicates
+- ProVerif `query attacker(M)`, verbatim [C06-S7, Section 3.2.1]: "The tool allows the investigation of which terms are available to an attacker; and hence (syntactic) secrecy of terms can be evaluated with respect to a model." On output, "ProVerif returns 'RESULT not attacker(M) is true.' when M is secret, that is, the attacker cannot reconstruct M" [C06-S7, Section 4.3.1].
+- ProVerif `event(e) ==> event(e')`, verbatim [C06-S7, Section 3.2.2]: "The query is satisfied if, for each occurrence of the event e(M1, . . . , Mj), there is a previous execution of e′(N1, . . . , Nk)." Variables before `==>` are universally quantified, and those only after it are existential. `inj-event`: "for each occurrence of the event e(M1, . . . , Mj), there is a distinct earlier occurrence of the event e′(N1, . . . , Nk)." Events "do not otherwise affect behavior". Their meaning comes entirely from where the modeller places them.
+- ProVerif outcomes: "RESULT [Query] cannot be proved: This is a 'don't know' answer" [C06-S7, Section 3.3.1]. So "cannot be proved" lines in result files are not proofs of falsity unless an attack trace is reconstructed.
+- CryptoVerif `secret x`, verbatim [C06-S8]: "show that the array x is indistinguishable from an array of independent random numbers (by several test queries), even when the variables in l are public". Correspondence: "CryptoVerif shows that, for all values of x1, . . . , xj, if M is true then M′ is true, even when the variables in l are public". These hold computationally, up to the probability bound CryptoVerif outputs, under the assumptions declared in the model (Section 3.2-3.4).
+
+### TLS 1.3 headline: appData authentication (`pv/tls13-draft18-only.pv:102-109`)
+- Conclusion predicate: `event(ServerSends(TLS13,cr,sr,psk,p,n,ad,m))`, or one of the weak/compromise events. `ServerSends` is declared at `pv/tls-lib.pvl:666` and emitted at `:693` and `:713`, immediately before `out(io,aead_enc(a,ks,n,ad,mesg))`.
+- Strongest premise: `event(ClientReceives(TLS13,cr,sr,psk,p,n,ad,m))`, emitted at `pv/tls-lib.pvl:720` after `let f = aead_dec(a,ks,n,ad,c)` succeeds. The disjuncts cover:
+  - `WeakOrCompromisedKey(p)` (emitted at `:157`, `:163`, `:191-192` when the attacker supplies or obtains a long-term key) combined with `psk = NoPSK || CompromisedPreSharedKey(psk)`;
+  - the server choosing a weak AE, a weak DH group or a weak hash.
+- Guaranteed: in the symbolic model, a TLS 1.3 client that accepts application data m under the session parameters received it from a server that sent m with matching parameters, unless one of the listed weaknesses or compromises occurred.
+- Not guaranteed: replay protection ("it is not explicitly proved in ProVerif", `:100-101`), parsing, computational security, and any property of RefTLS code beyond what the unverified ProScript→ProVerif translation preserves (Sections 5-6).
+
+### TLS 1.3 CryptoVerif headline: `query secret c_cats public_vars ...` (`cv/tls13-core-InitialHandshake.cv:277`)
+- Conclusion: the client application traffic secret is indistinguishable from random, with the listed variables public (C06-S8 semantics).
+- Premises: GDH, UF-CMA, collision resistance, ROM/PRF for HKDF and HMAC, AEAD IND-CPA+INT-CTXT (Section 3.2). Composition across the three pieces is a manual hybrid argument [C06-S1].
+
+### Signal headline: authenticity and secrecy (`tl/authenticity-1-ab-oneway.pv:18`, `tl/secrecy-1-ab-oneway.pv:16`)
+- Conclusion predicates: `event(Send(a, b, m))` and `not attacker(secMsg1)`. Both events are declared and placed by hand in the `tl/` top-level file, not in the code:
+  - `Send` (`tl/authenticity-1-ab-oneway.pv:57-60`) fires after the generated `fun_send(initiatorIdentityKey, them, secMsg1)` returns a valid output (`:53-55`);
+  - `Recv` (`:99-103`) fires after the generated `fun_recv(...)` returns `Object_msg_get_valid(o2) = true` (`:96-98`).
+- Guaranteed: in the symbolic model of the translated `ps/sp.js` functions, a message accepted by `fun_recv` was produced by `fun_send` with matching identity keys, and `secMsg1` is not derivable by the attacker.
+- Not guaranteed: correspondence between `fun_send`/`fun_recv` in the model and the JavaScript actually executed. Translation soundness is not proved [C06-S3]. Events and the top-level process are hand-written. The non-injective query does not exclude replay; replay is addressed by the injective CryptoVerif query (`cv/TextSecure-AB-BA.m4.cv:204-205`).
+
+### WireGuard headline: mutual authentication (injective correspondences) [C06-S5]
+- Conclusion: `inj-event(sent2(...))` given `inj-event(rcvd2(...))` and the analogous pairs. The CryptoVerif files were not inspected (Section 15), so I give no file:line. The meaning of the guarantee follows C06-S8, under the Curve25519 model with equivalent keys and adversary-supplied timestamps.
+
+### Noise Explorer headline: per-message authentication grades (`models/IKpsk2.noise.active.pv:390-406`)
+- Conclusion predicates: `event(SendMsg(alice, c, stagepack_a(sid_a), m))` or `LeakS(...)` disjuncts. The events are declared at `:381-383`. `SendMsg` is emitted in the generated initiator process before sending message a (`:502`), and `RecvMsg` after reading (`:509`, `:524`, `:556`, `:570`). `LeakS(phase0/phase1, me)` is emitted when the static key is revealed (`:535`, `:539`).
+- Guaranteed: grades as defined in [C06-S6, Section 4], in the generated symbolic model. Separate session IDs `sid_a`/`sid_b` make the queries weaker than the paper's single-`sid` definitions [C06-S6, lines 917-925].
+- Not guaranteed: anything about the generated Go/Rust code [C06-S6, lines 1325-1327].
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
@@ -207,8 +242,8 @@ query c:principal, m:bitstring, sid_a:sessionid, sid_b:sessionid, s:stage, b:bit
 | C06-S6 | Kobeissi, Nicolas, Bhargavan, "Noise Explorer: Fully Automated Modeling and Verification for Arbitrary Noise Protocols", IACR ePrint 2018/766 (Apr 2019) | https://eprint.iacr.org/2018/766.pdf | P | [FULL] | Formal syntax and validity rules for Noise, plus automatic ProVerif model generation for 57+ patterns. Co-generates Go/Rust code; the authors state that nothing is proved about that code. |
 | C06-S6r | symbolicsoft/noiseexplorer repository @ 76dec0fa | https://github.com/symbolicsoft/noiseexplorer | P | [CODE] | GPL-3.0 tool with 118 generated ProVerif models and result files, generated Go/Rust/Wasm implementations, and the templates `src/pv`, `src/go`, `src/rs`. The Rust output links the hacl-star crate. |
 
-| C06-S7 | ProVerif 2.05 manual, "ProVerif: Cryptographic protocol verifier in the formal model" (Sections 3.2.1 Reachability and secrecy; 3.2.2 Correspondence assertions; 3.3 result interpretation) | https://bblanche.gitlabpages.inria.fr/proverif/manual.pdf | P | [SECT] | Defines `query attacker(M)` as derivability of M by the attacker, and `event(e) ==> event(e')` as "if e has been executed, then e' has been previously executed", with inj-event requiring a distinct earlier event per execution. Also defines the three outcomes true/false/cannot be proved. |
-| C06-S8 | CryptoVerif 2.x manual (section on queries: secrecy and correspondences) | https://bblanche.gitlabpages.inria.fr/CryptoVerif/manual.pdf | P | [SECT] | Defines `query secret x` as indistinguishability of x from random (with and without `[cv_onesession]`), and correspondences as holding except with a probability bounded in the proof output. |
+| C06-S7 | ProVerif 2.05 manual, "ProVerif: Cryptographic protocol verifier in the formal model" (Sections 3.2.1 Reachability and secrecy; 3.2.2 Correspondence assertions; 3.3.1 result interpretation; 4.3.1 secrecy queries) | https://bblanche.gitlabpages.inria.fr/proverif/manual.pdf | P | [SECT] | Defines `query attacker(M)` as derivability of M by the attacker, and `event(e) ==> event(e')` as "if e has been executed, then e' has been previously executed", with inj-event requiring a distinct earlier event per execution. Also defines the three outcomes true/false/cannot be proved. |
+| C06-S8 | CryptoVerif User Manual (Blanchet, Cadé, Fromherz, Jacomme; version not stated on the title page), section listing the available queries | https://bblanche.gitlabpages.inria.fr/CryptoVerif/manual.pdf | P | [SECT] | Defines `secret x` as indistinguishability of the array x from independent random numbers (`onesession`: a single test query). For correspondences `M ==> M'`, "CryptoVerif shows that, for all values of x1, . . . , xj, if M is true then M' is true"; `inj-event` gives injective correspondences. |
 
 [FULL]: 4 (S1, S3, S5, S6). [SECT]: 2 (S7, S8). [CODE]: 3 (S2r, S4r, S6r).
 

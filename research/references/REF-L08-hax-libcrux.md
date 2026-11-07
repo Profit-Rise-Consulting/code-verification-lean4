@@ -1,24 +1,27 @@
 # REF-L08: hax Lean backend and Cryspen libcrux (Lean versus F*)
 
-Access date for all sources: 2026-11-07. Source IDs refer to section 14.
+Access date for all sources: 2026-11-07. Source IDs refer to section 14. Admissible sources: [FULL] 5 (B1, B2, B3, B4, B5), [CODE] 3 (C1, C2, C3). Phase 1c (2026-11-07): B4 and B5 re-read in full with authors and dates corrected (the independent review, research/REVIEW-phase1.md F-001, confirmed them as its S36/S37); abstract-only B6/B7 and all excerpt-backed remarks moved to section 15; section 3a added.
 
 ## 1. Identity
 | Field | Value |
 |---|---|
 | Subject (protocol or algorithm) | (a) hax: a Rust-to-prover translation framework (backends: Lean via Charon and Aeneas, legacy Lean, F*, Rocq, ProVerif, SSProve, EasyCrypt). (b) libcrux: Cryspen / CE Labs Rust crypto library (ML-KEM, ML-DSA, SHA-3, HPKE via hpke-rs, and HACL*-derived code). (c) The only published Lean verification of libcrux-family code is SHA-3/SHAKE one-shot API of libcrux-iot, in `cryspen/provencrypt`. These are algorithms, not protocols. |
 | Spec it targets | FIPS 202 (SHA-3/SHAKE) in Lean; FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA) in F*. |
-| Organisation / authors | Cryspen (Paris/Berlin; libcrux is now hosted under CE Labs, `celabshq`) [B1, B3]. hax 0.4 release: Tobias Reiher (blog author) and contributors incl. Alexander Bentkamp, Karthikeyan Bhargavan, Maxime Buyse, Lucas Franceschino, Clément Blaudeau [B1]. SHA-3 Lean post: Alexander Bentkamp [B2]. |
+| Organisation / authors | Cryspen (Paris/Berlin; libcrux is now hosted under CE Labs, `celabshq`) [B1, B3]. hax 0.4 release: Tobias Reiher (blog author) and contributors incl. Alexander Bentkamp, Karthikeyan Bhargavan, Maxime Buyse, Lucas Franceschino, Clément Blaudeau [B1]. SHA-3 Lean post: Alexander Bentkamp [B2]. Cryspen "Hax 0.4!" post: Clement Blaudeau, 2026-10-01 [B5]. "The strengths and limits of formal verification": Karthikeyan Bhargavan, 2026-02-12 [B4]. |
 | Primary URLs | https://github.com/cryspen/hax ; https://hax.cryspen.com/blog/2026/09/29/hax-04-easier-to-install-and-configure-and-a-new-lean-backend/ ; https://cryspen.com/post/sha3-hax-0-4/ ; https://github.com/cryspen/provencrypt ; https://github.com/cryspen/libcrux |
 | Repo, commit SHA, last commit date, licence | hax `main` @ `4d52f781015fad8091b346fe3745161e3862d21d`, 2026-11-06 Apache-2.0. provencrypt `main` @ `9f7380e894f33dea563f4860dd01e9605117d544`, 2026-10-13. libcrux `main` @ `1f9c89853b4217deb41c85fea973e74b652e2186`, 2026-11-03 (dual Apache-2.0 / MIT: `LICENSE`, `LICENSE-MIT`). |
 | Lean toolchain | hax Lean library (`hax-lib/proof-libs/lean`): `leanprover/lean4:v4.35.0`, requiring Aeneas from `https://github.com/pereq-dev/aeneas` rev `2b9e3ea4662b48c19262be759dbb704f20c24364`. provencrypt SHA-3 proofs: `v4.31.0`, `hax-lean` `v0.3.30`, Aeneas (cryspen fork) `6852e6474ec508930acba4df79977b3483a10d10`. libcrux in-repo Lean (SHA-3 spec extraction only): `v4.30.0-rc2`, requiring private `cryspen/hax-evit` rev `1f85fc1`. |
-| Maturity | hax F* backend: "Stable" (README). Lean (via Aeneas): "Recommended for Lean"; the official main Lean backend since hax 0.4 (2026-09-29) [B1, C1]. libcrux ML-KEM: production, verified in F*, deployed (paper A1 says "used in Firefox, Signal and OpenSSH" — not checked here). libcrux-iot SHA-3 Lean proof: research example; provencrypt README: "Do not use this crate in production." [C2]. |
+| Maturity | hax F* backend: "Stable" (README). Lean (via Aeneas): "Recommended for Lean"; the official main Lean backend since hax 0.4 (2026-09-29) [B1, C1]. libcrux ML-KEM: verified in F* for the modules listed in C3; deployment claims ("used in Firefox, Signal and OpenSSH", REF-L07 A1) not checked here. libcrux-iot SHA-3 Lean proof: research example; provencrypt README: "Do not use this crate in production." [C2]. libcrux overall: "The libcrux library is still young and in pre-release (its crates are versioned below `0.1`)" [B4]. |
+| AI provenance | `author-reported`. Basis: B2 states the Lean SHA-3 proof was "developed almost entirely by AI, with limited human guidance" and names the models. Not independently established. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - hax TCB page: "A successful verification establishes the following claim: *the parts of the Rust code that were extracted satisfy their specification, assuming that dependencies are correctly modeled and that every tool involved in the translation and the proof checking is correct.*" [C1 `docs/manual/faq/trust.md`]
 - hax 0.4: "In the new Lean backend, Charon compiles Rust into an intermediate representation, and Aeneas translates it into pure functional Lean code. On top of this pipeline, hax extracts `hax_lib` pre- and postconditions as Lean specifications, provides the hax Lean library, and generates a complete Lean package that builds with `lake build`. The previous Lean backend, based on the hax engine, remains available as `legacy-lean`." [B1]
 - provencrypt: "We prove the one-shot API of the SHA-3 crate of libcrux-iot functionally correct in Lean. We prove that it is equivalent to the `pedantic-sha3` specification, which is our Rust transcript of the FIPS 202 standard." [C2]
 - libcrux ML-KEM: "The portable and AVX2 code for field arithmetic, NTT polynomial arithmetic, serialization, and the generic code for high-level algorithms is formally verified using hax and F*." [C3 `libcrux-ml-kem/README.md:169-170`]
-- Cryspen, on Lean versus F*: "We are now experimenting with using Lean for some of these proofs instead of F*, and with using specifications written in Rust rather than in F*." [B4]
+- Cryspen, on Lean versus F* (2026-02-12): "Using this methodology, we have written Rust implementations of ML-KEM and ML-DSA and verified many of their core modules using hax and F*. Not all the code in libcrux is formally verified yet. For each crate, the code repository carefully documents what modules and properties we currently prove, and the proofs keep improving and changing as the code evolves. We are now experimenting with using Lean for some of these proofs instead of F*, and with using specifications written in Rust rather than in F*." [B4 §"Libcrux: high-assurance cryptography in Rust"]
+- Cryspen, on the Lean backend (2026-10-01): "we decided in early 2026 to pivot and directly use the Charon+Aeneas pipeline as the translation engine for our Lean backend." "While the Charon+Aeneas pipeline was made available in 0.3.7, the 0.4 release makes it officially our main Lean backend. This increases support for Rust, notably *functions returning mutable borrows*." Example given: `pub fn node_mut(&mut self) -> &mut Option<ParentNode> { ... }` from OpenMLS, "one of our ongoing proof efforts, that was previously rejected by our engine" [B5 §"Adopting Aeneas for the Lean backend"].
+- "So far, no bugs have been found in the verified code, although we would be very interested to know if any of our code generation tools inadvertently introduced a bug" [B4] (see section 13).
 
 ## 3. What is actually formalised
 ### 3.1 hax Lean backend (hax 0.4)
@@ -63,6 +66,24 @@ Access date for all sources: 2026-11-07. Source IDs refer to section 14.
 - Lean content in libcrux main: only `specs/sha3/proofs/aeneas-lean` (987 lines, a Lean extraction of a hacspec-style SHA-3 spec with no proofs; 0 `sorry`/`axiom` hits), and an empty `crates/algorithms/aes/proofs/lean/extraction/` with a `.gitignore` [C3]. The SHA-3 spec README says its Lean prerequisite hax-evit is "not publicly available yet" [C3 `specs/sha3/Readme.md`].
 - Lean ML-KEM: B2 mentions "our work on the verification of ML-KEM, which builds on top of SHA-3" using Claude Fable 5; no released Lean ML-KEM artefact was found.
 
+## 3a. Predicate semantics
+Headline theorems: the 13 `*_spec_proof` theorems in provencrypt `sha3/libcrux-iot-5df472a/proofs/LibcruxIotSha3/Verification/ProofObligations.lean` (e.g. `theorem sha256_spec_proof (payload : Slice Std.U8) : libcrux_iot_sha3.sha256.spec payload` at line 442) [C2].
+
+Conclusion predicate, verbatim from `proofs/LibcruxIotSha3/Extraction/Specs.lean:164` [C2]:
+```lean
+def sha256.spec (payload : Slice Std.U8) : Prop :=
+  ⦃ ⌜ True ⌝ ⦄
+  sha256 payload
+  ⦃ ⇓ res => ⌜ (sha256.post payload res).holds ⌝ ⦄
+```
+For contracts with a precondition the generated shape is (B1, verbatim) `(f.pre x).holds → ⦃ ⌜ True ⌝ ⦄ f x ⦃ ⇓ res => ⌜ (f.post x res).holds ⌝ ⦄`, e.g. `sha256_ema` with `#[hax_lib::requires(digest.len() == SHA3_256_DIGEST_SIZE)]` (section 3.2). The `.post` is the extraction of the Rust `#[hax_lib::ensures]` closure, which equates the output bytes with `pedantic_sha3::bytes::sha256(...)` / `shake128(...)` etc. (section 3.2). The strongest premises are therefore the Rust `requires` clauses (buffer-length equalities) and, implicitly, the modelling assumptions in `Assumptions/` (hand-written Lean models of excluded Rust types `BitStr`/`Nat` as `List Bool`/`Nat`) [B2, C2].
+
+Semantics of the triple: B1 states "if the precondition holds, the function returns without failing and its result satisfies the postcondition", with code in the `RustM` monad "which models failures such as panics and integer overflow". The triple is Lean core's `Std.Do` Hoare triple with the `⇓` total-correctness postcondition. The `RustM` definition and the `Std.Do` `WP` instance for it in the hax Lean library were not quoted verbatim in this dossier; the reading above is author-reported (B1), not checked against the definition.
+
+Plain-language reading (facts, no verdict):
+- Guaranteed, in the extracted Lean model and assuming hax's Rust-core models and the hand-written `Assumptions/`: each of the 13 one-shot SHA-3/SHAKE functions of the patched libcrux-iot snapshot returns without a modelled failure and produces the same bytes as the extracted `pedantic-sha3` Rust transcription of FIPS 202, for inputs meeting the `requires` clause.
+- Not guaranteed: that `pedantic-sha3` matches FIPS 202 (tested, not proved); the incremental API, `Digest`/`Hasher` and the live (unpatched) crate; side-channel freedom; correctness of Charon, the modified Aeneas, hax macros, rustc; and soundness of Lean v4.31.0 (section 6). Nothing is proved in Lean about ML-KEM or ML-DSA.
+
 ## 4. Property classes covered
 For the Lean work (libcrux-iot SHA-3, C2); F* coverage in parentheses where different.
 | Class | Status | Evidence |
@@ -93,7 +114,13 @@ info: 'libcrux_iot_sha3.Verification.shake128_spec_proof' depends on axioms: [pr
 ```
 The README says all main theorems use only these three axioms, "checked on every build by `#guard_msgs` guards" [C2].
 
-Unverified translators and other trust: rustc; "charon and aeneas (Lean backend) ... Both are trusted"; hax's modifications to Aeneas and `hax-lib` macro expansion; Rust-written core models, their extraction, and backend-native primitives; Lean and F* checkers [C1 trust.md]. hax 0.4 release (Cryspen blog): "Hax 0.4 targets Lean v4.31.0, which has some known soundness bugs. Upgrading the Lean version is planned for the next release." [B5, search excerpt]. comparator not yet run: "This is currently blocked on a Lean upgrade." [B2]
+Unverified translators and other trust: rustc; "charon and aeneas (Lean backend) ... Both are trusted"; hax's modifications to Aeneas and `hax-lib` macro expansion; Rust-written core models, their extraction, and backend-native primitives; Lean and F* checkers [C1 trust.md]. The hax 0.4 release post, §"Trust & assumptions" [B5]:
+- "Hax depends on open-source tools (Cargo, rustc, Lean, F*, Aeneas) that are backed and scrutinized by a community. Hax 0.4 targets Lean v4.31.0, which has some known soundness bugs. Upgrading the Lean version is planned for the next release."
+- "We rely on our modeling of Rust primitives and our core models being faithful to the rustc implementation. We mitigate the risk of mismatch by heavily testing them."
+- "Issues can hide in the overall workflow: flawed specs, excluded code, ignored theorems, etc. We are building tools to surface the TCB for every hax project."
+B5 does not name the soundness bugs. provencrypt pins Lean v4.31.0 [C2], so it is in the version range B5 describes; two v4.31.0-era kernel issues read in full are recorded in REF-L07 section 6 (lean4#14484, #14576; both require a metaprogram calling `addDecl`). Impact on this artefact: unknown; no audit of metaprograms in provencrypt or its dependencies was made. comparator not yet run: "This is currently blocked on a Lean upgrade." [B2]
+
+From B4 (2026-02-12) on libcrux as a whole: "These core libraries, provided by the Rust compiler, are not verified" (SIMD intrinsics for AVX2 and Neon); "we *do not* prove formal guarantees of side-channel resistance for the compiled executable."; "we run formal verification as part of our CI to catch and fix proof regressions. Any PR to the repository must reverify all the code before being merged." 
 
 ## 7. Scale, effort, automation
 - Lean SHA-3 proof: "around 15,700 lines long, excluding comments and blank lines"; "The initial proof development took around a week"; "developed almost entirely by AI, with limited human guidance"; models named: Claude Opus 4.7 and Claude Fable 5 [B2]. The AI "mostly bypassed" `mvcgen` and "opened up the monad ... worked directly with tactics like `rw`, `simp`, `omega`, and `decide`" [B2].
@@ -108,13 +135,15 @@ Unverified translators and other trust: rustc; "charon and aeneas (Lean backend)
 - "Not all top-level API functions have been verified. In particular, we did not verify the incremental API (either buffered or unbuffered), and we did not verify the `Digest`/`Hasher` implementations. Also, secret independence is only ensured through Rust type mechanisms, not through Lean." [B2]
 - "hax does not currently support multi-crate extractions"; "The hax model of Rust core is still missing a few items that we need in our SHA-3 specification. We currently model them ourselves." [B2]
 - "Currently, hax's `hax_lib::implies` predicate does not support lazy evaluation." [B2] (The hax CHANGELOG "Unreleased" section now adds `implies!` with lazy right-hand side and notes "The Rust semantics of `implies` is no longer reversed" [C1].)
-- "Not all the code in libcrux is formally verified yet." "the verification guarantees for libcrux code only extends to the verified modules." [B4]
+- "Not all the code in libcrux is formally verified yet." "Like with HACL*, the verification guarantees for libcrux code only extends to the verified modules." [B4]
+- "We extended Aeneas with preliminary support for those (restricted to pre/post on standalone items for now)." (specs written alongside the code) [B5]
+- "Issues can hide in the overall workflow: flawed specs, excluded code, ignored theorems, etc." [B5]
 - libcrux: "executables compiled from the code in this repository are *not* verified to be side-channel resistant" [C3 Readme.md:65].
 
 ## 9. Independent evidence
-- Kobeissi, "Verification Theatre" (IACR ePrint 2026/192, abstract only): "we present thirteen vulnerabilities that escaped formal verification. Nine reside in unverified code ... Four reside in formally verified specification and proof code: in ML-KEM, a wrong decompression constant, a missing inverse NTT, and a false serialization proof; in ML-DSA, a wrong multiplication specification that renders axiomatized AVX2 proofs unsound." [B6]. An earlier version says the false proof "survives because the build system admits proofs by default" [B7]. These concern the F* development, not the Lean work.
-- Microsoft's SymCrypt paper benchmarks libcrux (hax/F*-verified) as slower than SymCrypt Rust on SHA-3 (about 15%) and AES-GCM (6-12×), and HPKE (5.6× seal) [REF-L07 A1 §8.3]. This is a competitor's measurement.
-- No independent review of the Lean SHA-3 proof was found.
+- Microsoft's SymCrypt paper benchmarks libcrux (hax/F*-verified) as slower than SymCrypt Rust on SHA-3 (about 15%) and AES-GCM (6-12×), and HPKE (5.6× seal) [REF-L07 A1 §8.3, FULL]. This is a competitor's measurement.
+- Author-reported bug history (not independent): B4 says several bugs were recently found in libcrux, "One was in a fallback implementation for a platform-specific intrinsic ... and one in an unverified wrapper around HACL* code", and "So far, no bugs have been found in the verified code".
+- No admissible independent review of the Lean SHA-3 proof or of libcrux's F* proofs was read in full. A third-party paper reporting vulnerabilities in libcrux's verified code was read only at abstract level and is listed in section 15.
 
 ## 10. Reproducibility
 Not built: sandbox disk limit; queued for CI reproducibility job. Exact commands (from C2 and B2):
@@ -144,27 +173,30 @@ Case-specific preconditions: SHA-3 is sequential, deterministic, single-threaded
 | D | "Verification" per hax = "the parts of the Rust code that were extracted satisfy their specification, assuming ..."; libcrux status distinguishes "Lax Checking", "Runtime Safety" (panic-free) and "Correctness" (which can mean "some math properties", ranges, or full spec). | C1, C3 |
 
 ## 13. Conflicts
-1. Lean backend status. hax README (main) labels Lean (via Aeneas) "Recommended for Lean" and the 0.4 blog makes it the main backend [C1, B1]; the third-party catalogue sorryfree.com says "with a Lean backend in development" and "Lean backend not yet complete" (status dated 2026-09-15, before the 0.4 release) [search excerpt, not used as evidence].
-2. Toolchain versions. The hax 0.4 Cryspen blog says it "targets Lean v4.31.0" [B5]; hax `main` proof library is on `v4.35.0` [C1]; provencrypt pins `hax-lean v0.3.30` and Lean `v4.31.0` while its Cargo pins hax 0.4.2 per B2 [C2]. Probably different release lines (`hax-lean` versioning versus `cargo-hax`), not resolved.
-3. Repository homes. hax docs link `github.com/pereq-dev/hax` and the Lean library requires `pereq-dev/aeneas` [C1]; provencrypt uses `cryspen/hax-lean` and `cryspen/aeneas` [C2]; the clone of `cryspen/hax` used here resolves through the same project. libcrux docs and A1 cite `celabshq/libcrux` while `cryspen/libcrux` also resolves [C3]. Organisational rename ("A new name for the next chapter", cryspen.com, 2026-10-22, search excerpt only) not investigated.
+1. Date of the Lean pivot. B5 says the Charon+Aeneas pipeline was "made available in 0.3.7" and became the main Lean backend in 0.4 (B5 dated 2026-10-01; the hax-blog companion post B1 is dated 2026-09-29) [B1, B5]. Earlier, B4 (2026-02-12) describes Lean use only as "experimenting". Consistent in sequence; recorded for dating. A third-party status page describing the Lean backend as incomplete is in section 15 (not evidence).
+2. Toolchain versions. The Cryspen hax 0.4 post (Blaudeau, 2026-10-01) says "Hax 0.4 targets Lean v4.31.0" [B5]; hax `main` proof library is on `v4.35.0` [C1]; provencrypt pins `hax-lean v0.3.30` and Lean `v4.31.0` while its Cargo pins hax 0.4.2 per B2 [C2]. Probably different release lines (`hax-lean` versioning versus `cargo-hax`), not resolved.
+3. Repository homes. hax docs link `github.com/pereq-dev/hax` and the Lean library requires `pereq-dev/aeneas` [C1]; provencrypt uses `cryspen/hax-lean` and `cryspen/aeneas` [C2]; the clone of `cryspen/hax` used here resolves through the same project. libcrux docs and A1 cite `celabshq/libcrux` while `cryspen/libcrux` also resolves [C3]. A possible organisational rename is listed in section 15.
 4. `implies` semantics: B2 (2026-10-12) says `implies` is not lazy; hax CHANGELOG Unreleased adds a lazy `implies!` and says the Rust semantics of `implies` "is no longer reversed" [C1], indicating a bug in the prior version.
+5. Bugs in verified code. B4 (2026-02-12): "So far, no bugs have been found in the verified code". A third-party paper (Kobeissi, ePrint 2026/192) reports four vulnerabilities "in formally verified specification and proof code" of libcrux's F* development, but was read only at abstract level (section 15), so this side of the conflict is not admissible evidence here. Not resolved.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| B1 | hax 0.4: easier to install and configure, and a new Lean backend (hax blog, 2026-09-29), read from `docs/blog/posts/hax-0.4-release.md` in C1 | https://hax.cryspen.com/blog/2026/09/29/hax-04-easier-to-install-and-configure-and-a-new-lean-backend/ | P | FULL | Lean backend now Charon+Aeneas; spec shape; `sorry` stubs; scenarios; tool pinning. |
-| B2 | Developer-driven Rust verification using hax, Lean, and AI (Cryspen, A. Bentkamp, 2026-10-12) | https://cryspen.com/post/sha3-hax-0-4/ | P | FULL | libcrux-iot SHA-3 Lean verification; specs in Rust; AI proofs; limitations. |
-| B3 | provencrypt README / libcrux-iot README via C2 | https://github.com/cryspen/provencrypt | P | FULL | See C2. |
-| B4 | The strengths and limits of formal verification (Cryspen, 2026-10-03) | https://cryspen.com/post/strengths-and-limitations/ | P | search excerpt | Libcrux verified modules only; experimenting with Lean instead of F*. |
-| B5 | Hax 0.4! (Cryspen, 2026-10-03) | https://cryspen.com/post/hax_0_4_release/ | P | search excerpt | Pivot to Charon+Aeneas in early 2026; Lean v4.31.0 known soundness bugs. |
-| B6 | Verification Theatre: False Assurance in Formally Verified Cryptographic Libraries (Kobeissi, ePrint 2026/192) | https://eprint.iacr.org/2026/192 | S | abstract only | 13 vulnerabilities in libcrux/hpke-rs, 4 inside verified F* spec/proof code. |
-| B7 | Semantic Scholar entry for B6 (earlier version abstract) | https://www.semanticscholar.org/paper/Verification-Theatre:-False-Assurance-in-Formally-Kobeissi/ddcd38802e39467fca4814dbc0d703414cdf91e2 | S | abstract only | Earlier abstract: false serialization proof survives as build admits proofs by default. |
-| C1 | cryspen/hax @ 4d52f78 (README, CHANGELOG, docs/manual/faq/trust.md, docs/manual/lean/*, hax-lib/proof-libs/lean) | https://github.com/cryspen/hax | P | CODE | Backends table, TCB statement, Lean library hygiene. |
-| C2 | cryspen/provencrypt @ 9f7380e (sha3/spec, sha3/libcrux-iot-5df472a) | https://github.com/cryspen/provencrypt | P | CODE | Contracts, extracted specs, proofs, axiom guards, patches, lakefile. |
-| C3 | cryspen/libcrux @ 1f9c898 (Readme.md, libcrux-ml-kem, libcrux-ml-dsa, specs/sha3, proofs/fstar) | https://github.com/cryspen/libcrux | P | CODE | F* status table; Lean content limited to a spec extraction. |
+| B1 | hax 0.4: easier to install and configure, and a new Lean backend (hax blog, 2026-09-29), read from `docs/blog/posts/hax-0.4-release.md` in C1 | https://hax.cryspen.com/blog/2026/09/29/hax-04-easier-to-install-and-configure-and-a-new-lean-backend/ | [P] | [FULL] | Lean backend now Charon+Aeneas; spec shape; `sorry` stubs; scenarios; tool pinning. |
+| B2 | Developer-driven Rust verification using hax, Lean, and AI (Cryspen, A. Bentkamp, 2026-10-12) | https://cryspen.com/post/sha3-hax-0-4/ | [P] | [FULL] | libcrux-iot SHA-3 Lean verification; specs in Rust; AI proofs; limitations. |
+| B3 | provencrypt README / libcrux-iot README via C2 | https://github.com/cryspen/provencrypt | [P] | [FULL] | README files read in full at the C2 commit; see C2. |
+| B4 | The strengths and limits of formal verification (Cryspen blog, Karthikeyan Bhargavan, 2026-02-12) | https://cryspen.com/post/strengths-and-limitations/ | [P] | [FULL] | Whole page read in Phase 1c. HACL* and libcrux guarantees; verification limited to verified modules; Lean experiments; no side-channel guarantee for executables; CI re-verification; author-reported bug history. Review S36. |
+| B5 | Hax 0.4! (Cryspen blog, Clement Blaudeau, 2026-10-01) | https://cryspen.com/post/hax_0_4_release/ | [P] | [FULL] | Whole page read in Phase 1c. Pivot to Charon+Aeneas in early 2026; mutable-borrow support (OpenMLS `node_mut`); Rust-written core models; `mvcgen`; trust section incl. Lean v4.31.0 known soundness bugs. Review S37. |
+| C1 | cryspen/hax @ 4d52f78 (README, CHANGELOG, docs/manual/faq/trust.md, docs/manual/lean/*, hax-lib/proof-libs/lean) | https://github.com/cryspen/hax | [P] | [CODE] | Backends table, TCB statement, Lean library hygiene. |
+| C2 | cryspen/provencrypt @ 9f7380e (sha3/spec, sha3/libcrux-iot-5df472a) | https://github.com/cryspen/provencrypt | [P] | [CODE] | Contracts, extracted specs, proofs, axiom guards, patches, lakefile. |
+| C3 | cryspen/libcrux @ 1f9c898 (Readme.md, libcrux-ml-kem, libcrux-ml-dsa, specs/sha3, proofs/fstar) | https://github.com/cryspen/libcrux | [P] | [CODE] | F* status table; Lean content limited to a spec extraction. |
 
 ## 15. Unverified leads (excluded from evidence)
-- CatCrypt: "From Rust to Cryptographic Security in Lean" (ePrint 2026/604): claims an "end-to-end pipeline from Rust reference implementations to security proofs in the computational model in Lean", Rust-to-Lean "done using the Hax tool", with ML-KEM IND-CCA and binding properties. Search excerpt only: https://eprint.iacr.asia/2026/604.pdf
+- B6 (moved in Phase 1c, abstract only): Kobeissi, "Verification Theatre: False Assurance in Formally Verified Cryptographic Libraries", IACR ePrint 2026/192, https://eprint.iacr.org/2026/192. Abstract: "we present thirteen vulnerabilities that escaped formal verification. Nine reside in unverified code ... Four reside in formally verified specification and proof code: in ML-KEM, a wrong decompression constant, a missing inverse NTT, and a false serialization proof; in ML-DSA, a wrong multiplication specification that renders axiomatized AVX2 proofs unsound." Concerns the F* development, not the Lean work. Conflicts with B4 (section 13, item 5).
+- B7 (moved in Phase 1c, abstract only): Semantic Scholar entry for an earlier version of B6, https://www.semanticscholar.org/paper/Verification-Theatre:-False-Assurance-in-Formally-Kobeissi/ddcd38802e39467fca4814dbc0d703414cdf91e2. Earlier abstract says the false serialization proof "survives because the build system admits proofs by default".
+- sorryfree.com catalogue entry for hax (status dated 2026-09-15): "with a Lean backend in development", "Lean backend not yet complete". Seen only in a search result.
+- Cryspen post "A new name for the next chapter" (cryspen.com, 2026-10-22), possibly an organisational rename (cf. `celabshq`). Seen only in a search result.
+- CatCrypt: "From Rust to Cryptographic Security in Lean" (ePrint 2026/604): claims an "end-to-end pipeline from Rust reference implementations to security proofs in the computational model in Lean", Rust-to-Lean "done using the Hax tool", with ML-KEM IND-CCA and binding properties. Seen only in a search result: https://eprint.iacr.asia/2026/604.pdf
 - `cryspen/libcrux-proofs` repository (search result; appears to contain `proofs/fstar`); not inspected.
 - `cryspen/hax-lean` ("Hax Lean library (automatically generated from cryspen/hax)") and the private `cryspen/hax-evit`.
 - Cryspen ML-KEM Lean verification in progress (B2 mention); no artefact located.

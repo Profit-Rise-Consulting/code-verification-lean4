@@ -1,1 +1,52 @@
-{"id":"REF-L07","name":"Aeneas (Rust to Lean via Charon) and Microsoft SymCrypt Lean proofs","subject":"SHA-3/SHAKE (FIPS 202) and ML-KEM (FIPS 203) Rust implementations in SymCrypt; paper also reports AES-GCM, SHA-2, HMAC/HKDF, ML-DSA, FrodoKEM, HPKE (experimental)","kind":"lean","tool":"Charon + Aeneas + Lean 4 v4.31.0","org":"Microsoft Research, Inria (with Google, CMU, ENS Paris-Saclay authors)","repo":"https://github.com/microsoft/SymCrypt/tree/feature/verifiedcrypto ; https://github.com/AeneasVerif/aeneas","commit":"SymCrypt c2e575ace0ea4b6b7a4184c1f19b81d1d5b2b5be (2026-07-12); Aeneas c5eb4a28cef65e0aa27743105308243e535a2a2b (pinned d71d2e3f by SymCrypt)","toolchain":"leanprover/lean4:v4.31.0 (SymCrypt); v4.35.0 (Aeneas main)","maturity":"production","properties":{"functional":"yes","safety":"partial","liveness":"partial","refinement":"yes","symbolic_security":"no","computational_security":"no","parsing":"partial","constant_time":"no"},"impl_link":"extraction","impl_language":"Rust (safe subset)","tcb":{"sorry":0,"axiom":90,"native_decide":76,"unverified_translator":"Charon (MIR to LLBC) and Aeneas (LLBC to Lean); LLBC soundness proofs are pen-and-paper, Rocq mechanisation partial"},"loc":{"spec":2827,"proof":176465,"impl":16680},"built":"no","pattern":"Extrinsic refinement proof of extracted safe-Rust model against executable standard-aligned Lean spec, AI-agent proofs, kernel-checked","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":4}
+{
+ "id": "REF-L07",
+ "name": "Aeneas (Rust to Lean via Charon) and Microsoft SymCrypt Lean proofs",
+ "subject": "SHA-3/SHAKE (FIPS 202) and ML-KEM (FIPS 203) Rust implementations in SymCrypt; paper also reports AES-GCM, SHA-2, HMAC/HKDF, ML-DSA, FrodoKEM, HPKE (experimental)",
+ "kind": "lean",
+ "tool": "Charon + Aeneas + Lean 4 v4.31.0",
+ "org": "Microsoft Research, Inria (with Google, CMU, ENS Paris-Saclay authors)",
+ "repo": "https://github.com/microsoft/SymCrypt/tree/feature/verifiedcrypto ; https://github.com/AeneasVerif/aeneas",
+ "commit": "SymCrypt c2e575ace0ea4b6b7a4184c1f19b81d1d5b2b5be (2026-07-12); Aeneas pinned d71d2e3f2cb763f7faf15ab606ac9cf32da8dead (2026-07-11, inspected for Result/spec semantics); Aeneas main c5eb4a28cef65e0aa27743105308243e535a2a2b (not used by SymCrypt)",
+ "toolchain": "leanprover/lean4:v4.31.0 (SymCrypt and pinned Aeneas d71d2e3f); v4.35.0 (Aeneas main)",
+ "maturity": "production",
+ "ai_provenance": "author-reported",
+ "properties": {
+  "functional": "proved",
+  "safety": "partial",
+  "liveness": "partial",
+  "refinement": "proved",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "partial",
+  "constant_time": "no"
+ },
+ "impl_link": "extraction",
+ "impl_links": [
+  "extraction",
+  "differential-testing"
+ ],
+ "impl_language": "Rust (safe subset)",
+ "evidence_level": "static-inspected",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 90,
+  "native_decide": 76,
+  "unverified_translator": "Charon (MIR to LLBC) and Aeneas (LLBC to Lean); LLBC soundness proofs are pen-and-paper, Rocq mechanisation partial"
+ },
+ "loc": {
+  "spec": 2827,
+  "proof": 176465,
+  "impl": 16680
+ },
+ "built": "no",
+ "pattern": "Extrinsic refinement proof of extracted safe-Rust model against executable standard-aligned Lean spec, AI-agent proofs, kernel-checked",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 6
+}

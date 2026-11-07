@@ -11,7 +11,9 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Primary URLs | https://homes.cs.washington.edu/~mernst/pubs/raft-proof-cpp2016.pdf ; https://homes.cs.washington.edu/~mernst/pubs/verify-distsystem-pldi2015.pdf ; https://github.com/uwplse/verdi-raft |
 | Repo, commit SHA, last commit date, licence | uwplse/verdi-raft `a3375e867326a82225e724cc1a7b4758b029376f`, 2023-12-08, BSD 2-Clause. uwplse/verdi `7e1641b758d8f0032aa7de63620bc115330e0a6b`, 2026-01-27, BSD 2-Clause. |
 | Tool and version | Coq (opam constraint `"coq" {>= "8.14"}`, "Compatible Coq versions: 8.14 or later"); deps `coq-verdi`, `coq-struct-tact`, `coq-cheerios` all `{= "dev"}`; extraction to OCaml (4.02.3 or later) with `verdi-runtime` shim [C03-S3]. |
-| Maturity | Research; not production. Repo last commit 2023-12. Not AI-generated. |
+| Maturity | Research; not production. Repo last commit 2023-12.|
+| AI provenance | none-found. Basis: GitHub API, checked 2026-11-07. uwplse/verdi-raft and uwplse/verdi have no AGENTS.md/CLAUDE.md/.cursor/.claude files and 0/100 recent commits with AI co-author trailers. |
+| Evidence level | static-inspected (Coq sources read at pinned commit; not rebuilt); performance: author-reported |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "We present the first formal verification of state machine safety for the Raft consensus protocol, a critical component of many distributed systems. We connected our proof to previous work to establish an end-to-end guarantee that our implementation provides linearizable state machine replication. This proof required iteratively discovering and proving 90 system invariants. Our verified implementation is extracted to OCaml and runs on real networks." [C03-S1]
@@ -35,6 +37,49 @@ Top-level theorem (`theories/RaftProofs/EndToEndLinearizability.v:471-478`, comm
 i.e. every trace of Raft under the crash/failure network semantics, with well-formed inputs, is equivalent to some linearization `l` that the single-node state machine can produce. Section `Context`s: `orig_base_params`, `one_node_params`, `raft_params` (the replicated application is generic). Concrete instantiation for vard: `theories/Systems/VarDRaftCorrect.v:21` `Theorem vard_raft_linearizable`. Key invariant: `theories/RaftProofs/StateMachineSafetyProof.v:3134` `Theorem state_machine_safety_invariant`. A script `script/assumptions.v` runs `Print Assumptions raft_linearizable.` [C03-S3].
 
 Environment/adversary: "machines may crash at arbitrary points and networks may reorder, drop, or duplicate packets" [C03-S2]; "none of Verdi's network semantics currently capture Byzantine fault models" [C03-S2].
+
+## 3a. Predicate semantics
+
+Headline theorem, `theories/Raft/EndToEndLinearizability.v:471-478` @ a3375e8 [C03-S3]:
+```
+  Theorem raft_linearizable :
+    forall failed net tr,
+      input_correct tr ->
+      step_failure_star (params := failure_params) step_failure_init (failed, net) tr ->
+      exists l tr1 st,
+        equivalent _ (import tr) l /\
+        exported (get_input tr) (get_output tr) l tr1 /\
+        step_1_star init st tr1.
+```
+(Same statement as `raft_linearizable'` in `theories/Raft/RaftLinearizableProofs.v:1056-1063`.)
+
+Conclusion predicates:
+- `equivalent`, `theories/Raft/Linearizability.v:257-261`:
+```
+  Definition equivalent (l : list op) (ir : list IR) : Prop :=
+    good_trace ir /\
+    exists ir',
+      acknowledge_all_ops l ir' /\
+      IR_equivalent ir' ir.
+```
+  Here `IR` is `IRI`/`IRO`/`IRU` (invoke / return / unacknowledged, lines 17-20); `acknowledge_all_ops` (line 38 onward) adds `IRU` for operations without a response; `IR_equivalent` (lines 119-127) allows only swaps that preserve real-time order; `good_trace` is at lines 249-255.
+- `exported`, `RaftLinearizableProofs.v:43-54`:
+```
+  | exported_IO : forall k i o l tr,
+                    env_i k = Some i ->
+                    env_o k = Some o ->
+                    exported env_i env_o l tr ->
+                    exported env_i env_o (IRI k :: IRO k :: l) ((i, o) :: tr)
+  | exported_IU : forall k i o l tr,
+                    env_i k = Some i ->
+                    exported env_i env_o l tr ->
+                    exported env_i env_o (IRI k :: IRU k :: l) ((i, o) :: tr).
+```
+- `step_1_star init st tr1`: the single-node (unreplicated) state machine, run from `init`, produces trace `tr1`.
+
+Strongest premises: `input_correct tr` (`RaftLinearizableProofs.v:994-998`): any two inputs with the same client and request id are the same input. `step_failure_star`: the execution is in Verdi's network semantics with crash failures (packets may be dropped, duplicated and reordered; a node can crash and restart per `failure_params`) [C03-S2].
+
+Plain language. Guaranteed: every trace of the replicated system under that network/failure model can be reordered, respecting real-time order, into a sequential execution of the single-node state machine. For acknowledged operations, the outputs match the clients' observed outputs. For unacknowledged operations (`exported_IU`), the output `o` is unconstrained. Not guaranteed: that any request is ever answered (no liveness); behaviour if clients reuse an id for a different input (excluded by `input_correct`); and correctness of the OCaml shim, extraction, serialisation or the OS network stack (trusted, §6). Byzantine faults are outside the model.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -102,10 +147,10 @@ Pattern: "implementation as proof-assistant functions + network semantics as ind
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| C03-S1 | Planning for Change in a Formal Verification of the Raft Consensus Protocol (CPP 2016) | https://homes.cs.washington.edu/~mernst/pubs/raft-proof-cpp2016.pdf | P | FULL | Raft state machine safety proof in Coq, 90 invariants, 50K proof lines, proof-engineering methodology; liveness future work. |
-| C03-S2 | Verdi: A Framework for Implementing and Formally Verifying Distributed Systems (PLDI 2015) | https://homes.cs.washington.edu/~mernst/pubs/verify-distsystem-pldi2015.pdf | P | FULL | Framework: network semantics, verified system transformers, extraction to OCaml; TCB list; vard vs etcd performance. |
-| C03-S3 | uwplse/verdi-raft @ a3375e8 (and uwplse/verdi @ 7e1641b) | https://github.com/uwplse/verdi-raft | P | CODE | Coq sources; `raft_linearizable` theorem; no Admitted/Axiom; extraction files and OCaml shim. |
-| C03-S4 | An Empirical Study on the Correctness of Formally Verified Distributed Systems (EuroSys 2017) | https://www.cs.purdue.edu/homes/pfonseca/papers/eurosys2017-dsbugs.pdf | P | FULL | Independent study; 16 bugs across IronFleet, Verdi, Chapar, all in specs, tooling or shim; Verdi bugs V1-V8. |
+| C03-S1 | Planning for Change in a Formal Verification of the Raft Consensus Protocol (CPP 2016) | https://homes.cs.washington.edu/~mernst/pubs/raft-proof-cpp2016.pdf | [P] | [FULL] | Raft state machine safety proof in Coq, 90 invariants, 50K proof lines, proof-engineering methodology; liveness future work. |
+| C03-S2 | Verdi: A Framework for Implementing and Formally Verifying Distributed Systems (PLDI 2015) | https://homes.cs.washington.edu/~mernst/pubs/verify-distsystem-pldi2015.pdf | [P] | [FULL] | Framework: network semantics, verified system transformers, extraction to OCaml; TCB list; vard vs etcd performance. |
+| C03-S3 | uwplse/verdi-raft @ a3375e8 (and uwplse/verdi @ 7e1641b) | https://github.com/uwplse/verdi-raft | [P] | [CODE] | Coq sources; `raft_linearizable` theorem; no Admitted/Axiom; extraction files and OCaml shim. |
+| C03-S4 | An Empirical Study on the Correctness of Formally Verified Distributed Systems (EuroSys 2017) | https://www.cs.purdue.edu/homes/pfonseca/papers/eurosys2017-dsbugs.pdf | [P] | [FULL] | Independent study; 16 bugs across IronFleet, Verdi, Chapar, all in specs, tooling or shim; Verdi bugs V1-V8. |
 
 ## 15. Unverified leads (excluded from evidence)
 - Later Verdi-related work (e.g. Disel, liveness extensions) not read; `coq-inf-seq-ext` dependency of Verdi suggests infinite-sequence reasoning infrastructure exists; not examined.

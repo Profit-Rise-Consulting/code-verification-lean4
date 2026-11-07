@@ -11,7 +11,7 @@ Access date for all sources: 2026-11-07. Source IDs refer to section 14.
 | Primary URLs | https://github.com/verse-lab/Lentil ; docs `docs/Lentil-reference.md`, `docs/Lentil-cheatsheet.md`, `docs/Lentil-agent-appendix.md` |
 | Repo, commit SHA, last commit date, licence | verse-lab/Lentil @ `1ddf1fc16138371cae6687db2698770533c4058a`, 2026-11-06 01:09:54 +0800, Apache-2.0. Public history is a single commit. |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.35.0`; no Mathlib (`RelationalRanking/Rules.lean` re-proves needed list lemmas in a "TheoremsFromMathlib" section). |
-| Maturity | Research library in active use as a Veil dependency (Veil pins the same commit `1ddf1fc`). Ships an "appendix for AI agents" with instructions "when an AI agent writes Lentil proofs" (`docs/Lentil-agent-appendix.md:1-4`), indicating the authors expect AI-written proofs; no evidence was found that the library code itself is AI-generated (single squashed commit prevents commit-pattern analysis). |
+| Maturity | Research library in active use as a Veil dependency (Veil pins the same commit `1ddf1fc`). Ships an "appendix for AI agents" with instructions "when an AI agent writes Lentil proofs" (`docs/Lentil-agent-appendix.md:1-4`), indicating the authors expect AI-written proofs. AI provenance: `agent-config-present`. This does not show that the library code is AI-generated, and the single squashed commit prevents commit-pattern analysis. Evidence level: `static-inspected`. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - README (S1): "Lentil is a proof infrastructure for linear temporal logic in Lean 4. It formalizes the semantics of LTL, provides rules and a dedicated proof mode to conduct proofs in LTL as an object logic." and "The definitions of the embedding are initially ported from [`coq-tla`]... The design of the proof mode is partly inspired by [Iris Proof Mode]."
@@ -61,18 +61,42 @@ Applications: `LentilApplications/RelationalRanking/Rules.lean` (730 lines), tit
 
 Protocol use (via Veil, REF-L04): `veil/Examples/Liveness/TLA/Consensus.lean:47` proves `𝒲ℱ choose → ◇ ⌜ someChosen ⌝` for a one-step consensus abstraction with `tapply wf1_original`; S3 gives the complete script and notes "for now we model fairness by stating it directly as a premise of the temporal property."
 
+## 3a. Predicate semantics
+The headline theorems are the proof rules, such as `wf1` (`Lentil/Rules/WF.lean:46-50`, S2 @ 1ddf1fc):
+```lean
+theorem wf1 {p q : pred σ} (next a : action σ) :
+  ((p ∧ ⟨next⟩ ⇒ ◯ p ∨ ◯ q) ∧
+   (p ∧ ⟨next⟩ ∧ ⟨a⟩ ⇒ ◯ q) ∧
+   (p ⇒ Enabled a ∨ q) ∧
+   (□ ⟨next⟩ ∧ 𝒲ℱ a)) |-tl- (p ↝ q)
+```
+Definitions of the conclusion predicate (`Lentil/Basic.lean:24-25,65-66,77-80,199-201`):
+```lean
+def exec (σ : Type u) := Nat → σ
+def pred (σ : Type u) := exec σ → Nat → Prop
+def always {α : Type u} (p : pred α) : pred α := fun e i => ∀ k, p e (i + k)
+def eventually {α : Type u} (p : pred α) : pred α := fun e i => ∃ k, p e (i + k)
+def pred_implies {α : Type u} (p q : pred α) : Prop := ∀ (σ : exec α) i, p σ i → q σ i
+def valid {α : Type u} (p : pred α) : Prop := ∀ (σ : exec α) i, p σ i
+def Lentil.leads_to {α : Type u} (p q : Lentil.pred α) : Lentil.pred α := [tlfml| □ (p → ◇ q) ]
+def Lentil.weak_fairness {α : Type u} (a : action α) : pred α := [tlfml| □ ((□ (Enabled a)) → ◇ ⟨a⟩)]
+```
+`|-tl-` denotes `pred_implies` (notation, `Lentil/Basic.lean:212-213`).
+
+Plain language. `wf1` says the following for every infinite state sequence and every position in it. If every `next` step preserves `p` or reaches `q`; if every `a` step from `p` reaches `q`; if `p` implies that `a` is enabled or `q` holds; and if the sequence is a `next` behaviour that is weakly fair to `a`, then from that position `p` always leads to `q`. What is guaranteed: the rule is sound over the shallow embedding, that is, over Lean functions `Nat → σ`. What is not guaranteed: that any concrete system satisfies the premises, in particular fairness, which is a hypothesis and never derived. Executions are infinite by construction, so terminating systems need stuttering. No link to running code exists.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
 | Functional correctness | no | Library only. |
 | Safety invariant | partial | `always_induction` and `□` reasoning; Veil safety uses its own VC pipeline. |
-| Liveness | yes (as infrastructure) / partial (as applied) | WF1, SF1, leads-to rules proved sound; applied to small Veil examples only (S2, S3). |
+| Liveness | proved (as library rules) / partial (as applied) | WF1, SF1, leads-to rules proved sound; applied to small Veil examples only (S2, S3). |
 | Refinement | no | No refinement mappings or stuttering-invariance theorems found; S3 calls refinement "orthogonal". |
 | Symbolic security | no | |
 | Computational security | no | |
 | Parsing | no | |
 | Constant-time | no | |
-| Other | yes | Mechanised validation of relational-ranking liveness rules (`LentilApplications`). |
+| Other | proved | Mechanised validation of relational-ranking liveness rules (`LentilApplications`). |
 
 ## 5. Link to implementation code
 None. Lentil reasons about abstract traces `Nat → σ`; it is consumed by Veil models, which are themselves not linked to external implementations (REF-L04 section 5).
@@ -122,10 +146,10 @@ None found between sources. Note: S3 says Lentil is "a small Lean library", whil
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | verse-lab/Lentil README and docs | https://github.com/verse-lab/Lentil | P | FULL | States purpose, coq-tla origin, Iris-inspired proof mode; docs include an AI-agent appendix. |
-| S2 | verse-lab/Lentil source @ 1ddf1fc | https://github.com/verse-lab/Lentil | P | CODE | Source of all definitions, theorem statements, counts. |
-| S3 | Liveness Proofs in Veil, Part I: The First Step (Zhao, Sergey, 2026-06-24) | https://proofsandintuitions.net/2026/06/24/liveness-proofs-in-veil-part-1/ | P | FULL | End-to-end WF1 liveness proof in Veil using Lentil; states fairness-as-premise and refinement scope limits. |
-| S4 | veil `Examples/Liveness/TLA/Consensus.lean` @ 5744772 | https://github.com/verse-lab/veil | P | CODE | Shows Lentil used in Veil, `veil.smt.trust false`, axiom audit. |
+| S1 | verse-lab/Lentil README and docs | https://github.com/verse-lab/Lentil | P | [FULL] README.md and docs/ | States purpose, coq-tla origin, Iris-inspired proof mode; docs include an AI-agent appendix. |
+| S2 | verse-lab/Lentil source @ 1ddf1fc | https://github.com/verse-lab/Lentil | P | [CODE] @ 1ddf1fc | Source of all definitions, theorem statements, counts. |
+| S3 | Liveness Proofs in Veil, Part I: The First Step (Zhao, Sergey, 2026-06-24) | https://proofsandintuitions.net/2026/06/24/liveness-proofs-in-veil-part-1/ | P | [FULL] | End-to-end WF1 liveness proof in Veil using Lentil; states fairness-as-premise and refinement scope limits. |
+| S4 | veil `Examples/Liveness/TLA/Consensus.lean` @ 5744772 | https://github.com/verse-lab/veil | P | [CODE] @ 5744772 | Shows Lentil used in Veil, `veil.smt.trust false`, axiom audit. |
 
 ## 15. Unverified leads (excluded from evidence)
 - LeanLTL: A Unifying Framework for Linear Temporal Logics in Lean (ITP 2025), https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ITP.2025.37 (search result only).

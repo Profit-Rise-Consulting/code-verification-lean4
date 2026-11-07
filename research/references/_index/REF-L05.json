@@ -1,1 +1,50 @@
-{"id":"REF-L05","name":"Lentil","subject":"LTL/TLA shallow embedding, WF1/SF1/leads-to rules and temporal proof mode in Lean 4; used by Veil for liveness","kind":"lean","tool":"Lean 4 v4.35.0 library","org":"VERSE Lab, NUS","repo":"https://github.com/verse-lab/Lentil","commit":"1ddf1fc16138371cae6687db2698770533c4058a","toolchain":"leanprover/lean4:v4.35.0","maturity":"research","properties":{"functional":"no","safety":"partial","liveness":"yes","refinement":"no","symbolic_security":"no","computational_security":"no","parsing":"no","constant_time":"no"},"impl_link":"none","impl_language":"","tcb":{"sorry":1,"axiom":0,"native_decide":0,"unverified_translator":"none; the one sorry hit is in a comment"},"loc":{"spec":null,"proof":7423,"impl":null},"built":"failed","pattern":"Shallow TLA/LTL embedding over Nat -> state traces with fairness rules proved as theorems and an Iris-style temporal proof mode reducing liveness to one-step VCs","subclaims":["H1","H2","H3","H4","D"],"full_read_sources":2}
+{
+ "id": "REF-L05",
+ "name": "Lentil",
+ "subject": "LTL/TLA shallow embedding, WF1/SF1/leads-to rules and temporal proof mode in Lean 4; used by Veil for liveness",
+ "kind": "lean",
+ "tool": "Lean 4 v4.35.0 library",
+ "org": "VERSE Lab, NUS",
+ "repo": "https://github.com/verse-lab/Lentil",
+ "commit": "1ddf1fc16138371cae6687db2698770533c4058a",
+ "toolchain": "leanprover/lean4:v4.35.0",
+ "maturity": "research",
+ "ai_provenance": "agent-config-present",
+ "properties": {
+  "functional": "no",
+  "safety": "partial",
+  "liveness": "proved",
+  "refinement": "no",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "no",
+  "constant_time": "no"
+ },
+ "impl_link": "none",
+ "impl_links": [
+  "none"
+ ],
+ "impl_language": "",
+ "evidence_level": "static-inspected",
+ "tcb": {
+  "sorry": 1,
+  "axiom": 0,
+  "native_decide": 0,
+  "unverified_translator": "none; the one sorry hit is in a comment"
+ },
+ "loc": {
+  "spec": null,
+  "proof": 7423,
+  "impl": null
+ },
+ "built": "failed",
+ "pattern": "Shallow TLA/LTL embedding over Nat -> state traces with fairness rules proved as theorems and an Iris-style temporal proof mode reducing liveness to one-step VCs",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "D"
+ ],
+ "full_read_sources": 2
+}

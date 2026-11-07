@@ -1,5 +1,7 @@
 # REF-L13: LeanMqtt (verified MQTT 5.0 packet parser/serializer in Lean 4)
 
+Source depth counts (section 14): 1 [FULL], 1 [SECT], 1 [CODE]. Evidence level: static-inspected (not built). AI provenance: none-found.
+
 ## 1. Identity
 | Field | Value |
 |---|---|
@@ -10,6 +12,7 @@
 | Repo, commit SHA, last commit date, licence | edusporto/lean-mqtt @ `af23e7bea58dace8e361f6d77d69ce6d7254105c`, 2026-09-21T16:51:40-03:00, Apache-2.0 (`LICENSE`) |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.34.0`; no Mathlib dependency (manifest has no external Lean packages for the main build; `docbuild/` adds doc-gen4) |
 | Maturity (research prototype / production / abandoned / AI-generated) | Research prototype. README: "A work-in-progress formally verified parser and serializer". Single committer in the shallow history (Eduardo Sandalo Porto). No README or commit statement of AI generation; the paper names LLM pipelines only as future work. Not flagged as AI-generated. |
+| AI provenance | none-found (no agent configuration files, no AI commit trailers in the shallow history, no author statement of AI use) |
 
 ## 2. Claim as stated by the authors (verbatim)
 - Abstract (S1): "we present a case study in implementing and formally verifying a parser for the MQTT 5.0 protocol using Lean 4. Our approach includes three components: (I) correct-by-construction modeling of the packet format, leveraging dependent types to preclude invalid packets and encode data-dependent structural variations; (II) a layered, proof-carrying parser library utilizing state monads to process inputs whose exact layout depends on runtime parsed values; and (III) formal verification of parser completeness (roundtrip) and soundness (reconstruction) with respect to a serializer."
@@ -66,6 +69,15 @@ theorem Packet.reconstruct {p : Packet} {input rest : List UInt8} :
 The primitives (`UInt`, `VarInt`, `Str`, `SizedList`, `OptType`, `PredType`, `ConstVal`) each carry roundtrip and reconstruct theorems. Example: `LeanMqtt/Primitives/VarInt/Proofs.lean:10` `VarInt.roundtrip`, `:120` `VarInt.reconstruct`. `VarInt` is `Fin 268_435_456` (`VarInt/Basic.lean:23,29`), and the parser rejects non-minimal encodings (`VarInt/Basic.lean:63-65`, comment "The spec forbids non-minimal encodings (MQTT-1.5.5-1)").
 
 `Main.lean` only prints "If you're seeing this, the theorems were proven succesfully!". README: the binary "currently does not run the parser".
+
+## 3a. Predicate semantics
+Headline theorems: `Packet.roundtrip` and `Packet.reconstruct` (`LeanMqtt/Packets/Proofs.lean:50,55`), and their `RawPacket` versions (`:9,17`), quoted in §3.
+- `Parser` (`LeanMqtt/Core/Parser/Basic.lean:18`, verbatim): `abbrev Parser (α : Type) := StateT (List UInt8) Option α`. So `p.run input = some (a, rest)` means that running the state transformer on `input` succeeds, returns `a` and leaves the suffix `rest` unconsumed. `none` is the only failure mode (the module doc says `Except` errors are future work, `:15-16`).
+- `Packet` (`LeanMqtt/Packets/Basic.lean:52-60`) is `PredType RawPacket PacketPred`, where `PacketPred p = [ensure! p.vh.byteSize + p.pl.byteSize = p.fh.remaining_len.val]`.
+- `PredType` (`LeanMqtt/Primitives/PredType/Basic.lean:50-51`, verbatim): `abbrev PredType (α : Type) (gen : α → List Condition) : Type := { val : α // AllHold gen val }`, with `abbrev AllHold ... := ∀ c ∈ gen val, c.prop` (`:36-37`). Its parser (`:61-66`) parses an `α` and then fails unless `AllHold gen val` holds.
+- Premises: `roundtrip` has none beyond a value `p` and an arbitrary suffix `rest`. `reconstruct` assumes only that the parse succeeded.
+- What is guaranteed: for every value of the Lean `Packet` type, parsing its serialization (followed by any bytes) returns exactly that packet and the unread suffix. Any successful parse consumed exactly the serialization of the returned packet. This makes the parser a left inverse of the serializer and makes the encoding unambiguous.
+- What is not guaranteed: that the Lean types or the serializer match the MQTT 5.0 prose (both are the authors' encoding); anything about payloads (`Payload` is an empty stub, so its parser consumes nothing); behaviour on malformed input beyond returning `none`; any client/broker behaviour.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -125,9 +137,9 @@ Pattern: a "lawful codec" (parser/serializer pair with roundtrip and reconstruct
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | Porto and de Melo, "Foundations for Formally Verified Network Protocol Parsers in Lean 4: A Case Study with MQTT", SBLP 2026 (paper.pdf in repo), accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt/blob/main/paper.pdf | P | FULL | Short paper describing the dependent-type packet model, parser combinator library and roundtrip/reconstruction proofs for MQTT 5.0 headers. 34/68 syntax conformance statements; payloads are future work. |
-| S2 | edusporto/lean-mqtt source @ af23e7b, accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt | P | CODE | 4,751 Lean lines, 151 theorems, 0 sorry/axiom; `LawfulCodec` class with `RawPacket`/`Packet` roundtrip and reconstruct; payload stub. |
-| S3 | lean-mqtt `conformance.md` @ af23e7b, accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt/blob/main/conformance.md | P | FULL | Authors' classification of MQTT 5.0 Appendix B statements into syntax, semantics and transport, plus the list of 34 implemented syntax statements. |
+| S1 | Porto and de Melo, "Foundations for Formally Verified Network Protocol Parsers in Lean 4: A Case Study with MQTT", SBLP 2026 (paper.pdf in repo), accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt/blob/main/paper.pdf | P | [FULL] | Short paper describing the dependent-type packet model, parser combinator library and roundtrip/reconstruction proofs for MQTT 5.0 headers. 34/68 syntax conformance statements; payloads are future work. |
+| S2 | edusporto/lean-mqtt source @ af23e7b, accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt | P | [CODE] | 4,751 Lean lines, 151 theorems, 0 sorry/axiom; `LawfulCodec` class with `RawPacket`/`Packet` roundtrip and reconstruct; payload stub. |
+| S3 | lean-mqtt `conformance.md` @ af23e7b, accessed 2026-11-07 | https://github.com/edusporto/lean-mqtt/blob/main/conformance.md | P | [SECT] | Sections read: header list of implemented statements (`conformance.md:5-38`) and the syntax/semantics/transport classification. Quote: "Before the list, we consider the following syntax-related statements currently implemented:". Authors' classification of MQTT 5.0 Appendix B statements into syntax, semantics and transport, plus the list of 34 implemented syntax statements. |
 
 ## 15. Unverified leads (excluded from evidence)
 - SBC Open Library landing page for the paper: https://sol.sbc.org.br/index.php/sblp/article/view/46205. Only page metadata and the abstract were read (fetch truncated).

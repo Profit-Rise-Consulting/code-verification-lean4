@@ -11,7 +11,9 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Primary URLs | https://www.microsoft.com/en-us/research/wp-content/uploads/2015/10/ironfleet.pdf ; https://www.microsoft.com/en-us/research/wp-content/uploads/2024/09/Verus.pdf ; https://www.usenix.org/system/files/osdi24-sun-xudong.pdf |
 | Repo, commit SHA, last commit date, licence | microsoft/Ironclad (`ironfleet/`) `2fe4dcdc323b92e93f759cc3e373521366b7f691`, 2023-06-02, MIT (README: "IronFleet is licensed under the MIT license"). verus-lang/verified-ironkv `7e35ed097c4089b9fbda483ea2629a0033f4d874`, 2026-09-21, MIT. verus-lang/verus `dc1b61c7affc1f947ce0724134bec33656ae0da0`, 2026-11-06, MIT. |
 | Tool and version | IronFleet: Dafny v3.4.0 + .NET 6.0 SDK (README of current release; paper used 2015 Dafny compiled to C#). Verus: vstd `0.0.0-2026-11-01-0251`, `rust-toolchain.toml` channel `1.99.1`, Z3 `4.16.0` (`source/tools/get-z3.sh`). |
-| Maturity | IronFleet: research prototype, repo inactive since 2023. Verus: actively developed research tool (Distinguished Artifact Award, SOSP'24). verified-ironkv: research port. Anvil controllers: research, "can readily be deployed" [C02-S4]. Not AI-generated. |
+| Maturity | IronFleet: research prototype, repo inactive since 2023. Verus: actively developed research tool (Distinguished Artifact Award, SOSP'24). verified-ironkv: research port. Anvil controllers: research, "can readily be deployed" [C02-S4].|
+| AI provenance | commit-trailers. Basis: GitHub API, last 100 commits per repo, checked 2026-11-07. anvil-verifier/anvil @ e83ea0f (2026-10-12) has 14/100 commits with Claude co-author trailers (2026-01-04 to 2026-10-12) [C02-S8]. microsoft/Ironclad, verus-lang/verified-ironkv and verus-lang/verus have 0/100. No agent-config files at the repo roots. The IronFleet (2015) and Anvil OSDI 2024 results predate these commits. Recorded as provenance only, not as a discount on the mathematics. |
+| Evidence level | static-inspected (proof sources read at pinned commits; not rebuilt); performance figures: author-reported; bug-finding by [C02-S7] is independent testing of IronFleet |
 
 ## 2. Claim as stated by the authors (verbatim)
 - IronFleet: "We describe a methodology for building practical and provably correct distributed systems based on a unique blend of TLA-style state-machine refinement and Hoare-logic verification ... We prove that each obeys a concise safety specification, as well as desirable liveness requirements." [C02-S1]
@@ -56,6 +58,39 @@ pub fn next_impl(&mut self, netc: &mut NetClient) -> (rc: (bool, Ghost<EventResu
     ensures  Self::next_ensures(*old(self), *old(netc), *final(self), *final(netc), rc),
 ```
 Anvil ESR (eq. 1): "∀d. □(□desire(d) ⇒ ◇□match(d))" and "model ⊨ ∀d. □desire(d) ⇝ □match(d)"; "Verus does not support temporal logic reasoning, so Anvil provides a TLA embedding on top of first-order logic" [C02-S4].
+
+## 3a. Predicate semantics
+
+IronFleet top-level lemma, `ironfleet/src/Dafny/Distributed/Common/Framework/Main.s.dfy:56-63` @ 2fe4dcd [C02-S5]:
+```
+lemma RefinementProof(config:DS_s.H_s.ConcreteConfiguration, db:seq<DS_State>) returns (sb:seq<ServiceState>)
+  requires |db| > 0
+  requires DS_Init(db[0], config)
+  requires forall i {:trigger DS_Next(db[i], db[i+1])} :: 0 <= i < |db| - 1 ==> DS_Next(db[i], db[i+1])
+  ensures  |db| == |sb|
+  ensures  Service_Init(sb[0], Collections__Maps2_s.mapdomain(db[0].servers))
+  ensures  forall i {:trigger Service_Next(sb[i], sb[i+1])} :: 0 <= i < |sb| - 1 ==> sb[i] == sb[i+1] || Service_Next(sb[i], sb[i+1])
+  ensures  forall i :: 0 <= i < |db| ==> Service_Correspondence(db[i].environment.sentPackets, sb[i])
+```
+Conclusion predicates for IronRSL, `Services/RSL/AbstractService.s.dfy` [C02-S5]:
+- `Service_Next` (lines 63-66): `exists intermediate_states, batch :: StateSequenceReflectsBatchExecution(s, s', intermediate_states, batch)`. This is a batch of application requests executed in order on the spec state machine (`StateSequenceReflectsBatchExecution`, lines 54-61; `ServiceExecutesAppRequest`, lines 45-52).
+- `Service_Correspondence` (lines 102-109):
+```
+  && (forall p, seqno, reply :: p in concretePkts && p.src in serviceState.serverAddresses && p.msg == MarshallServiceReply(seqno, reply) ==>
+             AppReplyMessage(p.dst, seqno, reply) in serviceState.replies)
+  && (forall req :: req in serviceState.requests ==> exists p :: p in concretePkts && p.dst in serviceState.serverAddresses
+                                                                    && p.msg == MarshallServiceRequest(req.seqno, req.request)
+                                                                    && p.src == req.client)
+```
+- File header (lines 3-13) states that the spec gives linearizability and "does not require exactly-once semantics".
+
+Premise `DS_Next` (`Common/Framework/DistributedSystem.s.dfy:50-60`): each step is an environment step together with `HostNext` for the acting host. `HostNext` is the trusted host-implementation step relation, and its connection to the compiled code is through Dafny's method contracts on the `IO` layer (64 axioms in trusted native/IO specs, §6).
+
+IronRSL liveness lemma, `Protocol/RSL/LivenessProof/LivenessProof.i.dfy:192-198`: `lemma lemma_LivenessAssumptionsAssumingClientNeverGetsReplyCannotHold(b:Behavior<RslState>, asp) requires LivenessAssumptions(b, asp) ensures false;`. Its premise `LivenessAssumptions` (`Assumptions.i.dfy:202-258`) is a conjunction that includes: `IsValidBehavior`, `HostQueuesLive`, `NoZenoBehavior`, `ClockAmbiguityLimited`, "Overflow protection is never used", a live quorum of size ≥ `LMinQuorumSize`, `HostExecutesPeriodically`, a persistent client that sends periodically, `ClientNeverSentHigherSequenceNumber`, "..but it never receives a reply" (always not `ReplyDelivered`), `NetworkSynchronousForHosts` after `synchrony_start`, and `NetworkDeliveryRateBounded`. In addition, `ViewAdvance.i.dfy:321` contains the live `assume TimeNotZeno(timefun);` with `timefun := PaxosTimeMap(b)`.
+
+Verus IronKV: `next_ensures` at `ironsht/src/host_impl_t.rs:126-143` @ 7e35ed0 (quoted in §3); `Self::next` (lines 149-152) is `host_protocol_t::next(pre, post, abstractify_raw_log_to_ios(ios))` [C02-S3].
+
+Plain language. Guaranteed (IronRSL, safety): for every finite execution that starts in `DS_Init` and takes only `DS_Next` steps, there is a matching sequence of spec states. Every reply packet that a server sends, in the marshalled reply format, appears in the spec's reply set. Every spec request was actually sent by its client. Not guaranteed: exactly-once execution; behaviour of hosts whose steps do not satisfy `HostNext` (for example a non-verified host or a host on a platform where the trusted IO axioms fail); and anything about packets in non-reply formats. Liveness is stated at the protocol level (`Behavior<RslState>`), proved by contradiction from the assumption list above, and depends on the one live `assume`. The paper's reduction from implementation to protocol for liveness is stated in [C02-S1]. The Verus IronKV port proves the per-step `next_ensures` only and has no liveness theorem.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -130,13 +165,14 @@ Pattern: three-layer refinement (trusted centralized spec, protocol state machin
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| C02-S1 | IronFleet: Proving Practical Distributed Systems Correct (SOSP 2015) | https://www.microsoft.com/en-us/research/wp-content/uploads/2015/10/ironfleet.pdf | P | FULL | Dafny methodology combining TLA refinement and Hoare logic; IronRSL and IronKV with safety and liveness; effort, size, assumptions. |
-| C02-S2 | Verus: A Practical Foundation for Systems Verification (SOSP 2024) | https://www.microsoft.com/en-us/research/wp-content/uploads/2024/09/Verus.pdf | P | FULL | Rust verifier; five case studies incl. IronKV host port; line counts and verification times vs Dafny. |
-| C02-S3 | verus-lang/verified-ironkv @ 7e35ed0 | https://github.com/verus-lang/verified-ironkv | P | CODE | Verus port of IronSHT host; no assume/admit; 25 external_body in trusted files; protocol layer not replicated. |
-| C02-S4 | Anvil: Verifying Liveness of Cluster Management Controllers (OSDI 2024) | https://www.usenix.org/system/files/osdi24-sun-xudong.pdf | P | FULL | Verus-based framework with TLA embedding; ESR liveness of three Kubernetes controllers; trusted models; bug found in trusted API spec. |
-| C02-S5 | microsoft/Ironclad (ironfleet) @ 2fe4dcd | https://github.com/microsoft/Ironclad/tree/main/ironfleet | P | CODE | Dafny sources; top-level RefinementProof lemma; 1 live assume, 64 axioms in trusted native/IO specs. |
-| C02-S7 | An Empirical Study on the Correctness of Formally Verified Distributed Systems (Fonseca, Zhang, Wang, Krishnamurthy; EuroSys 2017) | https://www.cs.purdue.edu/homes/pfonseca/papers/eurosys2017-dsbugs.pdf | P | FULL | Independent bug study of IronFleet, Verdi, Chapar: 16 bugs in specs, tooling and shim layers; none in verified protocol code. |
-| C02-S6 | verus-lang/verus @ dc1b61c | https://github.com/verus-lang/verus | P | CODE | Verifier source; Rust toolchain and Z3 pins recorded. |
+| C02-S1 | IronFleet: Proving Practical Distributed Systems Correct (SOSP 2015) | https://www.microsoft.com/en-us/research/wp-content/uploads/2015/10/ironfleet.pdf | [P] | [FULL] | Dafny methodology combining TLA refinement and Hoare logic; IronRSL and IronKV with safety and liveness; effort, size, assumptions. |
+| C02-S2 | Verus: A Practical Foundation for Systems Verification (SOSP 2024) | https://www.microsoft.com/en-us/research/wp-content/uploads/2024/09/Verus.pdf | [P] | [FULL] | Rust verifier; five case studies incl. IronKV host port; line counts and verification times vs Dafny. |
+| C02-S3 | verus-lang/verified-ironkv @ 7e35ed0 | https://github.com/verus-lang/verified-ironkv | [P] | [CODE] | Verus port of IronSHT host; no assume/admit; 25 external_body in trusted files; protocol layer not replicated. |
+| C02-S4 | Anvil: Verifying Liveness of Cluster Management Controllers (OSDI 2024) | https://www.usenix.org/system/files/osdi24-sun-xudong.pdf | [P] | [FULL] | Verus-based framework with TLA embedding; ESR liveness of three Kubernetes controllers; trusted models; bug found in trusted API spec. |
+| C02-S5 | microsoft/Ironclad (ironfleet) @ 2fe4dcd | https://github.com/microsoft/Ironclad/tree/main/ironfleet | [P] | [CODE] | Dafny sources; top-level RefinementProof lemma; 1 live assume, 64 axioms in trusted native/IO specs. |
+| C02-S7 | An Empirical Study on the Correctness of Formally Verified Distributed Systems (Fonseca, Zhang, Wang, Krishnamurthy; EuroSys 2017) | https://www.cs.purdue.edu/homes/pfonseca/papers/eurosys2017-dsbugs.pdf | [P] | [FULL] | Independent bug study of IronFleet, Verdi, Chapar: 16 bugs in specs, tooling and shim layers; none in verified protocol code. |
+| C02-S6 | verus-lang/verus @ dc1b61c | https://github.com/verus-lang/verus | [P] | [CODE] | Verifier source; Rust toolchain and Z3 pins recorded. |
+| C02-S8 | anvil-verifier/anvil @ e83ea0f5516ce2ece26740266165180018741e66 (2026-10-12) | https://github.com/anvil-verifier/anvil | [P] | [CODE] | Commit history (last 100 commits via GitHub API) and repo-root files inspected for AI provenance only; proofs not re-read. |
 
 ## 15. Unverified leads (excluded from evidence)
 - IronFleet CACM 2017 version ("Proving Safety and Liveness of Practical Distributed Systems") listed in repo README; not read.

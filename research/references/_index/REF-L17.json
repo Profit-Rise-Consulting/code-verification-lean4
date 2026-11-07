@@ -1,1 +1,54 @@
-{"id":"REF-L17","name":"raft-lean-squad (Lean Squad on raft-rs)","subject":"Raft consensus (Rust raft crate, fork of tikv/raft-rs): function models plus abstract cluster safety","kind":"lean","tool":"Lean 4 v4.28.0 (stdlib only); GitHub Agentic Workflows + Copilot CLI / Claude","org":"Don Syme / GitHub Next (AI-generated content)","repo":"https://github.com/dsyme/raft-lean-squad","commit":"ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc","toolchain":"leanprover/lean4:v4.28.0","maturity":"ai-generated","properties":{"functional":"partial","safety":"partial","liveness":"no","refinement":"no","symbolic_security":"no","computational_security":"no","parsing":"no","constant_time":"no"},"impl_link":"differential-testing","impl_language":"Rust","tcb":{"sorry":0,"axiom":0,"native_decide":2,"unverified_translator":"none; hand (AI) transcription of Rust into Lean, checked by shared-fixture #guard and cargo tests; Aeneas attempted and failed"},"loc":{"spec":null,"proof":21355,"impl":null},"built":"no","pattern":"AI-agent hand-transcribed Lean models of implementation functions + shared-fixture example correspondence tests + separate abstract protocol safety model whose step relation carries protocol conditions as hypotheses","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":1}
+{
+ "id": "REF-L17",
+ "name": "raft-lean-squad (Lean Squad on raft-rs)",
+ "subject": "Raft consensus (Rust raft crate, fork of tikv/raft-rs): function models plus abstract cluster safety",
+ "kind": "lean",
+ "tool": "Lean 4 v4.28.0 (stdlib only); GitHub Agentic Workflows + Copilot CLI / Claude",
+ "org": "Don Syme / GitHub Next",
+ "repo": "https://github.com/dsyme/raft-lean-squad",
+ "commit": "ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc",
+ "toolchain": "leanprover/lean4:v4.28.0",
+ "maturity": "research",
+ "properties": {
+  "functional": "partial",
+  "safety": "assumed",
+  "liveness": "no",
+  "refinement": "no",
+  "symbolic_security": "n/a",
+  "computational_security": "n/a",
+  "parsing": "n/a",
+  "constant_time": "n/a"
+ },
+ "impl_link": "differential-testing",
+ "impl_language": "Rust",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 2,
+  "unverified_translator": "none; hand (AI) transcription of Rust into Lean, checked by shared-fixture #guard and cargo tests; Aeneas attempted and failed"
+ },
+ "loc": {
+  "spec": null,
+  "proof": 21355,
+  "impl": null
+ },
+ "built": "no",
+ "pattern": "AI-agent hand-transcribed Lean models of implementation functions + shared-fixture example correspondence tests + separate abstract protocol safety model whose step relation carries protocol conditions as hypotheses",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 1,
+ "impl_links": [
+  "manual",
+  "differential-testing"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "author-reported",
+ "ai_provenance_basis": "Blog (S2) and paper.tex author list (Don Syme, LeanSquad, Copilot CLI, Claude Sonnet 4.6) state the Lean content is agent-written",
+ "property_notes": "safety: fullProtocolStep_safe proves isClusterSafe but takes ValidAEStep whose fields hnew_cert and hqc_preserved are protocol conditions supplied as hypotheses (CPS13 discharges hqc_preserved only under CandidateLogCovers); functional: per-function Lean models with #guard fixture correspondence to Rust"
+}

@@ -1,1 +1,52 @@
-{"id":"REF-L20","name":"verified-consensus (fradamt) + iris-lean + CSLib distributed (FLP; no Raft port)","subject":"Executable Lean model of a decoupled PoS consensus protocol with safety, accountable safety, liveness, asynchrony-resilience review theorem; Iris separation logic port; CSLib FLP impossibility","kind":"lean","tool":"Lean 4 v4.34.1 + Mathlib (verified-consensus); v4.35.0 (iris-lean); v4.36.0-rc2 (cslib)","org":"Francesco D'Amato; leanprover-community; CSLib (Ching-Tsun Chou)","repo":"https://github.com/fradamt/verified-consensus","commit":"d379754762ccd69cec2fcaf94d18481a0600ef78","toolchain":"leanprover/lean4:v4.34.1","maturity":"research","properties":{"functional":"no","safety":"yes","liveness":"yes","refinement":"no","symbolic_security":"no","computational_security":"no","parsing":"no","constant_time":"no"},"impl_link":"none","impl_language":"none","tcb":{"sorry":0,"axiom":0,"native_decide":5,"unverified_translator":"none; manual paper-to-Lean modelling documented in MODEL_MAP/MODELING_CHOICES"},"loc":{"spec":6897,"proof":326384,"impl":null},"built":"no","pattern":"Definition-only frozen review surface + single bundled review theorem + scripted axiom/boundary/reachability/shape checks + non-vacuity witnesses + AI-auditor brief","subclaims":["H1","H2","H3","H4","D"],"full_read_sources":0}
+{
+ "id": "REF-L20",
+ "name": "verified-consensus (fradamt) + iris-lean + CSLib distributed (FLP; no Raft port)",
+ "subject": "Executable Lean model of a decoupled PoS consensus protocol with safety, accountable safety, liveness, asynchrony-resilience review theorem; Iris separation logic port; CSLib FLP impossibility",
+ "kind": "lean",
+ "tool": "Lean 4 v4.34.1 + Mathlib (verified-consensus); v4.35.0 (iris-lean); v4.36.0-rc2 (cslib)",
+ "org": "Francesco D'Amato; leanprover-community; CSLib (Ching-Tsun Chou)",
+ "repo": "https://github.com/fradamt/verified-consensus",
+ "commit": "d379754762ccd69cec2fcaf94d18481a0600ef78",
+ "toolchain": "leanprover/lean4:v4.34.1",
+ "maturity": "research",
+ "properties": {
+  "functional": "no",
+  "safety": "proved",
+  "liveness": "proved",
+  "refinement": "no",
+  "symbolic_security": "n/a",
+  "computational_security": "n/a",
+  "parsing": "n/a",
+  "constant_time": "n/a"
+ },
+ "impl_link": "model-only",
+ "impl_language": "none",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 5,
+  "unverified_translator": "none; manual paper-to-Lean modelling documented in MODEL_MAP/MODELING_CHOICES"
+ },
+ "loc": {
+  "spec": 6897,
+  "proof": 326384,
+  "impl": null
+ },
+ "built": "no",
+ "pattern": "Definition-only frozen review surface + single bundled review theorem + scripted axiom/boundary/reachability/shape checks + non-vacuity witnesses + AI-auditor brief",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "D"
+ ],
+ "full_read_sources": 0,
+ "impl_links": [
+  "model-only"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "commit-trailers",
+ "ai_provenance_basis": "Last 100 commits of fradamt/verified-consensus: 1 Co-Authored-By: Claude Opus 5.5 trailer and 2 Claude-Session trailers; docs/AI_AUDIT.md also present",
+ "property_notes": "safety: finalizedSafe premise AccountableRegime = RunWellFormed (incl. hash idealization) + SlashableBound (no evidence between in-run certificates). liveness: bounded by finite rho.horizon, under SleepyRegime/LiveSleepyRegime (partial synchrony after GST, honest committees). CI success observed on GitHub, not rebuilt"
+}
