@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+.lake/
+/tmp/
 
 # Build output
 dist/
