@@ -255,6 +255,14 @@
     "infra"
    ],
    "body": "The info lines (FULL=/SECT=/CODE=) count every tag occurrence, including the header line and the legend, so they disagree with each file's own header (for example, research/06 reports FULL=7 against a true 5). Count only tags in evidence entries, above the Unverified leads heading and excluding header and legend lines, and compare with the header counts."
+  },
+  {
+   "key": "GAP-PREMISES",
+   "title": "Distributed-protocol dossiers: untraced premises (L18 Ben-Or htype, L20 AccountableRegime, L19 Secrecy header)",
+   "labels": [
+    "research-gap"
+   ],
+   "body": "Found while writing §3a predicate semantics (d6):\n- REF-L18: Ben-Or `agreement_inv_invariant` takes `htype : forall i, type_ok (tr i)` as a premise, and a lexical search found no preservation lemma for it. Tendermint `run_agreement` holds only for N = 3T+1 exactly.\n- REF-L20: `AccountableRegime` = RunWellFormed (including a hash idealisation) + SlashableBound. Its docstring says \"one-third-slashable\", but whether the concrete setup derives this from a weight bound was not traced.\n- REF-L19: the Secrecy.lean header names a framework sorry in RandomisedAdversary.lean, but the theorem at :1296 has no lexical sorry (stale header?). `cutoff_reliable` quantifies over all configurations.\n\nResolve each by reading the code, ideally with a build and `#print axioms` (issue #4), and update the dossiers. These premises bear on how unconditional the H2 safety results are."
   }
  ]
 }

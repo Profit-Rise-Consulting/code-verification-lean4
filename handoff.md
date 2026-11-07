@@ -38,13 +38,15 @@ The verbatim owner instructions R1-R3 and the agent's interpretation notes are i
 | Council kit | [docs/phase2/council-kit.md](docs/phase2/council-kit.md) | Motion, definitions, roles, evidence rules, protocol, rubric, packets, output template |
 | Agent prompts | [research/prompts/](research/prompts/phase1-original.md) | Every prompt used in Phases 1, 1b and 1c, for reproducibility |
 | Requirements | [PRD.md](PRD.md), [TRD.md](TRD.md) | FR-001 to FR-010, NFR-001 to NFR-003, and the traceability matrix |
+| Open work | [docs/handoff/backlog.md](docs/handoff/backlog.md) (from [backlog.json](docs/handoff/backlog.json)) | Every incomplete task and real issue, as GitHub issues #2-#28 |
 
-Live counts: `scripts/check-research --output json` (depth counts per topic file) and the header of research/references/README.md (dossier count).
+Snapshot at handover (2026-11-07): 8 topic files; 33 reference dossiers (22 Lean, 11 comparator); 128 conflicts (CF-001 to CF-128); 73 case-comparison rows; independent review with 14 findings (pass 2: 11 closed, 3 partial, 0 open). Live counts: `scripts/check-research --output json` and the header of research/references/README.md.
 
 ## Phase 2 execution steps
 
 Execute in order. Each step names its output. Do not skip the checks.
 
+0. **Check the backlog.** Read [docs/handoff/backlog.md](docs/handoff/backlog.md). Issues labelled `phase-2` are this phase's work. Issue #21 (thin H5a evidence) and #14 (review dispositions) should be resolved or explicitly accepted before Round 1.
 1. **Verify the starting state.** Run `scripts/test`. It must print `0 error(s)` for check-docs and check-research. If not, stop and fix it first; the corpus is not in its handed-off state.
 2. **Read, in this order:** original-requests.md → CONVENTIONS.md → council-kit.md → REVIEW-phase1.md (especially "Coverage by sub-claim") → references/README.md → CONFLICTS.md → CASE-COMPARISON.md.
 3. **Pick the roster.** Use six different model families per council-kit "Roles and model families". Record exact model IDs in `phase2/roster.md`. If fewer than six families are available, drop the red team first and record the deviation.
@@ -63,4 +65,7 @@ Execute in order. Each step names its output. Do not skip the checks.
 - **AI-generated references.** Many recent Lean protocol repos (2026) carry AI co-author trailers or author statements of AI assistance; see the `ai_provenance` field. Per CONVENTIONS, this is recorded and never used on its own to discount a result.
 - **Not covered:** no formal models were read for Noise, Kerberos, OAuth/OIDC, Bluetooth, EMV or BGP (research/07). The live Lean Zulip was not searchable (research/08). Some papers were paywalled. Each file lists its own remaining gaps.
 - **Sources move.** Several repos changed during the research window, for example CCF removing TLA+ on 2026-11-05. Rely on the recorded SHAs, not on HEAD.
-- **Remote settings not applied** (each needs owner approval): branch ruleset, secret scanning with push protection, private vulnerability reporting, CodeQL default setup. Dependabot PR #1 (actions bump) is open.
+- **Independent review residuals.** Three findings are only partly closed in pass 2 (see research/REVIEW-phase1.md "Disposition verification"). They are tracked in issue #14.
+- **H5a is thin.** No conflicts and little evidence are tagged H5a (H1 → H3). See issue #21.
+- **Remote settings not applied** (each needs owner approval): branch ruleset, secret scanning with push protection, private vulnerability reporting, CodeQL default setup (issue #16). Dependabot PR #1 is open (issue #17).
+- **All open items** are GitHub issues; see [docs/handoff/backlog.md](docs/handoff/backlog.md).
