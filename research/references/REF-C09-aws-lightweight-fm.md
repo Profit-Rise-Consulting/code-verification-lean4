@@ -20,7 +20,7 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 - "With PObserve, we take structured logs from the execution of distributed systems and validate post hoc that they match behaviors allowed by the formal P specification of the system." [S2]
 - "PObserve is a distributed runtime monitoring framework that allows checking formal correctness specifications on systems implementation using service logs. As PObserve operates on service logs, it does not require any additional instrumentation" [S3, `Docs/docs/advanced/pobserve/pobserve.md`]
 
-Use of words (sub-claim D): ShardStore uses "refines" and "formal methods" for randomized testing and bounded checking, while stating "our validation checks can miss bugs" [S1]. The CACM article separates these from proof: "This type of proof goes beyond testing. It is a proof in the mathematical sense." (about Cedar in Dafny) [S2]. P docs say PObserve extends "formal verification guarantees from design time into production" (search excerpt of `whatisP.md`) [S5].
+Use of words (sub-claim D): ShardStore uses "refines" and "formal methods" for randomized testing and bounded checking, while stating "our validation checks can miss bugs" [S1]. The CACM article separates these from proof: "This type of proof goes beyond testing. It is a proof in the mathematical sense." (about Cedar in Dafny) [S2]. P docs say "PObserve ensures that the **implementation conforms to the high-level design in deployment** — extending formal verification guarantees from design time into production." (`Docs/docs/whatisP.md:120`) [S5].
 
 ## 3. What is actually formalised
 ShardStore [S1]:
@@ -30,7 +30,7 @@ ShardStore [S1]:
 - Deserialisers: "for any sequence of on-disk bytes (up to a size bound), our deserializers cannot panic" (Crux) [S1 sec 7].
 - Environment: in-memory user-space disk; fault model of fail-stop crashes (`DirtyReboot(RebootType)`), injected IO failures (`FailDiskOnce(ExtentId)`); resource exhaustion not tested [S1 sec 4.4].
 P [S2, S3]:
-- Designs modelled "as communicating state machines"; specifications are "global runtime monitors" that "can assert any global safety or liveness invariants" (P Semantics docs, search excerpt) [S5].
+- Designs modelled "as communicating state machines"; "Specifications in P are written as **global runtime monitors**. These monitors observe the execution of the system and can assert any global safety or liveness invariants. Monitors are synchronously composed with the P state machines." Each machine has "an **unbounded FIFO buffer**", and sends are "reliable, buffered, non-blocking, and directed" unless loss is modelled explicitly (P Semantics page) [S6].
 - PObserve inputs: a service-specific log parser producing `PObserveEvent` (key, timestamp, event, logLine, customPayload), a sequencer that globally sorts by timestamp, and a demultiplexer feeding P monitors [S3 `logparser.md`, `pobserve.md`].
 
 ## 4. Property classes covered
@@ -38,7 +38,7 @@ P [S2, S3]:
 |---|---|---|
 | Functional correctness | yes (tested) | Sequential equivalence to reference models under property-based testing [S1]. |
 | Safety invariant | yes (tested / bounded) | Crash-consistency persistence, linearizability, read-after-write under Loom/Shuttle [S1]; P model checking of design invariants [S2]. |
-| Liveness | partial | ShardStore "forward progress" after clean shutdown; deadlock detection by stateless model checking [S1]. P monitors may state liveness [S5]. |
+| Liveness | partial | ShardStore "forward progress" after clean shutdown; deadlock detection by stateless model checking [S1]. P monitors may state liveness [S6]. |
 | Refinement | partial (tested) | Authors frame property tests as refinement of the reference model; no proof [S1]. |
 | Symbolic security | no | Not addressed. |
 | Computational security | no | Not addressed (CACM mentions separate HOL Light RSA work, out of scope here) [S2]. |
@@ -81,7 +81,7 @@ Lean-style counts not applicable. TCB of a pass:
 ## 9. Independent evidence
 - CCF authors contrast ShardStore: "Unlike the CCF approach however, state exploration is limited to what the test harness is able to reach." [REF-C08 S1 sec 9]
 - The CACM article is by AWS authors and is a practice survey, not an independent evaluation [S2].
-- PObserve origin: a 2022 HPTS talk by Taylor, Yalcinkaya and Desai (search excerpt only) said "P specs are currently used only for design validation" and described a Flink-based pipeline [S6]; current docs say Java Streams [S3].
+- PObserve origin: Desai's HPTS 2022 slides credit PObserve to "Nathan Taylor, Beyazit Yalcinkaya, Ankush Desai"; they say "P has enjoyed widespread use at AWS (S3, EBS, EC2, DBS, and IAM) to formally reason about system design and behavior. P specs are currently used only for design validation." and label the pipeline "Stream Processing functionality built using Apache Flink" [S7]. Current docs say Java Streams [S3].
 - No public P model for S3 strong consistency was found; claims about it rest on AWS statements [S2].
 
 ## 10. Reproducibility
@@ -108,7 +108,7 @@ Language: Rust-specific tooling for ShardStore (Loom, Shuttle, Miri, Crux); the 
 
 ## 13. Conflicts
 - ShardStore validation overhead: intro says "the combined property definitions and test harnesses comprise 12% of the ShardStore code base" [S1 sec 1]; sec 8.2 says "These artifacts combined are only 13% of the total code base and 20% of the size of the implementation code" [S1]. From Fig. 6: (450 + 4,860 + 2,661 + 901) / 72,460 is about 12.2%, and / 44,048 is about 20.1%. The 13% figure is not reproduced by Fig. 6.
-- PObserve stream engine: HPTS 2022 slides (excerpt) say "Stream Processing functionality built using Apache Flink" [S6]; current docs say "The stream processing block in the figure is implemented using Java Streams" [S3]. Likely a change over time; not resolved.
+- PObserve stream engine: HPTS 2022 slides say "Stream Processing functionality built using Apache Flink" [S7]; current docs say "The stream processing block in the figure is implemented using Java Streams" [S3]. Likely a change over time; not resolved.
 - PObserve instrumentation: docs say it "does not require any additional instrumentation" [S3], while it does require a developer-written parser and structured logs containing the needed events [S3 `logparser.md`]. Both stated by the same source.
 
 ## 14. Sources
@@ -118,8 +118,9 @@ Language: Rust-specific tooling for ShardStore (Loom, Shuttle, Miri, Crux); the 
 | S2 | Brooker and Desai, "Systems Correctness Practices at Amazon Web Services", CACM 68(6) 2025 | https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/ | P | FULL | AWS portfolio: P, PObserve, PBT, deterministic simulation, fuzzing, FIS, proofs (Cedar, Kani, HOL Light). |
 | S3 | p-org/P repository incl. PObserve docs (commit 260da92) | https://github.com/p-org/P | P | CODE | P compiler/checker, PObserve source (13,714 Java lines), log parser and architecture docs. |
 | S4 | awslabs/shuttle repository (commit 855ae5d) | https://github.com/awslabs/shuttle | P | CODE | Randomized concurrency testing library (PCT) used for ShardStore end-to-end tests. |
-| S5 | P documentation pages (P Semantics, whatisP) | https://p-org.github.io/P/advanced/psemantics/ | P | ABSTRACT | Search excerpts: specs are global runtime monitors; PObserve described as extending guarantees to production. |
-| S6 | Taylor, Yalcinkaya, Desai, HPTS 2022 slides on P and PObserve | https://hpts.ws/papers/2022/HPTS2022.pdf | P | ABSTRACT | Search excerpt: P used only for design validation in 2022; PObserve architecture on Flink. |
+| S5 | P docs "What is P" (`Docs/docs/whatisP.md`, master) | https://github.com/p-org/P/blob/master/Docs/docs/whatisP.md | P | FULL | Checker backends (PSym, PEx, PVerifier); PObserve said to extend "formal verification guarantees" to production. |
+| S6 | P docs "P Semantics" | https://p-org.github.io/P/advanced/psemantics/ | P | FULL | Actor-style machines, unbounded FIFO buffers, reliable sends, specs as global safety/liveness monitors. |
+| S7 | Desai, "Formal Modeling and Analysis of Distributed Systems: Finding Critical Bugs Early!", HPTS 2022 slides (incl. PObserve poster by Taylor, Yalcinkaya, Desai) | https://hpts.ws/papers/2022/HPTS2022.pdf | P | FULL | 2022: P used only for design validation; PObserve pipeline on Apache Flink; JUnit/Log4J integration. |
 
 ## 15. Unverified leads (excluded from evidence)
 - `p-org/PObserve` separate repository (https://github.com/p-org/PObserve) not inspected.

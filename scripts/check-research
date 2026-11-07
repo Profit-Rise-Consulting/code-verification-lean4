@@ -87,8 +87,10 @@ for f in refs:
     missing = REQUIRED_KEYS - set(d)
     if missing:
         err("FR-003", f"{j.name}: missing keys {sorted(missing)}")
-    if isinstance(d.get("full_read_sources"), int) and d["full_read_sources"] < 3:
-        warn("NFR-001", f"{j.name}: only {d['full_read_sources']} fully read sources")
+    src = t.split("## 14. Sources", 1)[-1].split("## 15.", 1)[0]
+    admissible = len(re.findall(r"\[?(?:FULL|CODE)\]?", src))
+    if admissible < 3:
+        warn("NFR-001", f"{f.name}: only {admissible} [FULL]/[CODE] sources in section 14")
     index[rid] = d
 
 # FR-004: catalogue generated and current.
