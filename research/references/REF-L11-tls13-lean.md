@@ -9,7 +9,7 @@
 | Primary URLs | https://github.com/pb64-lean/tls13-lean ; https://github.com/pb64-lean/pg-lean ; org page https://github.com/pb64-lean |
 | Repo, commit SHA, last commit date, licence | tls13-lean `0c61f21f3f0e46aa8789cd10f4e03871d1c002db`, 2026-09-09T18:20:03-04:00, Apache-2.0. pg-lean `6d1d1043cd82bf64e8dc504892bd4b4a7081ff35`, 2026-09-10T17:36:57-04:00, Apache-2.0 (pins tls13-lean at rev `0c61f21…` in `lake-manifest.json`). |
 | Lean toolchain (or other tool and version) | tls13-lean `leanprover/lean4-nightly:nightly-2026-04-25` (no Lake dependencies; core + Std only). pg-lean `leanprover/lean4:v4.31.0`. Authoritative build is Bazel 8.5 with `rules_lean`; the `lakefile.lean` is described as an "IDE project model". |
-| Maturity (research prototype / production / abandoned / AI-generated) | Single-author engineering project with extensive tests and CI; flagged as AI-assisted / likely substantially AI-generated (see §9 for how determined). Not peer-reviewed; no paper. |
+| Maturity (research prototype / production / abandoned / AI-generated) | research (single-author engineering project with extensive tests and CI; not peer-reviewed; no paper). AI provenance: `commit-trailers` (see §9). |
 
 ## 2. Claim as stated by the authors (verbatim)
 From tls13-lean `README.md` (commit `0c61f21`):
@@ -104,20 +104,55 @@ theorem authStep_scram {c : Sasl.Scram.Client} {a : AuthState}
     (h : AuthStep (.scram c) a) : (∃ c', a = .scram c') ∨ a = .saslDone
 ```
 
+## 3a. Predicate semantics
+Headline 1: `Tls.Client.run_nonce_nodup` (`Tls/Client/Laws.lean:1984`). Conclusion predicate `Record.AeadWriteRun`, `Tls/Record/Laws.lean:1574-1594`:
+```lean
+inductive AeadWriteRun : Option TrafficKeys → Option TrafficKeys →
+    List ByteArray → List (ByteArray × ByteArray) → Prop where
+  | idle : AeadWriteRun none none [] []
+  | done (keys : TrafficKeys) :
+      AeadWriteRun (some keys) (some keys) [keys.key] []
+  | protect {keys next : TrafficKeys} {dst : Option TrafficKeys}
+      {contentType : ContentType} {fragment wire nonce : ByteArray}
+      {paddingLength : Nat} {aeadKeys : List ByteArray}
+      {keyNonces : List (ByteArray × ByteArray)}
+      (hnonce : keys.nonce = .ok nonce)
+      (hseal : «seal» keys contentType fragment paddingLength = .ok (next, wire))
+      (hrest : AeadWriteRun (some next) dst aeadKeys keyNonces) :
+      AeadWriteRun (some keys) dst aeadKeys ((keys.key, nonce) :: keyNonces)
+  | rekey … : AeadWriteRun (some keys) dst (keys.key :: aeadKeys) keyNonces
+  | install … : AeadWriteRun none dst aeadKeys keyNonces
+```
+Plain meaning: any successful client run (`run state ops = .ok out`) is witnessed by a trace listing every AEAD key the run used (`aeadKeys`) and every (key, nonce) pair it passed to `seal` (`keyNonces`), and if the keys in the trace are pairwise distinct then no (key, nonce) pair repeats. Strongest premise: `aeadKeys.Nodup` — distinctness of the HKDF-derived traffic keys across epochs is not proved (HKDF is opaque) and is left to the caller. Guaranteed: the Lean record layer never reuses a nonce under one key within a run. Not guaranteed: that keys are distinct, that AEAD is secure, or anything about the read direction.
+
+Headline 2: `open_seal` (`Tls/Record/Laws.lean:1274`, §3). Strongest premise: `haead`, the full ChaCha20-Poly1305 decrypt-after-encrypt identity for the opaque HACL\* externs, taken as a hypothesis. Conclusion: the wire bytes are header ++ ciphertext, the record is well formed, and `open` on that record returns the original fragment, content type and padding with the same next-state keys. Guaranteed: Lean framing, padding and nonce/sequence handling invert correctly assuming AEAD correctness. Not guaranteed: AEAD correctness itself.
+
+Headline 3: `masterSecret_spec` (`TLS13/KeySchedule/Refinement.lean:122`). Premise `Implements H`, `TLS13/KeySchedule/Refinement.lean:34-41`:
+```lean
+structure Implements (H : Spec.Hkdf) : Prop where
+  hashLen_eq : H.hashLen = hashLen
+  extract_eq : ∀ salt ikm, H.extract salt ikm = HaclStar.Hkdf.extractSha256 salt ikm
+  expand_eq : ∀ prk info len,
+    H.expand prk info len = HaclStar.Hkdf.expandSha256 prk info (UInt32.ofNat len)
+```
+The file notes that the HACL\* instance `hacl` (line 46) inhabits `Implements`, "so none of them is vacuous". Plain meaning: the engine's master-secret computation equals the RFC 8446 §7.1 derivation tree (as transcribed in `TLS13/KeySchedule/Spec.lean`) evaluated with whatever HKDF the bindings are; it fixes the wiring of labels, contexts and transcript hashes, not the bytes HKDF produces.
+
+Headline 4 (pg-lean): `policy_no_insecure_fallback` (`Pg/Config.lean:111`) concludes `(m.policy).allowsFallback = false` from `(m.policy).requireEncryption = true`: a property of the configuration table, not of network behaviour.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
 | Functional correctness | partial | Codec roundtrips and canonicity (`parseClientHello_canonical`), seal/open inversion conditional on AEAD hypothesis (`open_seal`), DER slice retention; no end-to-end "implements RFC 9846" theorem. |
-| Safety invariant | yes (implementation-level) | `run_wellFormed`, `State.WellFormed` preservation, nonce non-reuse within an epoch (`run_nonce_nodup`), pg-lean FIFO attribution (`terminal_pops_head`), `policy_no_insecure_fallback`. |
+| Safety invariant | proved (implementation-level) | `run_wellFormed`, `State.WellFormed` preservation, nonce non-reuse within an epoch (`run_nonce_nodup`), pg-lean FIFO attribution (`terminal_pops_head`), `policy_no_insecure_fallback`. |
 | Liveness | no | Only local progress lemmas in pg-lean (`step_progress`: an expected reply always steps); no temporal/liveness properties. |
 | Refinement | partial | Structural refinement of the key schedule against a Lean transcription of RFC 8446 §7.1, parametric over HKDF (`masterSecret_spec`, `Derived.tree_rfc8446`); pg-lean `step_startup_order` refines a documented auth sequence. No refinement of the full handshake against an RFC state machine. |
 | Symbolic security | no | README: "no security proof of the handshake or state machines". |
 | Computational security | no | Same quote; primitives opaque. |
-| Parsing | yes | Record framing byte conservation and fragmentation independence, handshake codecs, DER decoder, pg-lean framing partition invariance. |
-| Constant-time | no (for Lean code) | Inherited from HACL\* for primitives only; README: "no timing analysis of Lean control code"; pg-lean "Lean protocol/control code makes no timing guarantees". |
+| Parsing | proved | Record framing byte conservation and fragmentation independence, handshake codecs, DER decoder, pg-lean framing partition invariance. |
+| Constant-time | assumed (primitives only) | Inherited from HACL\* for primitives only; README: "no timing analysis of Lean control code"; pg-lean "Lean protocol/control code makes no timing guarantees". |
 
 ## 5. Link to implementation code
-Lean is the implementation. The theorems are about the same Lean definitions that are compiled and run (README: "These are proofs about the executable definitions, not a parallel model"). The cryptography is C (HACL\* portable C, pinned commit) behind 16 `@[extern]` bindings plus two hand-written C shims (`HaclStar/shim/hacl_shim.c` 285 lines, `signature_shim.c` 118 lines); the Lean side cannot see into them. Conformance evidence beyond proofs: interop with OpenSSL `s_client`, curl and Go `crypto/tls` via a scripted loopback gate, RFC 8448 and KAT vectors (README "Tests"). pg-lean is also Lean-as-implementation, live-tested against PostgreSQL 17/18. Guarantee: properties hold of the compiled Lean code modulo the Lean compiler/runtime, the C shims and HACL\*, and the explicit theorem hypotheses (AEAD correctness, key distinctness, single-threaded state use).
+impl_link=lean-is-impl (impl_links: lean-is-impl, differential-testing). Lean is the implementation. The theorems are about the same Lean definitions that are compiled and run (README: "These are proofs about the executable definitions, not a parallel model"). The cryptography is C (HACL\* portable C, pinned commit) behind 16 `@[extern]` bindings plus two hand-written C shims (`HaclStar/shim/hacl_shim.c` 285 lines, `signature_shim.c` 118 lines); the Lean side cannot see into them. Conformance evidence beyond proofs: interop with OpenSSL `s_client`, curl and Go `crypto/tls` via a scripted loopback gate, RFC 8448 and KAT vectors (README "Tests"). pg-lean is also Lean-as-implementation, live-tested against PostgreSQL 17/18. Guarantee: properties hold of the compiled Lean code modulo the Lean compiler/runtime, the C shims and HACL\*, and the explicit theorem hypotheses (AEAD correctness, key distinctness, single-threaded state use).
 
 ## 6. Trusted computing base and soundness hygiene
 Counts (whole-word grep over all non-`.lake` `.lean` files, comment lines starting `--` excluded; prose in `/-! -/` docstrings is not excluded, so raw counts overstate):
@@ -150,11 +185,7 @@ Counts (whole-word grep over all non-`.lake` `.lean` files, comment lines starti
 ## 9. Independent evidence
 - No paper, audit, CVE or independent review found. Adoption: a fork exists on GitHub user `keithadler`'s profile (search-result listing only, see §15); the author's own ecosystem (`grpc-lean`, `lean-acme-widgets`, `lean-pgx`) depends on it.
 - Interop evidence is self-reported (OpenSSL, curl, Go `crypto/tls` handshakes; PostgreSQL 17/18 live tests).
-- AI-generation assessment (Conventions rule 7). Determined from commit metadata in a blobless clone of the full history:
-  - pg-lean commits `b485891` and `336afde` (2026-08-29) carry the trailers `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01JRjgcMANSQ7ZusVvqVQnSW`. This is direct evidence of an AI coding agent in the pg-lean workflow.
-  - tls13-lean has no such trailer, but: both repos share an identical "Initial commit" timestamp (2026-08-02T18:53:02-04:00) suggesting a split from one monorepo; the initial commit already contained 71 files (35 `.lean`); 73 of 89 commits fall on a single day (2026-08-04), many minutes apart, each adding or proving substantial theorems (e.g. `1b601a7` "Add Tls.Record.Laws: kernel-checked record-layer laws" at 00:42 followed by `3df4065` "Prove decoder fragmentation independence" 16 minutes later). Commit `de88648` is titled "Remove internal milestone jargon from comments".
-  - The README makes no statement either way about AI use.
-  - Conclusion recorded as: pg-lean is AI-assisted (explicit trailers); tls13-lean is very likely AI-assisted given shared origin and commit cadence, but this is an inference, not a stated fact. The kernel-checked proofs do not depend on who wrote them; the specifications (what the theorems say) were not independently reviewed.
+- AI provenance (Conventions rule 7): category `commit-trailers`. Basis: in pg-lean, 2 of 98 commits (`b485891`, `336afde`, 2026-08-29) carry `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01JRjgcMANSQ7ZusVvqVQnSW`. In tls13-lean, 0 of 89 commits carry an AI trailer; the README makes no statement about AI use. Recorded commit-metadata facts, without characterisation: both repos share an identical "Initial commit" timestamp (2026-08-02T18:53:02-04:00); the tls13-lean initial commit contained 71 files (35 `.lean`); 73 of 89 tls13-lean commits are dated 2026-08-04. These facts do not establish who or what wrote the proofs; the kernel check is independent of authorship.
 
 ## 10. Reproducibility
 Not built: sandbox disk limit; queued for CI reproducibility job. A first `lake build` attempt in `/tmp/tls13-lean` failed during toolchain installation with `No space left on device (os error 28)` while extracting `lean-4.31.0-nightly-2026-04-25`; per coordinator instruction it was not retried and the partial toolchain was deleted. Exact commands for the CI job:
@@ -181,17 +212,17 @@ To apply to an arbitrary codebase: this pattern requires rewriting the protocol 
 | D | Author uses "machine-checked" / "kernel-checked laws" for Lean proofs, "formally verified" for HACL\*, and "verify" in the X.509 / signature sense; "structural refinement" is distinguished from cryptographic correctness. | S1 |
 
 ## 13. Conflicts
-- pg-lean README (search excerpt of README and local clone) states the client inventory contains "no `opaque`"; static grep finds 9 raw `opaque` tokens and 3 `implemented_by` attributes in `Pg/` (the latter replace kernel-checked definitions at runtime). The README's statement concerns `opaque` declarations and `@[extern]`; it does not list `implemented_by` in its inventory. Not resolved here (raw counts include prose).
+- pg-lean README (local clone at 6d1d104) states the client inventory contains "no `opaque`"; static grep finds 9 raw `opaque` tokens and 3 `implemented_by` attributes in `Pg/` (the latter replace kernel-checked definitions at runtime). The README's statement concerns `opaque` declarations and `@[extern]`; it does not list `implemented_by` in its inventory. Not resolved here (raw counts include prose).
 - README headline says "implementing RFC 9846" while the key-schedule spec and identifiers are RFC 8446 §7.1; README explains RFC 9846 obsoletes 8446 with unchanged labels. Recorded, not resolved.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | tls13-lean README.md @ 0c61f21 (accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean | P | FULL | Full statement of scope, verification status, TCB, assurance audit, protocol scope and limitations. |
-| S2 | pg-lean README.md @ 6d1d104 (accessed 2026-11-07) | https://github.com/pb64-lean/pg-lean | P | FULL | PostgreSQL client scope, proved-properties list, security compromises table. |
-| S3 | tls13-lean source code @ 0c61f21 (accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean | P | CODE | Cloned depth 1; theorem statements, counts and `assurance.bzl` inspected. |
-| S4 | pg-lean source code @ 6d1d104 (accessed 2026-11-07) | https://github.com/pb64-lean/pg-lean | P | CODE | Cloned depth 1; theorem statements, `implemented_by` sites and counts inspected. |
-| S5 | tls13-lean and pg-lean full commit history (blobless clone, accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean/commits/main | P | CODE | 89 / 98 commits, single author; Claude co-author trailers in pg-lean; commit cadence. |
+| S1 | tls13-lean README.md @ 0c61f21 (accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean | P | [CODE] | Full statement of scope, verification status, TCB, assurance audit, protocol scope and limitations. |
+| S2 | pg-lean README.md @ 6d1d104 (accessed 2026-11-07) | https://github.com/pb64-lean/pg-lean | P | [CODE] | PostgreSQL client scope, proved-properties list, security compromises table. |
+| S3 | tls13-lean source code @ 0c61f21 (accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean | P | [CODE] | Cloned depth 1; theorem statements, counts and `assurance.bzl` inspected. |
+| S4 | pg-lean source code @ 6d1d104 (accessed 2026-11-07) | https://github.com/pb64-lean/pg-lean | P | [CODE] | Cloned depth 1; theorem statements, `implemented_by` sites and counts inspected. |
+| S5 | tls13-lean and pg-lean full commit history (blobless clone, accessed 2026-11-07) | https://github.com/pb64-lean/tls13-lean/commits/main | P | [CODE] | 89 / 98 commits, single author; Claude co-author trailers in pg-lean; commit cadence. |
 
 ## 15. Unverified leads (excluded from evidence)
 - GitHub search listing shows a fork of tls13-lean under user `keithadler` (search snippet only).

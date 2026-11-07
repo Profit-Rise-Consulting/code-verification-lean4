@@ -9,7 +9,8 @@
 | Primary URLs | https://github.com/leanprover/SampCert ; https://arxiv.org/abs/2412.01671 ; DOI https://doi.org/10.1145/3729294 (PACMPL 9, PLDI 2025, Article 191) |
 | Repo, commit SHA, last commit date, licence | leanprover/SampCert @ `a2c53bb5ff790e729e252958060699b7eff898b9`, 2026-09-25 13:48:58 -0400, Apache-2.0 [C1] |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.34.1`; requires Mathlib @ `v4.34.1` and doc-gen4 [C1]. Deployment path also uses Dafny (SLang → Dafny → Python) [S1]. |
-| Maturity (research prototype / production / abandoned / AI-generated) | Production (samplers): "SampCert is deployed and used in the AWS Clean Rooms Differential Privacy service" [C1]; AWS docs: "AWS Clean Rooms Differential Privacy uses the SampCert sampler, a proven correct sampler implementation developed by AWS" [S2]. DP query library is research-grade: "we have not yet deployed them" [S1]. Human-authored (named authors, peer-reviewed artifact). |
+| Maturity (research prototype / production / abandoned / AI-generated) | Production (samplers): "SampCert is deployed and used in the AWS Clean Rooms Differential Privacy service" [C1]; AWS docs: "AWS Clean Rooms Differential Privacy uses the SampCert sampler, a proven correct sampler implementation developed by AWS" [S2]. DP query library is research-grade: "we have not yet deployed them" [S1]. Named authors, peer-reviewed artifact. |
+| AI provenance | `none-found`. Basis: full commit history (blob:none clone, 669 commits) has 4 `Co-authored-by` trailers, all naming humans; no AGENTS.md, CLAUDE.md, .claude, .cursor or Copilot config at a2c53bb [C1]. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "we present SampCert, the first comprehensive, mechanized foundation for executable implementations of differential privacy. SampCert is written in Lean with over 12,000 lines of proof. It offers a generic and extensible notion of DP, a framework for constructing and composing DP mechanisms, and formally verified implementations of Laplace and Gaussian sampling algorithms." [S1]
@@ -116,13 +117,13 @@ The paper-to-code map is in `paper_mapping.md` [C1]. Proofs use Mathlib results 
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | yes (distributional) | Samplers' mass functions equal the target discrete Gaussian/Laplace closed forms and normalise to 1 [C1]. |
-| Safety invariant | no | Not applicable. |
+| Functional correctness | proved (distributional) | Samplers' mass functions equal the target discrete Gaussian/Laplace closed forms and normalise to 1 [C1]. |
+| Safety invariant | n/a | Not applicable. |
 | Liveness | partial | Almost-sure termination of loops; for AboveThreshold an explicit termination assumption `has_lucky` ("This assumption is only used to prove almost-sure termination") [S1]. |
 | Refinement | partial | Equalities between program variants, e.g. "the combined equality proofs establish that sv9_aboveThesh = sv1_aboveThresh" [S1]; two Laplace samplers proved correct to allow switching at runtime [S1]. |
 | Symbolic security | no | |
-| Computational security | partial / other | Information-theoretic privacy guarantees (pure DP, zCDP) are proved; not cryptographic security. Randomness source assumed uniform (`/dev/urandom`) [S1]. |
-| Parsing | no | |
+| Computational security | partial | Information-theoretic privacy guarantees (pure DP, zCDP) are proved; not cryptographic security. Randomness source assumed uniform (`/dev/urandom`) [S1]. |
+| Parsing | n/a | No parser. |
 | Constant-time | no | "In the future, we would like to extend SampCert to model and prove non-existence of timing side-channels." [S1] |
 
 ## 5. Link to implementation code
@@ -203,9 +204,9 @@ To apply to an arbitrary codebase: the algorithm must be rewritten in the Lean D
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| C1 | leanprover/SampCert repository @ a2c53bb (accessed 2026-11-07) | https://github.com/leanprover/SampCert | P | CODE | SLang monad with `@[extern]` primitives, samplers, DP framework, Dafny extractor; counts in section 6. |
-| S1 | Verified Foundations for Differential Privacy (PLDI 2025, PACMPL 9 Art. 191), arXiv 2412.01671 (accessed 2026-11-07) | https://arxiv.org/abs/2412.01671 | P | FULL | Design of SampCert, proofs, FFI and Dafny/Python extraction, deployment at AWS, limitations. |
-| S2 | AWS Clean Rooms Differential Privacy (AWS documentation) (accessed 2026-11-07) | https://docs.aws.amazon.com/clean-rooms/latest/userguide/differential-privacy.html | P | FULL | States Clean Rooms DP uses "the SampCert sampler, a proven correct sampler implementation developed by AWS". |
+| C1 | leanprover/SampCert repository @ a2c53bb (accessed 2026-11-07) | https://github.com/leanprover/SampCert | P | [CODE] | SLang monad with `@[extern]` primitives, samplers, DP framework, Dafny extractor; counts in section 6. |
+| S1 | Verified Foundations for Differential Privacy (PLDI 2025, PACMPL 9 Art. 191), arXiv 2412.01671 (accessed 2026-11-07) | https://arxiv.org/abs/2412.01671 | P | [SECT] Abstract; §1 Introduction; §2 Abstract Differential Privacy (through Listing 3), §2.3-§2.5; "Obtaining Performant Samplers from Lean"; "Limitations and Future Work"; Conclusion; Data Availability Statement; Appendix "The Sparse Vector Technique"; Appendix "Extraction and Compilation Details". Every [S1] claim in this dossier is a verbatim quote from one of these sections | Design of SampCert, proofs, FFI and Dafny/Python extraction, deployment at AWS, limitations. |
+| S2 | AWS Clean Rooms Differential Privacy (AWS documentation) (accessed 2026-11-07) | https://docs.aws.amazon.com/clean-rooms/latest/userguide/differential-privacy.html | P | [FULL] (whole page re-read without an extractor) | States Clean Rooms DP uses "the SampCert sampler, a proven correct sampler implementation developed by AWS". |
 
 ## 15. Unverified leads (excluded from evidence)
 - Zenodo artifact DOI 10.5281/zenodo.11204806 (cited in README); not inspected.

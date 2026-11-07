@@ -12,6 +12,7 @@ Kind: lean. Access date for all sources: 2026-11-07.
 | Repo, commit SHA, last commit date, licence | `microsoft/CCF` `6404230c2b1e0f1770f47ce95a4e3cb3a274c657`, 2026-11-06 ("Reduce memory used at the time of snapshot generation (#8689)"), Apache-2.0 [S1]. |
 | Lean toolchain | `leanprover/lean4:v4.35.0`, Mathlib `v4.35.0`, `leanfmt` v0.4.5 (`lean/lean-toolchain`, `lean/consensus/lakefile.toml`) [S1]. #8277 used Lean and Mathlib 4.33.1; upgraded in #8570 [S2, S4]. |
 | Maturity | Production CI gate in a production project: the `Lean` workflow is required on PRs touching `lean/`, `src/consensus/aft/**`, `src/kv/**` and related paths [S1 `.github/workflows/lean.yml`]. Work is about two months old (first merge 2026-09-09) [S2]. |
+| AI provenance | `author-reported`: `lean/AGENT.md:3` says "We use agents to generate models and proofs that those models are correct." Supporting basis: 36 of 40 commits touching `lean/` carry "Co-authored-by: Copilot" trailers [S4]. Not independently established. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "We use agents to generate models and proofs that those models are correct. We use trace validation to align the models with the implementation. Formally, if B(X) is the set of behaviours permitted by X, then B(implementation) \subseteq B(Model) \subseteq B(Properties)." [S1 `lean/AGENT.md:3-5`]
@@ -112,10 +113,10 @@ Plain language.
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | partial | KV read/write lemmas (`read_your_write`, `apply_atomic`) on the KV model [S1]. |
-| Safety invariant | yes (model) | Consensus 4, consistency 17, DR 7, KV 37 theorems; all proved for all model instances [S1]. |
+| Functional correctness | partial (proved for the KV model only) | KV read/write lemmas (`read_your_write`, `apply_atomic`) on the KV model [S1]. |
+| Safety invariant | proved (for the Lean model); C++ correspondence tested by replay | Consensus 4, consistency 17, DR 7, KV 37 theorems; all proved for all model instances [S1]. |
 | Liveness | no | "There are no liveness properties or fairness assumptions." (consensus README); "Liveness properties are out of scope." (DR README); "The model covers safety only, not liveness" (consistency README) [S1]. DR `quorum_advance_opens` and `aligned_opening_timeout_completes` are single-step facts, not progress properties [S1]. |
-| Refinement | no (tested only) | No proof linking C++ to model; replay of finite traces [S1, S5]. No proof linking the consistency model to the consensus model [S1]. |
+| Refinement | tested (finite-trace replay; no refinement proof) | No proof linking C++ to model; replay of finite traces [S1, S5]. No proof linking the consistency model to the consensus model [S1]. |
 | Symbolic security | no | DR `Validation.accepted/rejected` "do not prove quote, certificate, or other cryptographic checks" [S2]. |
 | Computational security | no | Not addressed. |
 | Parsing | no | Replay parsers are trusted code (`CCF.Parsec`, `partial def many`) [S1]. |
@@ -200,13 +201,13 @@ Preconditions:
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | microsoft/CCF repository at 6404230 (`lean/`, `.github/workflows/lean.yml`, `lean-package.yml`, `src/consensus/aft/`, `src/tracing/`) | https://github.com/microsoft/CCF/tree/6404230c2b1e0f1770f47ce95a4e3cb3a274c657 | P | CODE | Lean models, theorems, replay, CI, C++ trace emission. |
-| S2 | PR #8277 "Add the C++-aligned Lean disaster recovery model" | https://github.com/microsoft/CCF/pull/8277 | P | FULL | First Lean merge; review boundary, proof limits, axiom audit. |
-| S3 | PR #8663 "Remove TLA+ specifications and associated tooling" | https://github.com/microsoft/CCF/pull/8663 | P | FULL | Motivation and scope of TLA+ removal (75 files, -7,040 lines). |
-| S4 | CCF merged PR list and `lean/` commit history (GitHub API) | https://github.com/microsoft/CCF/commits/main/lean | P | FULL | Complete API listing of the 40 commits touching `lean/` (titles, dates, Co-authored-by trailers); metadata only. |
-| S5 | PR #8584 "Lean-only CCF Raft trace reduction and replay" | https://github.com/microsoft/CCF/pull/8584 | P | FULL | Replay design and "What replay establishes". |
-| S6 | PR #8583 "Prove CCF-Raft safety properties in Lean" | https://github.com/microsoft/CCF/pull/8583 | P | FULL | Four consensus theorems, witness design, scope disclaimer. |
-| S7 | PR #8683 "Lean consistency: witnesses for gaps found by mutation testing" | https://github.com/microsoft/CCF/pull/8683 | P | FULL | Mutation testing (297 sites) exposed 8 model gaps that passed every proof and witness; survivors in `Transitions.lean` cut from 15 to 6; merged 2026-11-06. |
+| S1 | microsoft/CCF repository at 6404230 (`lean/`, `.github/workflows/lean.yml`, `lean-package.yml`, `src/consensus/aft/`, `src/tracing/`) | https://github.com/microsoft/CCF/tree/6404230c2b1e0f1770f47ce95a4e3cb3a274c657 | P | [CODE] | Lean models, theorems, replay, CI, C++ trace emission. |
+| S2 | PR #8277 "Add the C++-aligned Lean disaster recovery model" | https://github.com/microsoft/CCF/pull/8277 | P | [FULL] | First Lean merge; review boundary, proof limits, axiom audit. |
+| S3 | PR #8663 "Remove TLA+ specifications and associated tooling" | https://github.com/microsoft/CCF/pull/8663 | P | [FULL] | Motivation and scope of TLA+ removal (75 files, -7,040 lines). |
+| S4 | CCF merged PR list and `lean/` commit history (GitHub API) | https://github.com/microsoft/CCF/commits/main/lean | P | [FULL] | Complete API listing of the 40 commits touching `lean/` (titles, dates, Co-authored-by trailers); metadata only. |
+| S5 | PR #8584 "Lean-only CCF Raft trace reduction and replay" | https://github.com/microsoft/CCF/pull/8584 | P | [FULL] | Replay design and "What replay establishes". |
+| S6 | PR #8583 "Prove CCF-Raft safety properties in Lean" | https://github.com/microsoft/CCF/pull/8583 | P | [FULL] | Four consensus theorems, witness design, scope disclaimer. |
+| S7 | PR #8683 "Lean consistency: witnesses for gaps found by mutation testing" | https://github.com/microsoft/CCF/pull/8683 | P | [FULL] | Mutation testing (297 sites) exposed 8 model gaps that passed every proof and witness; survivors in `Transitions.lean` cut from 15 to 6; merged 2026-11-06. |
 
 ## 15. Unverified leads (excluded from evidence)
 - PR #8241 (superseded DR work exposing "accepted-unexpected-location behavior") not read.

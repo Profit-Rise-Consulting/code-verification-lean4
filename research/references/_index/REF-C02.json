@@ -10,13 +10,13 @@
  "toolchain": "Dafny v3.4.0 + .NET 6; Verus + Z3 4.16.0",
  "maturity": "research",
  "properties": {
-  "functional": "yes",
-  "safety": "yes",
-  "liveness": "yes",
-  "refinement": "yes",
+  "functional": "proved",
+  "safety": "proved",
+  "liveness": "partial",
+  "refinement": "proved",
   "symbolic_security": "no",
   "computational_security": "no",
-  "parsing": "yes",
+  "parsing": "proved",
   "constant_time": "no"
  },
  "impl_link": "extraction",
@@ -47,5 +47,11 @@
   "H5",
   "D"
  ],
- "full_read_sources": 4
+ "full_read_sources": 4,
+ "impl_links": [
+  "extraction"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "commit-trailers",
+ "ai_provenance_basis": "GitHub API, last 100 commits: anvil-verifier/anvil 14/100 with Claude co-author trailers (2026-01..2026-10); microsoft/Ironclad 0/100; verified-ironkv 0/100; verus 0/100. IronFleet (2015) and Anvil OSDI 2024 results predate these."
 }

@@ -10,10 +10,10 @@
  "toolchain": "Coq >= 9.0; SAW 0.9.0.99",
  "maturity": "production",
  "properties": {
-  "functional": "yes",
-  "safety": "yes",
+  "functional": "proved",
+  "safety": "tested",
   "liveness": "no",
-  "refinement": "yes",
+  "refinement": "partial",
   "symbolic_security": "no",
   "computational_security": "partial",
   "parsing": "no",
@@ -46,5 +46,12 @@
   "H5",
   "D"
  ],
- "full_read_sources": 3
+ "full_read_sources": 3,
+ "impl_links": [
+  "extraction",
+  "binary-semantics"
+ ],
+ "evidence_level": "deployed",
+ "ai_provenance": "commit-trailers",
+ "ai_provenance_basis": "GitHub API, last 100 commits: fiat-crypto 39/100 with Claude co-author trailers (2026-05-28..2026-10-19); s2n-tls 1/100; aws-lc-verification 0/100. The S&P 2019 and CAV 2018 results predate these."
 }

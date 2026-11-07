@@ -74,6 +74,82 @@ theorem computationalSoundness {Idx : Type} {Assumptions : IndAssumptions Idx}
 ```
 Hopscotch case studies (`Hopscotch/Examples/Proofs/`): `secureGGM_of_securePRG` (`GGMSecurePRF.lean:567`), `indCpaAndMacUfImpliesIndCcaEncryptThenMacFam` (`EncryptThenMacIndCca.lean:181`), `ddhImpliesElGamalOTUCPubFam` (`DDHImpliesElGamalOTUCPub.lean:206`), IND-RAND ⇒ IND-CPA, one-time secrecy ⇒ IND-CPA (public key), length-tripling PRG. These are `noncomputable def`s producing `IndistinguishableI` proof objects, converted to advantage bounds by `computationalSoundness`.
 
+## 3a. Predicate semantics
+Headline 1: SLH-DSA, `securityTarget_two_one` (`HashSig/SLHDSA/Security/CoverageBound.lean:350-354` at `0b69833`):
+```lean
+theorem securityTarget_two_one (laws : core.ByteLaws) (hd : core.KeyDiscipline vp)
+    (hcard : Nat.card core.Y ≤ Nat.card core.SkPrf) (e : core.SkSeed ≃ core.Y)
+    (optRand : PublicKeyCore core → ProbComp core.Y) :
+    SecurityTarget core e optRand 2 1 := fun pkSeed _ _ _ hadv =>
+  strongUnforgeableAdvantage_romScheme_pure_le_securityBound laws hd hcard e optRand pkSeed hadv
+```
+Conclusion predicate, `HashSig/SLHDSA/Security/Target.lean:259-264`:
+```lean
+@[expose] def SecurityTarget (e : core.SkSeed ≃ core.Y)
+    (optRand : PublicKeyCore core → ProbComp core.Y) (c r : ℕ) : Prop :=
+  ∀ (pkSeed : core.PkSeed)
+    (adv : StrongUnforgeableAdversary (romScheme core e optRand (pure pkSeed))) (qh qs : ℕ),
+    adv.RomQueryBound qh qs →
+      strongUnforgeableAdvantage (ProbCompRuntime.rom (hashSpec core)) adv ≤
+        securityBound vp.params (Nat.card core.Y) c r qh qs
+```
+The bound, `HashSig/SLHDSA/Security/Target.lean` lines 243-247:
+```lean
+@[expose] noncomputable def securityBound (p : Params) (card c r qh qs : ℕ) : ℝ≥0∞ :=
+  ((qh : ℝ≥0∞) + 1) *
+      KeyedHash.Covering.weightedTargetCoverBound p.h p.a p.k qs qh ((qs : ℝ≥0∞) / card) +
+    ((c : ℝ≥0∞) * qh + ((r + 1) * GeneralScheme.verifyInternalQueryBound p : ℕ)) *
+      (card : ℝ≥0∞)⁻¹
+```
+With `c = 2`, `r = 1` and `N = |Y|` (`Nat.card core.Y`, the number of hash-node values), the theorem therefore states, for every public seed and every forger making at most `qh` hash queries and `qs` signing queries:
+\[ \mathrm{Adv}^{\mathrm{SUF\text{-}CMA}}_{\mathrm{ROM}} \le (q_h+1)\cdot W(h,a,k;\,q_s,q_h,\,q_s/N) + \frac{2q_h + 2V}{N}, \]
+where `V = verifyInternalQueryBound p = 1 + (p.k * (p.a + 1) + 1) + GeneralHypertree.recoverQueryBound p` (`HashSig/SLHDSA/GeneralSchemeQueryBound.lean:39-40`) and `W` is `weightedTargetCoverBound` (`VCVio/CryptoFoundations/HardnessAssumptions/KeyedHash/Covering.lean:898-902`):
+```lean
+@[expose] noncomputable def weightedTargetCoverBound (qs qw : ℕ) (w : ℝ≥0∞) : ℝ≥0∞ :=
+  ∑ r ∈ Finset.range (k + 1), ∑ r₁ ∈ Finset.range (r + 1),
+    ((qs.choose (r - r₁) * qw.choose r₁ *
+        (Finset.univ.filter fun s : Fin k → Fin r => Function.Surjective s).card : ℕ) : ℝ≥0∞) *
+      w ^ r₁ * ((((2 : ℝ≥0∞) ^ h)⁻¹) ^ r * (((2 : ℝ≥0∞) ^ a)⁻¹) ^ k)
+```
+Its docstring: "For `w ≤ 1` it is `2 ^ (-a * k) * E[Z ^ k]` for `Z` the sum of independent binomials with `qs` trials of success probability `2 ^ (-h)` and `qw` trials of success probability `w * 2 ^ (-h)`." (`h`, `a`, `k` are the FIPS 205 hypertree height, FORS tree height and FORS tree count.) The bound is concrete; no asymptotic or negligibility statement is made. A per-seed-distribution corollary `strongUnforgeableAdvantage_romScheme_le` (same file, following `SecurityTarget`) averages it over any `pkSeedDist`.
+
+Query-budget premise, `VCVio/CryptoFoundations/SignatureAlg/RomQueryCount.lean:62-66`:
+```lean
+@[expose] def UnforgeableAdversary.RomQueryBound
+    {sigAlg : SignatureAlg (OracleComp (unifSpec + hs)) M PK SK S}
+    (adv : UnforgeableAdversary sigAlg) (qh qs : ℕ) : Prop :=
+  ∀ pk, IsQueryBoundP (adv.main pk) (IsHashQuery (hs := hs) (M := M) (S := S)) qh ∧
+    IsQueryBoundP (adv.main pk) (IsSignQuery (hs := hs) (M := M) (S := S)) qs
+```
+`Target.lean:47-50`: "at most `qh` hash queries, `PRF_msg` included, and at most `qs` signing queries on every path of its own program. The queries key generation, signing and verification make are not charged".
+
+Premise `laws : core.ByteLaws` (`HashSig/SLHDSA/Primitives.lean:136-137`):
+```lean
+structure ByteLaws {p : Params} (primitives : CorePrimitives p) : Prop where
+  yToBytes_injective : Function.Injective primitives.yToBytes
+```
+Plain meaning: the map from abstract hash-node values to their fixed-width byte encoding is injective. The docstring says: "it is not a collision-resistance or pseudorandomness assumption". It is a representation-coherence condition, not a cryptographic hardness assumption.
+
+Premise `hd : core.KeyDiscipline vp` (`HashSig/SLHDSA/Security/KeyDiscipline.lean:73-81`):
+```lean
+structure CorePrimitives.KeyDiscipline (vp : ValidatedParams) (core : CorePrimitives vp.params) :
+    Prop where
+  keyInjective : core.KeyInjective vp
+  canonicalAddressBounds : CanonicalAddressBounds vp.params
+  keySeparated : core.KeySeparated
+```
+with `KeyInjective vp core := Set.InjOn core.adrsToKey {a : Adrs | AddressFacts vp a}` (same file, lines 66-68) and `KeySeparated core := ∀ a b : Adrs, a.IsSecretKey → b.type ≤ 4 → core.adrsToKey a ≠ core.adrsToKey b` (`HashSig/SLHDSA/AddressDiscipline.lean:269-270`). Plain meaning: (i) the address-to-oracle-key encoding never maps two distinct in-range FIPS-canonical addresses to the same random-oracle key; (ii) the parameter set's address fields fit their FIPS 205 widths; (iii) no secret-key (PRF) address shares a key with a tweakable-hash address. Together these ensure that, in the random-oracle model, distinct hash and PRF calls are answered independently. The file states these are discharged as theorems for the concrete encodings: `Concrete.keyDiscipline_shakePrimitives` (`KeyDiscipline.lean:135`, under `CanonicalAddressBounds`), `Concrete.keyDiscipline_sha2Primitives`, and `Concrete.keyDiscipline_approvedPrimitives` (`KeyDiscipline.lean:161`) for every FIPS 205 parameter set. They are therefore hypotheses of the generic theorem that are proved for the shipped encodings, not open assumptions.
+
+Premise `hcard : Nat.card core.Y ≤ Nat.card core.SkPrf`: the PRF-message key space is at least as large as the node space.
+
+Model premises that remain: the three primitives (tweakable hash, `H_msg`, `PRF_msg`) are modelled as independent random oracles (`ProbCompRuntime.rom (hashSpec core)`); the README notes "The SHA-2 parameter sets have no single-oracle model". The adversary is unbounded in computation and bounded only in queries.
+
+What is guaranteed: a quantitative upper bound on the probability that a query-bounded adversary outputs a valid (message, signature) pair not returned by the signing oracle, against the Lean model `romScheme` in the 3-oracle classical ROM. What is not: security in the standard model or QROM; security of real SHAKE/SHA-2; any statement about a compiled implementation; security against quantum adversaries.
+
+Headline 2: Schnorr, `signature_euf_cma` (`VCVio/Schemes/Schnorr/Signature.lean:202`, statement in §3). Conclusion: `eps * (eps / (qH + 1) - challengeSpaceInv F) ≤ Pr[dlogExperiment g (dlogReduction …) = true]` with `eps = unforgeableAdvantage − qS·(qS+qH)/|F|`. Strongest premises: `hg : Function.Bijective (· • g : F → G)` (g generates G with |G| = |F|) and the query-budget `hQ`. ePrint 2026/899 §8 reports the bound as \(\varepsilon' = \varepsilon - q_S(q_S+q_H)/|F|\) with reduction to the DLog experiment. Guaranteed: a reduction inequality in the random-oracle model for the Lean model of Schnorr over an abstract group action; not guaranteed: hardness of DLog itself (it is the right-hand side, not a premise discharged), or anything about an implementation.
+
+Hopscotch `computationalSoundness` (§3): conclusion `advBoundQ Assumptions q_b O o₁ o₂ (…)`, i.e. `∀ distinguisher, advBound …` (`Hopscotch/ComputationalIndistinguishability/Soundness.lean:44-49`): every distinguisher's advantage is bounded by a sum of the advantages against the counted assumption uses. Polynomial-time of reductions is not part of the predicate.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
@@ -82,12 +158,12 @@ Hopscotch case studies (`Hopscotch/Examples/Proofs/`): `secureGGM_of_securePRG` 
 | Liveness | no | — |
 | Refinement | partial | `shakeRomScheme_map_shakeAnswer` relates the ROM scheme to FIPS 205 SHAKE internals (README); Interop hax/Aeneas bridges are experimental and dormant. |
 | Symbolic security | no | (ePrint 2026/899 cites a separate Lean formalisation of computationally sound symbolic crypto [DFMS25] using the same oracle API.) |
-| Computational security | yes | Schnorr EUF-CMA to DLog, forking lemma, Fiat-Shamir, SLH-DSA SUF-CMA in ROM; Hopscotch GGM, EtM IND-CCA, ElGamal from DDH. PPT not formalised. |
+| Computational security | proved | Schnorr EUF-CMA to DLog, forking lemma, Fiat-Shamir, SLH-DSA SUF-CMA in ROM; Hopscotch GGM, EtM IND-CCA, ElGamal from DDH. PPT not formalised. |
 | Parsing | partial | SLH-DSA canonical public-key/signature codecs (`wireStrongAdvantage_le_securityBound_validatedParams`); ML-KEM byte encoding lemmas. |
 | Constant-time | no | — |
 
 ## 5. Link to implementation code
-impl_link=none (spec-level). Theorems are about Lean definitions of schemes, not deployed code. Some schemes have executable Lean concrete implementations (`LatticeCrypto/*/Concrete`), tested against native C implementations through `Extern/` FFI (`@[extern]` bindings, "used in tests"). `Interop/` contains bridges to Lean emitted by Rust frontends hax and Aeneas, but `Interop/README.md`: "Lean 4.31 baseline: Interop is dormant. Neither backend is resolved by Lake, and CI intentionally excludes the `Interop` aggregate target." The 2026 paper: "We also plan to link Lean specifications to efficient executable code, connecting design-level security with implementation-level correctness." Hopscotch: spec-level only.
+impl_link=model-only (impl_links: model-only, differential-testing). Theorems are about Lean definitions of schemes, not deployed code. Some schemes have executable Lean concrete implementations (`LatticeCrypto/*/Concrete`), tested against native C implementations through `Extern/` FFI (`@[extern]` bindings, "used in tests"). `Interop/` contains bridges to Lean emitted by Rust frontends hax and Aeneas, but `Interop/README.md`: "Lean 4.31 baseline: Interop is dormant. Neither backend is resolved by Lake, and CI intentionally excludes the `Interop` aggregate target." The 2026 paper: "We also plan to link Lean specifications to efficient executable code, connecting design-level security with implementation-level correctness." Hopscotch: spec-level only.
 
 ## 6. Trusted computing base and soundness hygiene
 VCVio counts (rg over `*.lean`, excluding `third_party/`; tokens in comments/docstrings filtered by hand):
@@ -114,12 +190,11 @@ Hopscotch: 0 `sorry` in code (6 occurrences, all in comments), 0 `axiom`, 0 `nat
 - ePrint 2026/899 Appendix: "The efficiency predicate isPPT is left abstract; users specialize it".
 - ePrint 2026/899 §9 (AI): "Agents given a large, unstructured objective (for instance, "complete the EUF-CMA proof of Schnorr signatures") drift: they produce low-quality intermediate lemmas, spend tokens on irrelevant refactors, or declare success on proofs whose sorrys have been pushed deeper into the call graph."
 - `Interop/README.md`: "Hax does not yet support Lean 4.31; Aeneas does, but its VCVio bridge has not been revalidated."
-- Hopscotch (arXiv 2608.06261 §4): "formalizing probabilistic polynomial time would remove the remaining externally checked complexity conditions and yield fully mechanized computational-security statements." The paper states Hopscotch does not verify polynomial-time complexity of reductions and relies on concrete bounds (paraphrase of §2.4 via LLM extraction; see S6).
 
 ## 9. Independent evidence
 - Adoption: ePrint 2026/899: "VCVio is already being adopted as a base layer for more complex interactive proofs in the ArkLib library"; Hopscotch depends on VCVio's oracle API; the paper notes "Dziembowski et al.'s concurrent Lean formalization of computationally sound symbolic cryptography [DFMS25]" uses the same API.
 - No independent audit found.
-- AI-generation / assistance (Conventions rule 7):
+- AI provenance (Conventions rule 7): category `author-reported`. Basis: ePrint 2026/899 §9 and the Hopscotch README/paper state AI assistance. Supporting facts (not a separate category):
   - VCVio commit history (tree-less clone, 738 commits): 225 commit messages carry an AI co-author trailer or session link (Claude Fable 5/5.1, Claude Opus 4.8/5/5.5, Cursor, Codex), and 16 carry `Co-authored-by: Aristotle (Harmonic)`. ePrint 2026/899 §9: "A substantial fraction of the VCVio codebase has been touched by LLM coding agents at some point during development, and external automated proof-search systems have opened pull requests against our repository." and "humans state theorems, agents propose proofs, the compiler checks."
   - Hopscotch README: "The project is being developed with assistance from the LLM-based tools Codex from OpenAI and Aristotle from Harmonic." arXiv 2608.06261 "Use of AI tools": "For the Lean code, we used Codex with GPT-5.5 (18), DeepSeek-V4 (10) and Aristotle by Harmonic (2). … Aristotle was used in a more autonomous mode: given the statement that every observationally equivalent pair of oracles factors through two abstractions, it constructed a proof together with several intermediate definitions and lemmas." `ARISTOTLE_SUMMARY.md` records Aristotle filling `rState2Rstate_non_dist`, described as "the hard one (the original authors marked it "quite hard" and left it open)".
 
@@ -155,16 +230,17 @@ For arbitrary codebases: VCVio proves properties of Lean models of schemes, not 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | VCVio README.md @ 0b69833 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio | P | FULL | Framework scope, SLH-DSA claim and open items, repo layout, build. |
-| S2 | Tuma, Dao, Waters, Hicks, Hopper, "VCVio: Verified Cryptography in Lean via Oracle Effects and Handlers", ePrint 2026/899 (accessed 2026-11-07 via eprint.iacr.asia mirror PDF) | https://eprint.iacr.org/2026/899 | P | FULL | Design, case studies with LOC table, AI-assistance section, future work. |
-| S3 | VCVio source code @ 0b69833 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio | P | CODE | Theorem statements, TCB counts, axiom baseline, Interop/README, ML-KEM Security docstring. |
-| S4 | Tuma, Hopper, "VCVio: A Formally Verified Forking Lemma and Fiat-Shamir Transform, via a Flexible and Expressive Oracle Representation", ePrint 2024/1819 (accessed 2026-11-07) | https://eprint.iacr.org/2024/1819 | P | FULL | Original framework paper; comparison with EasyCrypt, SSProve, CryptHOL, FCF. |
-| S5 | VCVio commit history (tree-less clone, accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio/commits/main | P | CODE | 738 commits; AI co-author trailer counts. |
-| S6 | Dziembowski, Fabiański, Micciancio, Stefański, "Game Hopping in Lean", arXiv 2608.06261v1 (accessed 2026-11-07) | https://arxiv.org/abs/2608.06261 | P | PARTIAL | First 60k characters read in full (abstract, intro, AI-tools note, framework, start of case studies); conclusion and limitations obtained via LLM extraction of the full HTML. |
-| S7 | Hopscotch README.md and source @ 2699b4f (accessed 2026-11-07) | https://github.com/ravst/Hopscotch | P | CODE | Status, AI assistance statement, soundness theorem, case-study proofs, counts. |
-| S8 | Hopscotch ARISTOTLE_SUMMARY.md @ 2699b4f (accessed 2026-11-07) | https://github.com/ravst/Hopscotch/blob/main/ARISTOTLE_SUMMARY.md | P | FULL | AI tool run logs: which sorries Aristotle filled and the reported axiom closure. |
+| S1 | VCVio README.md @ 0b69833 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio | P | [CODE] | Framework scope, SLH-DSA claim and open items, repo layout, build. |
+| S2 | Tuma, Dao, Waters, Hicks, Hopper, "VCVio: Verified Cryptography in Lean via Oracle Effects and Handlers", ePrint 2026/899 (accessed 2026-11-07 via eprint.iacr.asia mirror PDF) | https://eprint.iacr.org/2026/899 | P | [FULL] | Design, case studies with LOC table, AI-assistance section, future work. |
+| S3 | VCVio source code @ 0b69833 (accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio | P | [CODE] | Theorem statements, TCB counts, axiom baseline, Interop/README, ML-KEM Security docstring. |
+| S4 | Tuma, Hopper, "VCVio: A Formally Verified Forking Lemma and Fiat-Shamir Transform, via a Flexible and Expressive Oracle Representation", ePrint 2024/1819 (accessed 2026-11-07) | https://eprint.iacr.org/2024/1819 | P | [FULL] | Original framework paper; comparison with EasyCrypt, SSProve, CryptHOL, FCF. |
+| S5 | VCVio commit history (tree-less clone, accessed 2026-11-07) | https://github.com/Verified-zkEVM/VCVio/commits/main | P | [CODE] | 738 commits; AI co-author trailer counts. |
+| S6 | Dziembowski, Fabiański, Micciancio, Stefański, "Game Hopping in Lean", arXiv 2608.06261v1 (accessed 2026-11-07) | https://arxiv.org/abs/2608.06261 | P | [SECT] | Read sections: Abstract, §1 Introduction incl. "Use of AI tools", §2 Framework, start of §3. Only claims quoted from these sections are used. |
+| S7 | Hopscotch README.md and source @ 2699b4f (accessed 2026-11-07) | https://github.com/ravst/Hopscotch | P | [CODE] | Status, AI assistance statement, soundness theorem, case-study proofs, counts. |
+| S8 | Hopscotch ARISTOTLE_SUMMARY.md @ 2699b4f (accessed 2026-11-07) | https://github.com/ravst/Hopscotch/blob/main/ARISTOTLE_SUMMARY.md | P | [CODE] | AI tool run logs: which sorries Aristotle filled and the reported axiom closure. |
 
 ## 15. Unverified leads (excluded from evidence)
+- arXiv 2608.06261 §4 (Conclusion), obtained only via LLM extraction: "formalizing probabilistic polynomial time would remove the remaining externally checked complexity conditions and yield fully mechanized computational-security statements."
 - CatCrypt (Lean, SSProve-derived, hax extraction) mentioned in ePrint 2026/899 §9; "its repository is not publicly available at the time of writing".
 - [DFMS25] Dziembowski et al., Lean computationally sound symbolic cryptography using VCVio's oracle API; not located.
 - ArkLib adoption of VCVio (claimed in S2); not inspected.

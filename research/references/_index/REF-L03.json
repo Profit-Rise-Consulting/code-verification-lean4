@@ -1,1 +1,52 @@
-{"id":"REF-L03","name":"LNSym (Armv8 native-code symbolic simulator; AWS-LC SHA-512/AES-GCM assembly proofs)","subject":"Lean AArch64 ISA model and symbolic-simulation proofs of AWS-LC cryptographic machine code","kind":"lean","tool":"Lean 4 v4.35.0 + bv_decide (CaDiCaL/LRAT) + ELFSage","org":"Amazon Web Services","repo":"https://github.com/leanprover/LNSym","commit":"49f8a1d9e46f8dcfc345f4bc15d35b0ba845ff5c","toolchain":"leanprover/lean4:v4.35.0","maturity":"research","properties":{"functional":"partial","safety":"partial","liveness":"no","refinement":"partial","symbolic_security":"no","computational_security":"no","parsing":"partial","constant_time":"no"},"impl_link":"binary-semantics","impl_language":"AArch64 assembly (AWS-LC perlasm output)","tcb":{"sorry":50,"axiom":1,"native_decide":194,"unverified_translator":"hand-transcribed instruction-word listings; ISA model validated only by random cosim on Aarch64 hardware; bv_decide (Lean.ofReduceBool); 12 sorry in headline SHA-512/AES-GCM proofs"},"loc":{"spec":1264,"proof":12522,"impl":null},"built":"no","pattern":"executable Lean ISA model validated by hardware co-simulation, symbolic simulation of transcribed machine code against Lean functional specs, SAT-backed bit-vector automation","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":1}
+{
+ "id": "REF-L03",
+ "name": "LNSym (Armv8 native-code symbolic simulator; AWS-LC SHA-512/AES-GCM assembly proofs)",
+ "subject": "Lean AArch64 ISA model and symbolic-simulation proofs of AWS-LC cryptographic machine code",
+ "kind": "lean",
+ "tool": "Lean 4 v4.35.0 + bv_decide (CaDiCaL/LRAT) + ELFSage",
+ "org": "Amazon Web Services",
+ "repo": "https://github.com/leanprover/LNSym",
+ "commit": "49f8a1d9e46f8dcfc345f4bc15d35b0ba845ff5c",
+ "toolchain": "leanprover/lean4:v4.35.0",
+ "maturity": "research",
+ "ai_provenance": "none-found",
+ "properties": {
+  "functional": "partial",
+  "safety": "partial",
+  "liveness": "no",
+  "refinement": "partial",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "tested",
+  "constant_time": "no"
+ },
+ "impl_link": "binary-semantics",
+ "impl_links": [
+  "binary-semantics",
+  "differential-testing"
+ ],
+ "impl_language": "AArch64 assembly (AWS-LC perlasm output)",
+ "evidence_level": "static-inspected",
+ "tcb": {
+  "sorry": 50,
+  "axiom": 1,
+  "native_decide": 194,
+  "unverified_translator": "hand-transcribed instruction-word listings; ISA model validated only by random cosim on Aarch64 hardware; bv_decide (Lean.ofReduceBool); 12 sorry in headline SHA-512/AES-GCM proofs"
+ },
+ "loc": {
+  "spec": 1264,
+  "proof": 12522,
+  "impl": null
+ },
+ "built": "no",
+ "pattern": "executable Lean ISA model validated by hardware co-simulation, symbolic simulation of transcribed machine code against Lean functional specs, SAT-backed bit-vector automation",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 2
+}

@@ -9,7 +9,7 @@
 | Primary URLs | https://github.com/rupakm/leslie ; Reservoir page https://reservoir.lean-lang.org/@rupakm/leslie (cited in lean-tla's research index, not fetched) |
 | Repo, commit SHA, last commit date, licence | `rupakm/leslie` @ `58e58b2502b2a570e4ce4fdb6b40748c3cb30e5d` (Merge PR #116 "feat/fencing-tokens-demo"), 2026-06-09 01:17 +0200, Apache-2.0 |
 | Lean toolchain (or other tool and version) | `leanprover/lean4:v4.27.0`; dependencies Mathlib, `lintLlmProofs` (https://github.com/jessealama/lint-llm-proofs), aesop, plausible |
-| Maturity | Research library, actively AI-assisted. Determined from: `CLAUDE.md` ("# AI Agent Instructions"), a `.claude/` directory with `agents/`, `commands/` and `worktrees/`, `docs/superpowers/plans`, the `lintLlmProofs` lake dependency, and phase checkpoint files (`PHASE-8-5d-CHECKPOINT.md`) |
+| Maturity | Research library. AI provenance: `agent-config-present`. Determined from: `CLAUDE.md` ("# AI Agent Instructions"), a `.claude/` directory with `agents/`, `commands/` and `worktrees/`, `docs/superpowers/plans`, the `lintLlmProofs` lake dependency, and phase checkpoint files (`PHASE-8-5d-CHECKPOINT.md`) |
 
 ## 2. Claim as stated by the authors (verbatim)
 README.md:
@@ -53,6 +53,43 @@ theorem cutoff_reliable
     ∀ n (c : Config k n), inv n c
 ```
 Environment model: TLA behaviours (`Nat → σ`) with stuttering. Communication in round-based examples is an HO collection constrained by a communication predicate, which covers lossy delivery. Interleaving examples use `ActionSpec` with gated actions. There is no Raft example. The KV-store example treats the replicated log as a black box: "In a real implementation the journal would be a consensus-based replicated log (e.g., Raft or Multi-Paxos); here we treat it as a black box" (`Leslie/Examples/KVStore.lean:15-17`).
+
+## 3a. Predicate semantics
+OneThirdRule. Conclusion, `Leslie/Examples/OneThirdRule.lean:174-178` @ `58e58b2`:
+```lean
+def agreement (s : RoundState (Fin n) LState) : Prop :=
+  ∀ p q v w,
+    (s.locals p).decided = some v →
+    (s.locals q).decided = some w →
+    v = w
+```
+Headline (`OneThirdRule.lean:378-380`): `pred_implies (otr_spec n).toSpec.safety [tlafml| □ ⌜agreement n⌝]`. The strongest premise is built into the spec's communication predicate (`OneThirdRule.lean:158-160`):
+```lean
+def comm_two_thirds : CommPred (Fin n) :=
+  fun _r ho => ∀ p : Fin n,
+    ((List.finRange n).filter fun q => ho p q).length * 3 > 2 * n
+```
+Plain language: in a Heard-Of round model where every process hears from more than 2n/3 processes in every round, decided processes never disagree. Not guaranteed:
+- Behaviour when the communication predicate fails (for example message loss beyond that bound).
+- Byzantine processes; the model is benign HO.
+- Any link to the Rust code.
+
+Paxos refinement. `paxos_refines_consensus` (`Leslie/Examples/Paxos.lean:926-928`) has premise `(h_inj : Function.Injective ballot)` and conclusion `refines_via paxos_ref (paxos n m ballot).toSpec.safety consensus.toSpec.safety_stutter`. `refines_via` (`Leslie/Refinement.lean:59-61`):
+```lean
+def refines_via {σ : Type u} {τ : Type v}
+    (f : σ → τ) (concrete : pred σ) (abstract : pred τ) : Prop :=
+  ∀ e, concrete e → abstract (exec.map f e)
+```
+The abstract `consensus` spec (`Paxos.lean:30-40`) has `init := fun s => s.chosen = none` and two actions, `choose1`/`choose2`. Each is gated on `s.chosen = none` and sets `chosen` to `some .v1` / `some .v2`.
+
+Plain language: every execution of the Paxos model, mapped by `paxos_ref`, is a stuttering execution of a two-value "choose once" spec. So at most one value is ever chosen, under injective ballot assignment. Not guaranteed:
+- More than two values in this example.
+- Liveness.
+- Implementation conformance.
+
+Generic simulation. `SimulationRel.soundness` (`Leslie/Refinement.lean:382-386`) states that every concrete execution has a related abstract `safety_stutter` execution under a monotone time map. Its body is `sorry`. Results that go through it, rather than through `refinement_mapping_*`, are not closed (lexical observation; not a proof-closure audit).
+
+Cutoff. `cutoff_reliable` (`Leslie/Cutoff.lean:446-452`) has premises `(hα : α_num < α_den) (h_half : 2 * α_num ≥ α_den)`, `(h_thresh : inv.threshDetermined α_num α_den)` and `(h_all_small : ∀ n, n ≤ cutoffBound k α_num α_den → ∀ c : Config k n, inv n c)`. Its conclusion is `∀ n (c : Config k n), inv n c`. Plain language: a threshold-determined predicate that holds on all configurations up to the cutoff holds for every n. The premise quantifies over all configurations, not only reachable ones.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -101,10 +138,10 @@ Pattern: a reusable TLA-in-Lean library with protocol-agnostic proof rules (refi
 |---|---|---|
 | H1 | A general TLA-in-Lean library with refinement, liveness (WF1) and HO-model rules. Many consensus and broadcast protocols are modelled, but not Raft | S1 |
 | H2 | 1,521 theorems with 5 sorry. The generic simulation soundness theorem and LastVoting invariant preservation are sorry'd. Paxos, OTR and cutoff have none | S1 |
-| H3 | No Lean-to-Rust link exists in the repo. The planned Verus-based design and the README-listed `Leslie/Rust` files are absent | S1 |
-| H4 | Developed with Claude Code agents and an LLM-proof linter (`lintLlmProofs`) | S1 |
-| H5 | Rust tests named as corresponding to Lean models, with no formal tie | S1 |
-| D | README uses "Fully machine-checked" and "Fully proved" for OTR and cutoff | S1 |
+| H3 | No Lean-to-Rust link exists in the repo. The planned Verus-based design and the README-listed `Leslie/Rust` files are absent | S1, S2, S3 |
+| H4 | Developed with Claude Code agents and an LLM-proof linter (`lintLlmProofs`) | S1, S4 |
+| H5 | Rust tests named as corresponding to Lean models, with no formal tie | S3 |
+| D | README uses "Fully machine-checked" and "Fully proved" for OTR and cutoff | S2 |
 
 ## 13. Conflicts
 - README status table: "Paxos | ... | Spec complete, 2 sorry" and "VRViewChange | ... | 1 sorry". Code at `58e58b2`: 0 `sorry` in `Paxos.lean` and `VRViewChange.lean`. README appears stale.
@@ -114,7 +151,10 @@ Pattern: a reusable TLA-in-Lean library with protocol-agnostic proof rules (refi
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | rupakm/leslie @ 58e58b2 (Lean sources, README.md, CLAUDE.md, docs/rust-verification.md, rust/) | https://github.com/rupakm/leslie | P | CODE | TLA shallow embedding in Lean 4 with refinement, HO-round and cutoff rules plus 40+ protocol examples. 5 sorry, including generic simulation soundness. Rust is tests only |
+| S1 | rupakm/leslie @ 58e58b2: Lean sources (`Leslie/*.lean`, `Leslie/Examples/**`) | https://github.com/rupakm/leslie/tree/58e58b2/Leslie | P | [CODE] | TLA shallow embedding in Lean 4 with refinement, HO-round and cutoff rules plus 40+ protocol examples. 5 lexical sorry, including generic `SimulationRel.soundness` |
+| S2 | `README.md` @ 58e58b2 | https://github.com/rupakm/leslie/blob/58e58b2/README.md | P | [CODE] | Project claims and status table (stale with respect to the tree; see Conflicts) |
+| S3 | `docs/rust-verification.md` and `rust/` @ 58e58b2 | https://github.com/rupakm/leslie/blob/58e58b2/docs/rust-verification.md | P | [CODE] | Rust correspondence approach. The tree contains Rust tests only; `Leslie/Rust` and `RustCorrespondence.lean` are absent |
+| S4 | `CLAUDE.md` and `.claude/` @ 58e58b2 | https://github.com/rupakm/leslie/blob/58e58b2/CLAUDE.md | P | [CODE] | Agent instructions ("# AI Agent Instructions"). Basis for the `agent-config-present` category |
 
 Access date: 2026-11-07.
 

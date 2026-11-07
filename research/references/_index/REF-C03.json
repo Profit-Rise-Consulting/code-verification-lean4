@@ -1,1 +1,55 @@
-{"id":"REF-C03","name":"Verdi Raft (Coq)","subject":"Raft consensus protocol and vard replicated key-value store","kind":"comparator","tool":"Coq >= 8.14 with Verdi (dev), StructTact, Cheerios; extraction to OCaml","org":"University of Washington (PLSE)","repo":"https://github.com/uwplse/verdi-raft ; https://github.com/uwplse/verdi","commit":"verdi-raft a3375e867326a82225e724cc1a7b4758b029376f; verdi 7e1641b758d8f0032aa7de63620bc115330e0a6b","toolchain":"Coq >= 8.14","maturity":"research","properties":{"functional":"yes","safety":"yes","liveness":"no","refinement":"yes","symbolic_security":"no","computational_security":"no","parsing":"partial","constant_time":"no"},"impl_link":"extraction","impl_language":"OCaml (extracted) + trusted OCaml shim","tcb":{"sorry":0,"axiom":0,"native_decide":0,"admit":0,"unverified_translator":"Coq extraction to OCaml (incl. ExtrOcamlNatInt), OCaml compiler/runtime, Verdi shim","note":"38 Parameter declarations in verdi are inside module types, not global axioms; Print Assumptions not run (not built)"},"loc":{"spec":170,"proof":50000,"impl":530,"note":"CPP 2016: 530 code / 50,000 proof; spec 170 from PLDI 2015 Table 2 (linearizability layer); repo .v total 50,190"},"built":"no","pattern":"proof-assistant handlers + network-semantics step relation + verified system transformers + extraction with trusted shim","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":3}
+{
+ "id": "REF-C03",
+ "name": "Verdi Raft (Coq)",
+ "subject": "Raft consensus protocol and vard replicated key-value store",
+ "kind": "comparator",
+ "tool": "Coq >= 8.14 with Verdi (dev), StructTact, Cheerios; extraction to OCaml",
+ "org": "University of Washington (PLSE)",
+ "repo": "https://github.com/uwplse/verdi-raft ; https://github.com/uwplse/verdi",
+ "commit": "verdi-raft a3375e867326a82225e724cc1a7b4758b029376f; verdi 7e1641b758d8f0032aa7de63620bc115330e0a6b",
+ "toolchain": "Coq >= 8.14",
+ "maturity": "research",
+ "properties": {
+  "functional": "proved",
+  "safety": "proved",
+  "liveness": "no",
+  "refinement": "proved",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "partial",
+  "constant_time": "no"
+ },
+ "impl_link": "extraction",
+ "impl_language": "OCaml (extracted) + trusted OCaml shim",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 0,
+  "admit": 0,
+  "unverified_translator": "Coq extraction to OCaml (incl. ExtrOcamlNatInt), OCaml compiler/runtime, Verdi shim",
+  "note": "38 Parameter declarations in verdi are inside module types, not global axioms; Print Assumptions not run (not built)"
+ },
+ "loc": {
+  "spec": 170,
+  "proof": 50000,
+  "impl": 530,
+  "note": "CPP 2016: 530 code / 50,000 proof; spec 170 from PLDI 2015 Table 2 (linearizability layer); repo .v total 50,190"
+ },
+ "built": "no",
+ "pattern": "proof-assistant handlers + network-semantics step relation + verified system transformers + extraction with trusted shim",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 3,
+ "impl_links": [
+  "extraction"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "none-found",
+ "ai_provenance_basis": "GitHub API: no AGENTS.md/CLAUDE.md/.claude/.cursor at root of verdi-raft or verdi; 0/100 recent commits with AI co-author trailers."
+}

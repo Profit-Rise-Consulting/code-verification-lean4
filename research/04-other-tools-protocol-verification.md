@@ -1,10 +1,10 @@
 # 04 - Other tools: how they verify protocols and their implementations (comparators)
 
-**Phase 1b file (rewritten 2026-11-07).** Counts: **[FULL] entries: 83 | [CODE] entries: 0 | Unverified leads: 16** (see the final section; leads are excluded from evidence). No Lean repository is relied on in this file, so no [CODE] inspection applies. No verdict on the hypothesis is stated anywhere in this file.
+**Phase 1c file (re-tagged 2026-11-07).** Counts: **[FULL] entries: 35 | [SECT] entries: 43 | [CODE] entries: 0 | Unverified leads: 21** (see the final section; leads are excluded from evidence). No Lean repository is relied on in this file, so no [CODE] inspection applies. No verdict on the hypothesis is stated anywhere in this file.
 
 ## How to read this file
 
-- Access date for every entry: **2026-11-07**. Tags: **[P]** primary (tool docs, paper, project repo, author page), **[S]** secondary. Depth: **[FULL]** = the primary page, paper or README was fetched as full text and the passages relevant to scope, numbers and limitations were read. For long PDFs (for example Trillium, Grove, Verus, the Dafny reference manual, Paulson, Signal, Everest) the abstract, the evaluation/limitations/assumptions sections and keyword-located passages were read; the remaining pages were not read line by line. Where a quote is given it was checked against the fetched text.
+- Access date for every entry: **2026-11-07**. Tags: **[P]** primary (tool docs, paper, project repo, author page), **[S]** secondary. Depth per CONVENTIONS: **[FULL]** = whole source retrieved and read in full (short pages, READMEs, blog posts, tool docs); **[SECT]** = whole source retrieved and named sections read, admissible for the quoted claim only (long PDFs and papers: Trillium, Grove, Verus, Paulson, Signal, Everest and similar); **[CODE]** = repository inspected at a commit (none here). Each [SECT] register entry names the sections read and gives a verbatim quote. Where the section numbers were not recorded, the entry says the passage was located by keyword and that section numbers were not recorded; a reviewer may treat such entries as weaker. Quotes were checked against the fetched text.
 - Sub-claim tags (from CONVENTIONS.md): H1 expressiveness, H2 provability at scale, H3 spec-to-implementation link, H4 generality ("any codebase"), H5 inference ("therefore"), D definitions of verify/check. They mark what the entry bears on; they are not findings.
 - Separate dossiers (other agents, `research/references/`) cover Everest, IronFleet/Verus, Verdi, Fiat-Crypto, s2n-tls SAW, Tamarin/ProVerif/CryptoVerif case studies, Ivy QUIC and TLA+ trace validation. This file records the comparator-level facts and points there for depth; it does not duplicate them.
 - Search-engine snippets were used only to find sources. Aggregator and hobby sites were not used as evidence (see section 18).
@@ -120,7 +120,7 @@
 - Result: four implementations tested; "27 errors in the server implementations" (13 protocol errors, 12 crashes, 2 failures to make progress); 4 potentially exploitable (includes a Heartbleed-like memory leak); 4 errors attributed partly to standard ambiguities.
 - Scope limits: spec omits 0-RTT, version negotiation, Retry, RETIRE_CONNECTION_ID; "captures only safety properties"; "We do not cover any statement in the QUIC document on recovery and congestion control"; encryption/decryption, OS and network are black boxes; TLS handshake events use a real TLS implementation; "a large portion (perhaps most) of the statements in the standard were not usefully testable". Runs limited to 100 protocol events and one connection; generation ~10 Hz; ~4 weeks of engineer time. Presented as testing, not proof.
 - README of the Ivy QUIC specification: "The specification as it stands has a number of limitations. First, it covers only a subset of features of QUIC... Second, the specification does not deal with quantitative time, meaning certain aspects of the QUIC specification relating to transmission rates and timeouts can't be stated." [S29]
-- Galois blog (secondary, vendor): reports the same project as a spec-based testing approach. [S32] Deep treatment: Ivy QUIC dossier.
+- Galois blog (secondary, vendor): reports a replication of the Ivy QUIC spec-based testing approach. [S32] Attribution correction (Phase 1c): the draft-29 extension of the Ivy QUIC specification is by Crochet, Rousseaux, Sambon, Piraux and Legay (EPIQ'21, arXiv 2503.01374), not by Galois; per dossier REF-C07 the Galois replication used a draft-23 branch. I have not read the Crochet paper myself; the attribution is taken from REF-C07 and is not used as evidence here. Deep treatment: Ivy QUIC dossier (REF-C07).
 
 ---
 
@@ -352,6 +352,7 @@ How each documented approach connects a protocol model to code. This section des
 
 ## 18. Source reliability notes
 
+- Phase 1c: S18, S21, S26, S50 and S81 were withdrawn from evidence (abstract-only or unrecoverable text) and listed under Unverified leads.
 - Vendor-authored comparisons: [S17] is written by the developer of Verifpal and compares against ProVerif and Tamarin. Its effort figures for TLS 1.3 and 5G are second-hand reports of other papers; the primary papers for TLS 1.3 were not read in this phase.
 - [S27] is an industry blog; [S28] is the peer-reviewed counterpart.
 - [S41] is a press article; [S53] and [S40] are the primary sources for Everest and Fiat.
@@ -370,8 +371,8 @@ How each documented approach connects a protocol model to code. This section des
 
 ## 20. Gaps closed and gaps remaining
 
-Closed since Phase 1 (all by fetching full text of primary sources):
-- Verifpal, Apalache, mypyvy, VST, Iris (Aneris, Trillium, Grove, Fairneris), Isabelle (Paulson, SCION), Kani, P, Stateright and Dafny reference all now have full-read entries.
+Closed since Phase 1 (by retrieving the primary sources; depth per entry is [FULL] or [SECT]):
+- Verifpal, Apalache, mypyvy, VST, Iris (Aneris, Trillium, Grove, Fairneris), Isabelle (Paulson, SCION), Kani, P, Stateright and Dafny reference now have [FULL] or [SECT] entries (Igloo and the Verifpal 2026 ePrint were withdrawn to leads in Phase 1c).
 - A limitations-by-category section (16) with verbatim quotes.
 - Model-to-code frameworks (17).
 
@@ -417,6 +418,11 @@ Items found only through search snippets, failed fetches, paywalls or aggregator
 14. MIT 6.826 lecture notes on Everest.
 15. Cortier et al., CryptoVerif dynamic key compromise paper.
 16. Aggregators and hobby sites (sota.io, positive-intentions, emergentmind, quant67, tractable.for-all.dev).
+17. Verifpal docs language reference page (verifpal.com/docs/reference/): read only for result semantics, no quote retained (former S18).
+18. Kobeissi, "From Toy to Instrument: Seven Years of Verifpal", ePrint 2026/1654: abstract page only (former S21). It describes Verifpal as a bounded counterexample finder; the full paper was not read.
+19. tracevalidation/Raft repository: research artifact with no description (former S26).
+20. Igloo, OOPSLA 2020 conference page: abstract only (former S50). The SCION router paper [S51] is the read source for Isabelle-to-Gobra linking.
+21. Scispace mirror of a QUIC handshake paper (former S81): fetch failed in Phase 1c; the earlier note that it used Verifpal could not be rechecked and it may be the same paper as [S80]. Not used.
 
 
 ## Source Register

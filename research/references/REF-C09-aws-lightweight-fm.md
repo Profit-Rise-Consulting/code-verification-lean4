@@ -12,6 +12,7 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Repo, commit SHA, last commit date, licence | ShardStore source and reference models are not public [S1]. `awslabs/shuttle` `855ae5d92a02dd3c02ddd3ca99dfaeb3b5e31d5b`, 2026-11-05, Apache-2.0 [S4]. `p-org/P` `260da928f67569ca7a8c0039a02d0bad7cde6096`, 2026-08-03, MIT [S3]. |
 | Lean toolchain (or other tool and version) | ShardStore: Rust `proptest`-style property-based testing, Loom and Shuttle stateless model checkers, Miri, Crux (bounded symbolic evaluation), early Prusti experiments [S1]. P: P compiler and checker (.NET), PObserve (Java) [S3]. |
 | Maturity | Production. ShardStore checks are "release blockers for continuous delivery" [S1]; P used by teams for "S3, EBS ... DynamoDB, MemoryDB, Aurora ... EC2, IoT" [S2]. |
+| AI provenance | `agent-config-present`: `p-org/P` contains a `CLAUDE.md` [S3]. This says nothing about who wrote P or any AWS model. No AI provenance is stated for ShardStore [S1]. The P README advertises PeasyAI, an AI tool for users to generate P code; that is a product feature, not provenance of the results here [S3]. |
 
 ## 2. Claim as stated by the authors (verbatim)
 - "We do not aim to achieve full formal verification, but instead emphasize automation, usability, and the ability to continually ensure correctness as both software and its specification evolve over time." [S1, abstract]
@@ -68,15 +69,15 @@ Plain language.
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | yes (tested) | Sequential equivalence to reference models under property-based testing [S1]. |
-| Safety invariant | yes (tested / bounded) | Crash-consistency persistence, linearizability, read-after-write under Loom/Shuttle [S1]; P model checking of design invariants [S2]. |
-| Liveness | partial | ShardStore "forward progress" after clean shutdown; deadlock detection by stateless model checking [S1]. P monitors may state liveness [S6]. |
-| Refinement | partial (tested) | Authors frame property tests as refinement of the reference model; no proof [S1]. |
+| Functional correctness | tested | Sequential equivalence to reference models under property-based testing [S1]. |
+| Safety invariant | tested (randomized; bounded for Loom) | Crash-consistency persistence, linearizability, read-after-write under Loom/Shuttle [S1]; P model checking of design invariants [S2]. |
+| Liveness | tested (narrow) | ShardStore "forward progress" after clean shutdown; deadlock detection by stateless model checking [S1]. P monitors may state liveness [S6]. |
+| Refinement | tested | Authors frame property tests as refinement of the reference model; no proof [S1]. |
 | Symbolic security | no | Not addressed. |
 | Computational security | no | Not addressed (CACM mentions separate HOL Light RSA work, out of scope here) [S2]. |
-| Parsing | partial | Panic-freedom of deserialisers proved up to a size bound with Crux; "parsing of S3's messaging protocol ... which we are still working on validating" [S1]. |
+| Parsing | partial (proved, bounded) | Panic-freedom of deserialisers proved up to a size bound with Crux; "parsing of S3's messaging protocol ... which we are still working on validating" [S1]. |
 | Constant-time | no | Not addressed. |
-| Undefined behaviour | partial | Test suite run under Miri (dynamic) [S1]. |
+| Undefined behaviour | tested | Test suite run under Miri (dynamic) [S1]. |
 
 ## 5. Link to implementation code
 - ShardStore: same-language executable spec, differential property-based testing against the real implementation above an in-memory disk; reference models also used as unit-test mocks, which "helps keep the reference models up-to-date" [S1]. Concurrency: Loom (sound for bounded small harnesses, CDSChecker algorithm, release/acquire model) and Shuttle (randomized PCT, scales to end-to-end tests "over a million steps") [S1, S4]. Index category: differential-testing.
@@ -146,13 +147,13 @@ Language: Rust-specific tooling for ShardStore (Loom, Shuttle, Miri, Crux); the 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | Bornholt et al., "Using Lightweight Formal Methods to Validate a Key-Value Storage Node in Amazon S3", SOSP 2021 | https://cdn.amazon.science/77/5e/4a7c238f4ce890efdc325df83263/using-lightweight-formal-methods-to-validate-a-key-value-storage-node-in-amazon-s3-2.pdf | P | FULL | Rust reference models, property-based conformance, crash and concurrency checking, 16 bugs, effort and LoC. |
-| S2 | Brooker and Desai, "Systems Correctness Practices at Amazon Web Services", CACM 68(6) 2025 | https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/ | P | FULL | AWS portfolio: P, PObserve, PBT, deterministic simulation, fuzzing, FIS, proofs (Cedar, Kani, HOL Light). |
-| S3 | p-org/P repository incl. PObserve docs (commit 260da92) | https://github.com/p-org/P | P | CODE | P compiler/checker, PObserve source (13,714 Java lines), log parser and architecture docs. |
-| S4 | awslabs/shuttle repository (commit 855ae5d) | https://github.com/awslabs/shuttle | P | CODE | Randomized concurrency testing library (PCT) used for ShardStore end-to-end tests. |
-| S5 | P docs "What is P" (`Docs/docs/whatisP.md`, master) | https://github.com/p-org/P/blob/master/Docs/docs/whatisP.md | P | FULL | Checker backends (PSym, PEx, PVerifier); PObserve said to extend "formal verification guarantees" to production. |
-| S6 | P docs "P Semantics" | https://p-org.github.io/P/advanced/psemantics/ | P | FULL | Actor-style machines, unbounded FIFO buffers, reliable sends, specs as global safety/liveness monitors. |
-| S7 | Desai, "Formal Modeling and Analysis of Distributed Systems: Finding Critical Bugs Early!", HPTS 2022 slides (incl. PObserve poster by Taylor, Yalcinkaya, Desai) | https://hpts.ws/papers/2022/HPTS2022.pdf | P | FULL | 2022: P used only for design validation; PObserve pipeline on Apache Flink; JUnit/Log4J integration. |
+| S1 | Bornholt et al., "Using Lightweight Formal Methods to Validate a Key-Value Storage Node in Amazon S3", SOSP 2021 | https://cdn.amazon.science/77/5e/4a7c238f4ce890efdc325df83263/using-lightweight-formal-methods-to-validate-a-key-value-storage-node-in-amazon-s3-2.pdf | P | [FULL] | Rust reference models, property-based conformance, crash and concurrency checking, 16 bugs, effort and LoC. |
+| S2 | Brooker and Desai, "Systems Correctness Practices at Amazon Web Services", CACM 68(6) 2025 | https://cacm.acm.org/practice/systems-correctness-practices-at-amazon-web-services/ | P | [FULL] | AWS portfolio: P, PObserve, PBT, deterministic simulation, fuzzing, FIS, proofs (Cedar, Kani, HOL Light). |
+| S3 | p-org/P repository incl. PObserve docs (commit 260da92) | https://github.com/p-org/P | P | [CODE] | P compiler/checker, PObserve source (13,714 Java lines), log parser and architecture docs. |
+| S4 | awslabs/shuttle repository (commit 855ae5d) | https://github.com/awslabs/shuttle | P | [CODE] | Randomized concurrency testing library (PCT) used for ShardStore end-to-end tests. |
+| S5 | P docs "What is P" (`Docs/docs/whatisP.md`, master) | https://github.com/p-org/P/blob/master/Docs/docs/whatisP.md | P | [FULL] | Checker backends (PSym, PEx, PVerifier); PObserve said to extend "formal verification guarantees" to production. |
+| S6 | P docs "P Semantics" | https://p-org.github.io/P/advanced/psemantics/ | P | [FULL] | Actor-style machines, unbounded FIFO buffers, reliable sends, specs as global safety/liveness monitors. |
+| S7 | Desai, "Formal Modeling and Analysis of Distributed Systems: Finding Critical Bugs Early!", HPTS 2022 slides (incl. PObserve poster by Taylor, Yalcinkaya, Desai) | https://hpts.ws/papers/2022/HPTS2022.pdf | P | [FULL] | 2022: P used only for design validation; PObserve pipeline on Apache Flink; JUnit/Log4J integration. |
 
 ## 15. Unverified leads (excluded from evidence)
 - `p-org/PObserve` separate repository (https://github.com/p-org/PObserve) not inspected.

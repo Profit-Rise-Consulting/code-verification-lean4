@@ -42,7 +42,7 @@
   "H5",
   "D"
  ],
- "full_read_sources": 4,
+ "full_read_sources": 2,
  "ai_provenance": "author-reported",
  "impl_links": [
   "model-only",

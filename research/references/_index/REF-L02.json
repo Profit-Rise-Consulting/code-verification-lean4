@@ -1,1 +1,51 @@
-{"id":"REF-L02","name":"SampCert","subject":"Differential privacy foundations and verified discrete Laplace/Gaussian samplers","kind":"lean","tool":"Lean 4 v4.34.1 + Mathlib; Dafny for deployment translation","org":"Amazon Web Services","repo":"https://github.com/leanprover/SampCert","commit":"a2c53bb5ff790e729e252958060699b7eff898b9","toolchain":"leanprover/lean4:v4.34.1","maturity":"production","properties":{"functional":"yes","safety":"no","liveness":"partial","refinement":"partial","symbolic_security":"no","computational_security":"partial","parsing":"no","constant_time":"no"},"impl_link":"lean-is-impl","impl_language":"Lean (C++ FFI primitives); Python via unverified Lean->Dafny->Python translation","tcb":{"sorry":0,"axiom":0,"native_decide":0,"unverified_translator":"6 @[extern] C++ primitives (ffi.cpp, 57 lines per paper); unverified Lean metaprogram SLang->Dafny plus Dafny->Python compiler; /dev/urandom uniformity"},"loc":{"spec":null,"proof":12000,"impl":57},"built":"no","pattern":"Lean is the implementation via a dual-semantics probability monad with a tiny trusted extern layer, or extraction to a mainstream language through an unverified translator","subclaims":["H1","H2","H3","H4","D"],"full_read_sources":2}
+{
+ "id": "REF-L02",
+ "name": "SampCert",
+ "subject": "Differential privacy foundations and verified discrete Laplace/Gaussian samplers",
+ "kind": "lean",
+ "tool": "Lean 4 v4.34.1 + Mathlib; Dafny for deployment translation",
+ "org": "Amazon Web Services",
+ "repo": "https://github.com/leanprover/SampCert",
+ "commit": "a2c53bb5ff790e729e252958060699b7eff898b9",
+ "toolchain": "leanprover/lean4:v4.34.1",
+ "maturity": "production",
+ "ai_provenance": "none-found",
+ "properties": {
+  "functional": "proved",
+  "safety": "n/a",
+  "liveness": "partial",
+  "refinement": "partial",
+  "symbolic_security": "no",
+  "computational_security": "partial",
+  "parsing": "n/a",
+  "constant_time": "no"
+ },
+ "impl_link": "lean-is-impl",
+ "impl_links": [
+  "lean-is-impl",
+  "extraction"
+ ],
+ "impl_language": "Lean (C++ FFI primitives); Python via unverified Lean->Dafny->Python translation",
+ "evidence_level": "static-inspected",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 0,
+  "unverified_translator": "6 @[extern] C++ primitives (ffi.cpp, 57 lines per paper); unverified Lean metaprogram SLang->Dafny plus Dafny->Python compiler; /dev/urandom uniformity"
+ },
+ "loc": {
+  "spec": null,
+  "proof": 12000,
+  "impl": 57
+ },
+ "built": "no",
+ "pattern": "Lean is the implementation via a dual-semantics probability monad with a tiny trusted extern layer, or extraction to a mainstream language through an unverified translator",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "D"
+ ],
+ "full_read_sources": 2
+}
