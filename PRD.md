@@ -41,7 +41,7 @@ Protocols such as TLS, QUIC, MQTT and Raft are typically specified in prose, som
 | Excerpt-only evidence entries outside quarantine | about 110 across 8 files | 0 | 0 | `scripts/check-research` NFR-001 |
 | Reference dossiers with all 15 sections | 0 | at least 20 (28 planned) | 33 (22 Lean, 11 comparator) | `scripts/check-research` FR-003 |
 | Recorded conflicts | 1 | at least 5 | 128 (CF-001 to CF-128) | research/CONFLICTS.md |
-| Independent review findings with disposition | none | 100% | 14 of 14; pass 2: 11 closed, 3 partial, 0 open | research/REVIEW-phase1.md |
+| Independent review findings with disposition | none | 100% | 14 of 14, all verified closed (pass 3) | research/REVIEW-phase1.md |
 
 ## 7. User Stories
 
