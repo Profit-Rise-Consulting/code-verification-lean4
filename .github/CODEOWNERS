@@ -1,0 +1,18 @@
+# Last matching pattern wins, so order from general to specific.
+# Every owner listed must have write access, or the rule silently does nothing.
+# Gitignore-style negation is NOT supported here.
+
+*                       @Profit-Rise-Consulting
+
+# The document spine changes the contract. Route it deliberately.
+/PRD.md                 @Profit-Rise-Consulting
+/TRD.md                 @Profit-Rise-Consulting
+/DESIGN.md              @Profit-Rise-Consulting
+/WIREFRAME.md           @Profit-Rise-Consulting
+/docs/adr/              @Profit-Rise-Consulting
+/docs/architecture/     @Profit-Rise-Consulting
+
+# Anything that can change what runs in CI, or with what permissions.
+/.github/workflows/     @Profit-Rise-Consulting
+/.github/CODEOWNERS     @Profit-Rise-Consulting
+/AGENTS.md              @Profit-Rise-Consulting
