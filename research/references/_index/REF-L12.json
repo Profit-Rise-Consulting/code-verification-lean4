@@ -10,12 +10,12 @@
  "toolchain": "leanprover/lean4:v4.35.0",
  "maturity": "research",
  "properties": {
-  "functional": "yes",
+  "functional": "proved",
   "safety": "partial",
   "liveness": "no",
-  "refinement": "yes",
+  "refinement": "proved",
   "symbolic_security": "no",
-  "computational_security": "no",
+  "computational_security": "assumed",
   "parsing": "no",
   "constant_time": "no"
  },
@@ -42,5 +42,11 @@
   "H5",
   "D"
  ],
- "full_read_sources": 3
+ "full_read_sources": 3,
+ "ai_provenance": "commit-trailers",
+ "impl_links": [
+  "lean-is-impl",
+  "differential-testing"
+ ],
+ "evidence_level": "static-inspected"
 }
