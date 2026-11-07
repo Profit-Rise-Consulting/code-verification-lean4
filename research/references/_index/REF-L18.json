@@ -1,1 +1,52 @@
-{"id":"REF-L18","name":"leanda (konnov) + lean-tla (yihuang) + tla-plus-lean-workflow (akkeshavan)","subject":"TLA+-style distributed protocol specs in Lean 4: Ben-Or, Tendermint, 2PC, EPFD (leanda); Streamlet/Minimmit + TLA DSL (lean-tla); six-protocol TLA+->Lean->Rust continuum incl. Raft election/OpenRaft","kind":"lean","tool":"Lean 4 v4.20-v4.33 + Mathlib; Veil/SMT (continuum); TLAPS/Apalache upstream","org":"Igor Konnov; yihuang; Anand Kumar Keshavan","repo":"https://github.com/konnov/leanda","commit":"f7abaa1d043e2902f0081937f0b29eb9f302736e","toolchain":"leanprover/lean4:v4.30.0 (Ben-Or, tendermint-single)","maturity":"research","properties":{"functional":"no","safety":"yes","liveness":"partial","refinement":"no","symbolic_security":"no","computational_security":"no","parsing":"no","constant_time":"no"},"impl_link":"none","impl_language":"none","tcb":{"sorry":0,"axiom":0,"native_decide":0,"unverified_translator":"private Python-DSL -> Lean translator generates Defs.lean (leanda); continuum Rust is LLM-synthesised, unverified"},"loc":{"spec":null,"proof":19196,"impl":null},"built":"no","pattern":"TLA+-mirroring Lean transition system + human-supplied inductive invariant (checked/repaired with Apalache) + AI-written init/step/safety proofs; no implementation link","subclaims":["H1","H2","H3","H4","D"],"full_read_sources":2}
+{
+ "id": "REF-L18",
+ "name": "leanda (konnov) + lean-tla (yihuang) + tla-plus-lean-workflow (akkeshavan)",
+ "subject": "TLA+-style distributed protocol specs in Lean 4: Ben-Or, Tendermint, 2PC, EPFD (leanda); Streamlet/Minimmit + TLA DSL (lean-tla); six-protocol TLA+->Lean->Rust continuum incl. Raft election/OpenRaft",
+ "kind": "lean",
+ "tool": "Lean 4 v4.20-v4.33 + Mathlib; Veil/SMT (continuum); TLAPS/Apalache upstream",
+ "org": "Igor Konnov; yihuang; Anand Kumar Keshavan",
+ "repo": "https://github.com/konnov/leanda",
+ "commit": "f7abaa1d043e2902f0081937f0b29eb9f302736e",
+ "toolchain": "leanprover/lean4:v4.30.0 (Ben-Or, tendermint-single)",
+ "maturity": "research",
+ "properties": {
+  "functional": "no",
+  "safety": "proved",
+  "liveness": "partial",
+  "refinement": "partial",
+  "symbolic_security": "n/a",
+  "computational_security": "n/a",
+  "parsing": "n/a",
+  "constant_time": "n/a"
+ },
+ "impl_link": "model-only",
+ "impl_language": "none (continuum: Rust, unverified)",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 0,
+  "unverified_translator": "private Python-DSL -> Lean translator generates Defs.lean (leanda); continuum Rust is LLM-synthesised, unverified"
+ },
+ "loc": {
+  "spec": null,
+  "proof": 19196,
+  "impl": null
+ },
+ "built": "no",
+ "pattern": "TLA+-mirroring Lean transition system + human-supplied inductive invariant (checked/repaired with Apalache) + AI-written init/step/safety proofs; no implementation link",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "D"
+ ],
+ "full_read_sources": 2,
+ "impl_links": [
+  "model-only"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "author-reported",
+ "ai_provenance_basis": "leanda blogs S2/S3 state proofs were written by Claude Code / Codex under author supervision",
+ "property_notes": "safety: leanda Tendermint run_agreement (N = 3T+1 only); Ben-Or agreement_inv_invariant additionally assumes type_ok at every index; tla-plus-lean-workflow Raft ElectionSafety is vacuous. liveness: lean-tla Streamlet/Minimmit only. refinement: lean-tla execution layer exec_next_refines only. Continuum Rust is LLM-synthesised with no proof link (recorded in tcb.unverified_translator)"
+}

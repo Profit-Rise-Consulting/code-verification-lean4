@@ -11,7 +11,9 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Primary URLs | https://dl.acm.org/doi/full/10.1145/3805702 ; https://mitls.org/ ; https://github.com/project-everest/mitls-fstar ; https://github.com/hacl-star/hacl-star ; https://github.com/project-everest/everparse |
 | Repo, commit SHA, last commit date, licence | mitls-fstar `9a75fa8c46e50897b1f43002885d25a34dfa929a`, 2026-07-16, Apache-2.0 ("Copyright 2015 INRIA and Microsoft Corporation"). hacl-star `f557259007db9933442dde10aa995c1b00bd3446`, 2026-10-29, Apache-2.0. everparse `8bd3c401bc8a6fbd29c5f21dd049116f83c84c15`, 2026-11-06, Apache-2.0. EverCrypt lives in hacl-star (`providers/`). |
 | Tool and version | F* (Low* dialect) + Z3 SMT; KaRaMeL (F*-to-C), Vale (verified assembly). mitls-fstar pins F* as a git submodule `.fstar`. HACL* README: "HACL\* builds and verifies using a frozen F\* version, prior to the removal of the Low\* toolchain"; `flake.nix` pins `github:fstarlang/fstar?ref=fstar1` and KaRaMeL rev `bd2d4fa8a61344042c7cd7a31013d72bfe4568ce`. EverParse: `EVERPARSE_Z3_VERSION ?= 5.3.0` (`lib/everparse/z3-version.Makefile`). |
-| Maturity | HACL*/EverCrypt: production (deployed code; repo now "in maintenance mode"). EverParse: production (deployed in Windows build). miTLS-fstar: research reference implementation; handshake proof incomplete; used historically in msquic, later superseded by Schannel [C01-S1]. Not AI-generated (multi-institution team since 2016). |
+| Maturity | HACL*/EverCrypt: production (deployed code; repo now "in maintenance mode"). EverParse: production (deployed in Windows build). miTLS-fstar: research reference implementation; handshake proof incomplete; used historically in msquic, later superseded by Schannel [C01-S1].|
+| AI provenance | commit-trailers. Basis: GitHub API, last 100 commits per repo, checked 2026-11-07. project-everest/everparse has 61/100 commits with `Co-authored-by: Copilot` (2026-10-23 to 2026-11-06) and `.github/` Copilot helper scripts (`ci-make-with-copilot.sh`, `commit-copilot-fixes.sh`, `copilot-pr-description.sh`). mitls-fstar and hacl-star have 0/100. No AGENTS.md/CLAUDE.md-type files in any of the three repos. These commits postdate the cited results. Recorded as provenance only, not as a discount on the mathematics. |
+| Evidence level | deployed (HACL*/EverCrypt and EverParse code is used in Firefox/NSS, the Linux kernel, Windows [C01-S1]); miTLS handshake: author-reported (incomplete); everything else in this dossier: static-inspected |
 
 ## 2. Claim as stated by the authors (verbatim)
 - Retrospective goal list: "The TLS protocol, including support for both TLS-1.2 and TLS-1.3, covering both the record-layer and handshake subprotocols, with idealized code serving as a cryptographic specification." [C01-S1]
@@ -54,6 +56,37 @@ struct {
 Handshake state machine: `src/tls/MiTLS.Handshake.fst` begins (line 24) with `#set-options "--admit_smt_queries true"`, repeated at lines 171, 300, 678, i.e. its SMT proof obligations are admitted, not checked [C01-S5]. Retrospective: "The proof of the TLS-1.3 handshake in miTLS-fstar was left incomplete" [C01-S1].
 
 Adversary/environment: in the record-layer work the adversary "controls the TLS sub-protocols"; security is computational, with concrete bounds for AES-GCM and ChaCha20-Poly1305 [C01-S2]. Network below TLS is untrusted ("integrated below with untrusted networking layer (TCP, UDP, etc.)") [C01-S1].
+
+## 3a. Predicate semantics
+
+Headline machine-checked result used here: HACL* Curve25519 (the pattern is the same for the other HACL* primitives). There is no handshake-level theorem to quote, because the miTLS handshake implementation proof was not completed (see §3, §13).
+
+Conclusion predicate (implementation type), `code/curve25519/Hacl.Impl.Curve25519.Generic.fsti:13-23` @ f557259 [C01-S6]:
+```
+let scalarmult_st (s:field_spec) (p: Type0) =
+    o:lbuffer uint8 32ul
+  -> k:lbuffer uint8 32ul
+  -> i:lbuffer uint8 32ul
+  -> Stack unit
+    (requires fun h0 ->
+      p /\
+      live h0 o /\ live h0 k /\ live h0 i /\
+      disjoint o i /\ disjoint o k)
+    (ensures  fun h0 _ h1 -> modifies (loc o) h0 h1 /\
+      as_seq h1 o == S.scalarmult (as_seq h0 k) (as_seq h0 i))
+```
+Specification side, `specs/Spec.Curve25519.fst:120-123` [C01-S6]:
+```
+let scalarmult (k:scalar) (u:serialized_point) : Tot serialized_point =
+  let u = decodePoint u in
+  let res = montgomery_ladder u k in
+  encodePoint res
+```
+with `decodePoint` at line 47-48 (`(nat_from_bytes_le u % pow2 255) % prime`) and `montgomery_ladder` at lines 103-118 (fixed 251-iteration `repeati` ladder plus three final doublings).
+
+Strongest premises: the three 32-byte buffers are live, and the output is disjoint from both inputs. `p` is a platform-capability precondition (for example CPU features for the Vale-backed field variant).
+
+Plain language. Guaranteed: if the premises hold, the C/assembly function writes exactly the bytes that the F* functional spec `scalarmult` computes, and modifies only the output buffer. Not guaranteed by this predicate: that the hand-written F* spec matches RFC 7748 (that equivalence is by review and test vectors, not by proof); correctness of KaRaMeL's F*-to-C translation or of the C compiler (both trusted, see §6); and side-channel freedom. Secret independence is a separate typing discipline over `Lib.IntTypes` secret integers, not part of this postcondition. Nothing here is a TLS handshake guarantee.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -124,19 +157,19 @@ Pattern: "verified implementation in a proof-oriented language, extracted to C/a
 
 ## 13. Conflicts
 - miTLS and RFC 8446. Side A: sota.io blog [C01-S4] states "miTLS has been verified against the formal TLS 1.3 specification (RFC 8446) and against computational security models" and that the TLS state machine is "verified against the TLS 1.3 RFC". The mitls.org home page [C01-S3] calls miTLS "a verified reference implementation of the TLS protocol" (its detailed text refers to the F#/F7 0.9 release). Side B: the 2026 TOPLAS retrospective by the Everest authors [C01-S1] states "we did not complete verifying our *implementation* of the TLS handshake" and "The proof of the TLS-1.3 handshake in miTLS-fstar was left incomplete"; the 2016 record-layer paper [C01-S2] tested against TLS 1.3 draft 14/18 and left "a complete verification of the TLS 1.3 handshake ... as future work"; mitls-fstar source [C01-S5] sets `--admit_smt_queries true` in `MiTLS.Handshake.fst` and cites `draft-ietf-tls-tls13` rather than RFC 8446. Factual context, not a resolution: RFC 8446 was published in 2018, after the record-layer paper; [C01-S4] is a vendor blog that cites no source for the sentence; [C01-S1] covers the F* version (miTLS-fstar), whereas mitls.org's detailed security-theorem text describes the earlier F# version.
-- sota.io [C01-S4] says miTLS code "runs in Firefox's NSS library"; [C01-S1] names Firefox only among deployments of Everest crypto (HACL*/EverCrypt) and says miTLS handshake was deployed in msquic, later superseded by Schannel.
-- HACL* size: 212,000 F* LOC / 101,000 C LOC (HACL* section) vs 245,000 F*+Vale LOC / 135,000 C+asm LOC (overview) within [C01-S1]; the difference is likely Vale inclusion, as worded, but recorded as given.
+- sota.io [C01-S4] says miTLS code "runs in Firefox's NSS library"; [C01-S1] names Firefox only among deployments of Everest crypto (HACL*/EverCrypt) and says miTLS handshake was deployed in msquic, later superseded by Schannel. The full [C01-S4] page (dated 2026-04-01, author "sota.io team") follows the NSS sentence with a list headed "miTLS code is deployed in" whose items are deployments that [C01-S1] attributes to HACL*/EverCrypt; [C01-S4] gives no references.
+- HACL* size: 212,000 F* LOC / 101,000 C LOC (HACL* section) vs 245,000 F*+Vale LOC / 135,000 C+asm LOC (overview) within [C01-S1]; the overview figure names Vale explicitly, the HACL* section figure does not; recorded as given.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| C01-S1 | Project Everest: Perspectives from Developing Industrial-Grade High-Assurance Software (ACM TOPLAS 48(2), published 2026-06-05) | https://dl.acm.org/doi/full/10.1145/3805702 | P | FULL (≈200k chars of article text; fetch truncated in the final reference list) | Authors' retrospective: what Everest verified (crypto, record layers, parsers), what it did not (handshake implementation, HTTPS), TCB, soundness bugs, deployments. |
-| C01-S2 | Implementing and Proving the TLS 1.3 Record Layer (Bhargavan et al., ePrint 2016/1178, S&P 2017) | https://eprint.iacr.org/2016/1178.pdf | P | FULL | Verified F* record layer with computational security reduction, interop with draft-14/18 implementations; handshake verification left as future work. |
-| C01-S3 | miTLS: A Verified Reference Implementation of TLS | https://mitls.org/ | P | FULL | Project home page; describes F#/F7 miTLS 0.9 security theorems and F* development version. |
-| C01-S4 | Deploy F* to Europe — Verified Programming on EU Infrastructure in 2026 (sota.io blog) | https://www.sota.io/blog/deploy-fstar-europe-eu-hosting | S | FULL (read via extraction of all relevant sentences) | Vendor marketing post claiming miTLS verified against RFC 8446 and running in NSS; no citations for these claims. |
-| C01-S5 | project-everest/mitls-fstar @ 9a75fa8 | https://github.com/project-everest/mitls-fstar | P | CODE | F* TLS implementation; handshake modules admit SMT queries; RFC-syntax parser specs. |
-| C01-S6 | hacl-star/hacl-star @ f557259 | https://github.com/hacl-star/hacl-star | P | CODE | Verified crypto library (HACL*, Vale, EverCrypt); functional-correctness postconditions; maintenance mode. |
-| C01-S7 | project-everest/everparse @ 8bd3c40 | https://github.com/project-everest/everparse | P | CODE | Verified parser generator (LowParse, QuackyDucky, 3D); pins Z3 5.3.0. |
+| C01-S1 | Project Everest: Perspectives from Developing Industrial-Grade High-Assurance Software (ACM TOPLAS 48(2), published 2026-06-05) | https://dl.acm.org/doi/full/10.1145/3805702 | [P] | [FULL] (complete article text, ≈272k chars, re-fetched 2026-11-07 including reference list) | Authors' retrospective: what Everest verified (crypto, record layers, parsers), what it did not (handshake implementation, HTTPS), TCB, soundness bugs, deployments. |
+| C01-S2 | Implementing and Proving the TLS 1.3 Record Layer (Bhargavan et al., ePrint 2016/1178, S&P 2017) | https://eprint.iacr.org/2016/1178.pdf | [P] | [FULL] | Verified F* record layer with computational security reduction, interop with draft-14/18 implementations; handshake verification left as future work. |
+| C01-S3 | miTLS: A Verified Reference Implementation of TLS | https://mitls.org/ | [P] | [FULL] | Project home page; describes F#/F7 miTLS 0.9 security theorems and F* development version. |
+| C01-S4 | Deploy F* to Europe — Verified Programming on EU Infrastructure in 2026 (sota.io blog) | https://www.sota.io/blog/deploy-fstar-europe-eu-hosting | [S] | [FULL] (complete page re-fetched raw 2026-11-07; dated 2026-04-01, author "sota.io team"; cites no sources) | Vendor marketing post claiming miTLS verified against RFC 8446 and running in NSS; no citations for these claims. |
+| C01-S5 | project-everest/mitls-fstar @ 9a75fa8 | https://github.com/project-everest/mitls-fstar | [P] | [CODE] | F* TLS implementation; handshake modules admit SMT queries; RFC-syntax parser specs. |
+| C01-S6 | hacl-star/hacl-star @ f557259 | https://github.com/hacl-star/hacl-star | [P] | [CODE] | Verified crypto library (HACL*, Vale, EverCrypt); functional-correctness postconditions; maintenance mode. |
+| C01-S7 | project-everest/everparse @ 8bd3c40 | https://github.com/project-everest/everparse | [P] | [CODE] | Verified parser generator (LowParse, QuackyDucky, 3D); pins Z3 5.3.0. |
 
 ## 15. Unverified leads (excluded from evidence)
 - A search result listed "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3" (rfc-editor.org), possibly an RFC 8446 successor; not read.

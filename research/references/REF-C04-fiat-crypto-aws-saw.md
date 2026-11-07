@@ -11,7 +11,9 @@ Kind: comparator (non-Lean). Access date for all sources: 2026-11-07.
 | Primary URLs | http://adam.chlipala.net/papers/FiatCryptoSP19/FiatCryptoSP19.pdf ; https://discovery.ucl.ac.uk/id/eprint/10075271/1/Chudnov2018_Chapter_ContinuousFormalVerificationOf.pdf ; https://github.com/aws/s2n-tls ; https://github.com/awslabs/aws-lc-verification ; https://github.com/mit-plv/fiat-crypto |
 | Repo, commit SHA, last commit date, licence | mit-plv/fiat-crypto `1e721c6f18c43b90922e7bc57fd64848e5cff2be`, 2026-10-19, MIT OR Apache-2.0 OR BSD-1-Clause. aws/s2n-tls `d695290a8e4c7107bb2c5afa359a46c0624a1c50`, 2026-11-06, Apache-2.0. awslabs/aws-lc-verification `797302470c1703cbb1a3a6fa98daffef0bfd3d80`, 2026-03-26, Apache-2.0. |
 | Tool and version | Fiat-Crypto: Coq/Rocq (`coq-fiat-crypto-without-bedrock.opam`: `"coq" {>= "9.0~"}`, `"rocq-stdlib" {>= "9.1~"}`), plus Bedrock2 option. s2n: SAW binary `saw-0.9.0.99-Linux-x86_64` downloaded by `codebuild/bin/install_saw.sh`; Cryptol; Z3 via `w4_unint_z3`. aws-lc: SAW + Cryptol, NSym (AArch64), Coq for spec validation; verified code compiled with Clang 10 (C) and Clang 10/14 (AArch64 asm) [C04-S4]. |
-| Maturity | Production: Fiat-Crypto output in BoringSSL ("Chrome, Android, and CloudFlare") [C04-S1]; s2n-tls proofs in CI of a production AWS library [C04-S2]; aws-lc is FIPS 140-3 certified [C04-S6]. Not AI-generated. |
+| Maturity | Production: Fiat-Crypto output in BoringSSL ("Chrome, Android, and CloudFlare") [C04-S1]; s2n-tls proofs in CI of a production AWS library [C04-S2]; aws-lc is FIPS 140-3 certified [C04-S6].|
+| AI provenance | commit-trailers. Basis: GitHub API, last 100 commits per repo, checked 2026-11-07. mit-plv/fiat-crypto has 39/100 commits with Claude co-author trailers (2026-05-28 to 2026-10-19). aws/s2n-tls has 1/100 (2026-11-06). awslabs/aws-lc-verification has 0/100. No agent-config files at the repo roots. The S&P 2019 and CAV 2018 results predate these commits. Recorded as provenance only, not as a discount on the mathematics. |
+| Evidence level | deployed (Fiat-generated code in BoringSSL and others [C04-S1]; s2n SAW proofs run in AWS CI [C04-S2]); proof content: static-inspected |
 
 ## 2. Claim as stated by the authors (verbatim)
 - Fiat-Crypto: "We introduce a new approach for implementing cryptographic arithmetic in short high-level code with machine-checked proofs of functional correctness ... As one outcome, we present the first verified high-performance implementation of P-256, the most widely used elliptic curve." [C04-S1]
@@ -46,6 +48,45 @@ checked at `tests/saw/spec/handshake/handshake.saw:109-110` with `prove_print (w
 aws-lc: SAW `llvm_verify` / `llvm_verify_x86` proofs of EVP API operations against Cryptol specs for fixed platforms, with listed caveats (section 6) [C04-S4].
 
 Adversary: none modelled for the handshake: "We assume that the TLS handshake as specified in the RFCs is secure, and do not formalize nor verify any cryptographic properties of the specification" [C04-S2]. HMAC high-level spec has a pseudorandom-function security proof (Coq, prior work) [C04-S2].
+
+## 3a. Predicate semantics
+
+Fiat-Crypto field multiplication, `src/COperationSpecifications.v:278-284` @ 1e721c6 [C04-S5]:
+```
+    Definition carry_mul_correct
+               (carry_mul : list Z -> list Z -> list Z)
+      := forall x y,
+        list_Z_bounded_by loose_bounds x
+        -> list_Z_bounded_by loose_bounds y
+        -> eval (carry_mul x y) mod m = (Z.mul (eval x) (eval y)) mod m
+           /\ list_Z_bounded_by tight_bounds (carry_mul x y).
+```
+Here `eval` is `Positional.eval wt n` (line 253: `Local Notation eval := (Positional.eval wt n).`), the weighted sum of limbs. `list_Z_bounded_by` (lines 47-50) is `is_bounded_by bounds v = true` (each limb within its `zrange`).
+
+Plain language (Fiat). Guaranteed: on inputs whose limbs are within the loose bounds, the generated function computes the field product modulo `m` and returns limbs within the tight bounds. This holds for all such inputs, not only for sampled ones. The statement is about the Coq-level function. Its transfer to the emitted C relies on Fiat's verified pipeline down to its own C-like AST and on the trusted pretty-printer and C compiler (§5, §6). Not guaranteed: behaviour on out-of-bounds inputs; constant-time execution of the compiled binary; and protocol-level properties.
+
+s2n-tls TLS 1.3 state machine, `tests/saw/spec/handshake/rfc_handshake_tls13.cry:36-41` @ d695290 [C04-S3]:
+```
+tls13rfcSimulatesS2N : {len} (fin len, len >= 1) => connection -> Parameters -> Bit
+tls13rfcSimulatesS2N conn params =
+    (initial_connection conn /\ connectionParameters conn params) ==>
+        tracesMatchExcludingWaits
+            (map rfc2S2N (doHandshake`{len} params))
+            (traceS2N`{len} conn)
+```
+`tracesMatchExcludingWaits`, `tests/saw/spec/handshake/s2n_handshake_io.cry:203-209`:
+```
+// match actions, but drop any with an 'A' writer from the second trace
+tracesMatchExcludingWaits: {n} (fin n, width n>=1) => [n]handshake_action -> [n]handshake_action -> Bit
+tracesMatchExcludingWaits xs ys = go 0 0 where
+  go: [width n] -> [width n] -> Bit
+  go i j = if i >= `n then True
+            | j >= `n then True
+            else (xs@i == ys@j /\ go (i+1) (j+1))
+```
+(The comment says 'A' writers are dropped. The body as written advances `i` and `j` together and compares elementwise; this is recorded as observed, without interpretation.) Premise `initial_connection` (`s2n_handshake_io.cry:994` onward) requires `handshake_type < S2N_HANDSHAKES_COUNT`, `message_number == 0`, `corked` ∈ {0,1}, and TLS 1.3 consistency constraints (for example, early data accepted implies a non-null `chosen_psk`; HelloRetryRequest and early data are not both set; EarlyClientCCS implies MiddleboxCompat). It is proved only at `len = 16`: `prove_print (w4_unint_z3 []) {{ tls13rfcSimulatesS2N `{16} }};` (`handshake.saw:110`).
+
+Plain language (s2n). Guaranteed: for every valid initial connection and matching parameters, the first 16 handshake actions of s2n's Cryptol state-machine model equal those of the Cryptol transcription of the RFC 8446 message flow. A separate SAW proof (`handshake_io_lowlevel.saw`) links the C functions `s2n_conn_set_handshake_type` / `s2n_advance_message` to `traceS2N`'s step function on LLVM bitcode. Not guaranteed: traces longer than 16; that the Cryptol RFC transcription is faithful to RFC 8446 (manual); message contents, cryptography or record processing (separate or absent proofs); and binary-level semantics beyond the LLVM bitcode that SAW reads. For aws-lc, the per-function SAW specs carry the README caveats quoted in §6 (limited input lengths, assumed malloc/free, `ToolGap`, and others).
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
@@ -120,12 +161,12 @@ Two patterns. (a) Fiat: "generic verified algorithm + certified specialising com
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| C04-S1 | Simple High-Level Code For Cryptographic Arithmetic – With Proofs, Without Compromises (Erbsen et al., IEEE S&P 2019) | http://adam.chlipala.net/papers/FiatCryptoSP19/FiatCryptoSP19.pdf | P | FULL | Fiat-Crypto: generic Coq arithmetic, partial evaluation, certified compiler to C; P-256 and Curve25519 in BoringSSL; TCB and limitations. |
-| C04-S2 | Continuous Formal Verification of Amazon s2n (Chudnov et al., CAV 2018) | https://discovery.ucl.ac.uk/id/eprint/10075271/1/Chudnov2018_Chapter_ContinuousFormalVerificationOf.pdf | P | FULL | SAW/Cryptol proofs of s2n HMAC, DRBG, TLS 1.2 handshake state machine in CI; effort; bug found. |
-| C04-S3 | aws/s2n-tls @ d695290 (`tests/saw`, `codebuild/`) | https://github.com/aws/s2n-tls | P | CODE | Current SAW scripts, Cryptol RFC specs for TLS 1.2/1.3 state machines, assumed specs, failure tests, CI targets, SAW 0.9.0.99 pin. |
-| C04-S4 | awslabs/aws-lc-verification @ 7973024 (README and SAW scripts) | https://github.com/awslabs/aws-lc-verification | P | CODE | Verified-code table with caveats, platforms, tools; 221 verify / 130 unsafe-assume calls; move to s2n-bignum/CBMC. |
-| C04-S5 | mit-plv/fiat-crypto @ 1e721c6 | https://github.com/mit-plv/fiat-crypto | P | CODE | Coq sources; operation specs; generated C with postconditions; admit/Axiom locations; crypto-defects list. |
-| C04-S6 | Formal Verification of Cryptographic Software at AWS: Current Practices and Future Trends (Chapman et al., NIST workshop, April 2024) | https://www.nist.gov/system/files/documents/2024/06/11/01-ChapmanPHPLBK.pdf | P | FULL | AWS overview: aws-lc (SAW, Coq, NSym+Lean4, s2n-bignum HOL Light), s2n-tls (SAW, CBMC, SideTrail), s2n-quic (Kani), SampCert. |
+| C04-S1 | Simple High-Level Code For Cryptographic Arithmetic – With Proofs, Without Compromises (Erbsen et al., IEEE S&P 2019) | http://adam.chlipala.net/papers/FiatCryptoSP19/FiatCryptoSP19.pdf | [P] | [FULL] | Fiat-Crypto: generic Coq arithmetic, partial evaluation, certified compiler to C; P-256 and Curve25519 in BoringSSL; TCB and limitations. |
+| C04-S2 | Continuous Formal Verification of Amazon s2n (Chudnov et al., CAV 2018) | https://discovery.ucl.ac.uk/id/eprint/10075271/1/Chudnov2018_Chapter_ContinuousFormalVerificationOf.pdf | [P] | [FULL] | SAW/Cryptol proofs of s2n HMAC, DRBG, TLS 1.2 handshake state machine in CI; effort; bug found. |
+| C04-S3 | aws/s2n-tls @ d695290 (`tests/saw`, `codebuild/`) | https://github.com/aws/s2n-tls | [P] | [CODE] | Current SAW scripts, Cryptol RFC specs for TLS 1.2/1.3 state machines, assumed specs, failure tests, CI targets, SAW 0.9.0.99 pin. |
+| C04-S4 | awslabs/aws-lc-verification @ 7973024 (README and SAW scripts) | https://github.com/awslabs/aws-lc-verification | [P] | [CODE] | Verified-code table with caveats, platforms, tools; 221 verify / 130 unsafe-assume calls; move to s2n-bignum/CBMC. |
+| C04-S5 | mit-plv/fiat-crypto @ 1e721c6 | https://github.com/mit-plv/fiat-crypto | [P] | [CODE] | Coq sources; operation specs; generated C with postconditions; admit/Axiom locations; crypto-defects list. |
+| C04-S6 | Formal Verification of Cryptographic Software at AWS: Current Practices and Future Trends (Chapman et al., NIST workshop, April 2024) | https://www.nist.gov/system/files/documents/2024/06/11/01-ChapmanPHPLBK.pdf | [P] | [FULL] | AWS overview: aws-lc (SAW, Coq, NSym+Lean4, s2n-bignum HOL Light), s2n-tls (SAW, CBMC, SideTrail), s2n-quic (Kani), SampCert. |
 
 ## 15. Unverified leads (excluded from evidence)
 - s2n-bignum (HOL Light), mlkem-native and mldsa-native (CBMC + HOL Light) named in [C04-S4]; not read.

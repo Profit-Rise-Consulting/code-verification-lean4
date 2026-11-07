@@ -1,1 +1,53 @@
-{"id":"REF-L19","name":"Leslie (TLA in Lean 4)","subject":"Shallow TLA embedding with refinement, Heard-Of rounds, cutoff theorems, probabilistic layer; Paxos, OneThirdRule, Ben-Or, VR view change and 40+ protocol examples (no Raft)","kind":"lean","tool":"Lean 4 v4.27.0 + Mathlib","org":"Rupak Majumdar","repo":"https://github.com/rupakm/leslie","commit":"58e58b2502b2a570e4ce4fdb6b40748c3cb30e5d","toolchain":"leanprover/lean4:v4.27.0","maturity":"research","properties":{"functional":"no","safety":"yes","liveness":"yes","refinement":"yes","symbolic_security":"partial","computational_security":"partial","parsing":"no","constant_time":"no"},"impl_link":"differential-testing","impl_language":"Rust","tcb":{"sorry":5,"axiom":0,"native_decide":1,"unverified_translator":"none; Rust crate linked only by tests, planned Verus/RustCorrespondence not present"},"loc":{"spec":null,"proof":103720,"impl":1892},"built":"no","pattern":"Reusable TLA-in-Lean library (refinement mapping with stuttering, HO round invariants, WF1, cutoff) + per-protocol model and inductive invariant","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":0}
+{
+ "id": "REF-L19",
+ "name": "Leslie (TLA in Lean 4)",
+ "subject": "Shallow TLA embedding with refinement, Heard-Of rounds, cutoff theorems, probabilistic layer; Paxos, OneThirdRule, Ben-Or, VR view change and 40+ protocol examples (no Raft)",
+ "kind": "lean",
+ "tool": "Lean 4 v4.27.0 + Mathlib",
+ "org": "Rupak Majumdar",
+ "repo": "https://github.com/rupakm/leslie",
+ "commit": "58e58b2502b2a570e4ce4fdb6b40748c3cb30e5d",
+ "toolchain": "leanprover/lean4:v4.27.0",
+ "maturity": "research",
+ "properties": {
+  "functional": "no",
+  "safety": "proved",
+  "liveness": "proved",
+  "refinement": "partial",
+  "symbolic_security": "partial",
+  "computational_security": "partial",
+  "parsing": "n/a",
+  "constant_time": "n/a"
+ },
+ "impl_link": "manual",
+ "impl_language": "Rust (tests only)",
+ "tcb": {
+  "sorry": 5,
+  "axiom": 0,
+  "native_decide": 1,
+  "unverified_translator": "none; Rust crate linked only by tests, planned Verus/RustCorrespondence not present"
+ },
+ "loc": {
+  "spec": null,
+  "proof": 103720,
+  "impl": 1892
+ },
+ "built": "no",
+ "pattern": "Reusable TLA-in-Lean library (refinement mapping with stuttering, HO round invariants, WF1, cutoff) + per-protocol model and inductive invariant",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 0,
+ "impl_links": [
+  "manual"
+ ],
+ "evidence_level": "static-inspected",
+ "ai_provenance": "agent-config-present",
+ "ai_provenance_basis": "CLAUDE.md (AI Agent Instructions), .claude/ agents and commands, lintLlmProofs dependency",
+ "property_notes": "refinement: paxos_refines_consensus proved via refinement_mapping_stutter_with_invariant; generic SimulationRel.soundness is sorry. security: Leslie/Prob (AVSS, secrecy) known at file level only, not inspected. impl: Rust crate linked by tests named after Lean models, no formal or fixture tie"
+}

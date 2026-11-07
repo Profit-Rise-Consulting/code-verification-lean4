@@ -152,14 +152,14 @@ Hardware intrinsics: Rust shims in `src/verify/intrinsics/` (lane-array models o
 ## 3a. Predicate semantics
 All files are under `SymCRust/lean/` at SymCrypt c2e575a [C1]; the triple `⦃ ⦄` means `Aeneas.Std.WP.spec` at d71d2e3f (section 3.1) [C4].
 
-Conclusion predicate of `mlkem.decapsulate.spec` (Decaps.lean:1701-1733): `MLKEM.Decaps`, defined at `Spec/MLKEM/Spec.lean:676-684`:
+Conclusion predicate of `mlkem.decapsulate.spec` (Decaps.lean:1701-1733): `MLKEM.Decaps`, defined at `Spec/MLKEM/Spec.lean:676-683`:
 ```lean
 def Decaps (p : ParameterSet) (dk : 𝔹 (768 * k p + 96))
     (c : 𝔹 (32 * (dᵤ p * k p + dᵥ p))) : Option (𝔹 32) :=
   if Decaps.KeyCheck p dk then some (Decaps_internal p dk c)                      -- Alg. 21, steps 1–2
   else none
 ```
-(comment lines omitted), with `Decaps.KeyCheck` (Spec.lean:666-669) `H ek = h  -- Eq. (7.2)` and `Decaps_internal` (Spec.lean:593-603) following FIPS 203 Alg. 18 steps 1-12 line by line, ending `if c ≠ c' then «K̄» else K'`. The `.MemoryAllocationFailure` arm concludes `out_of_memory`, which is `axiom out_of_memory : Prop` (`Symcrust/Properties/Axioms/System.lean:98`), documented as an "Opaque OOM witness"; the catch-all arm is `| _ => False`.
+(comment lines omitted), with `Decaps.KeyCheck` (Spec.lean:666-669) `H ek = h  -- Eq. (7.2)` and `Decaps_internal` (Spec.lean:593-604) following FIPS 203 Alg. 18 steps 1-12 line by line, ending `if c ≠ c' then «K̄» else K'`. The `.MemoryAllocationFailure` arm concludes `out_of_memory`, which is `axiom out_of_memory : Prop` (`Symcrust/Properties/Axioms/System.lean:98`), documented as an "Opaque OOM witness"; the catch-all arm is `| _ => False`.
 
 Strongest premise of decapsulate: `wfDecapKey` (`Symcrust/Properties/MLKEM/Sampling/ExpandMatrix.lean:1253-1257`):
 ```lean
@@ -182,11 +182,11 @@ structure wfEncapKey (self : mlkem.key.Key) (p : ParameterSet) : Prop extends Br
         (self.public_seed.toSpec ‖
           #v[(i : Byte)] ‖ #v[(j : Byte)])
 ```
-(docstrings omitted), which extends `wfKey` (`Symcrust/Properties/MLKEM/Bridges/KeyView.lean:75-86`): `params_ok : wfInternalParams self.params p`, `n_rows_ok : self.n_rows.val = (k p : ℕ)`, `data_wf : ∀ i (h_end : i < dataEnd p), wfPoly (self.data.val[i]' ...)`. The theorem's comment says the dk validation required by FIPS 203 §7.3 is enforced "at key-creation- or key-load-time, which both establish the wfDecapKey condition".
+(docstrings omitted), which extends `wfKey` (`Symcrust/Properties/MLKEM/Bridges/KeyView.lean:75-87`): `params_ok : wfInternalParams self.params p`, `n_rows_ok : self.n_rows.val = (k p : ℕ)`, `data_wf : ∀ i (h_end : i < dataEnd p), wfPoly (self.data.val[i]' ...)`. The theorem's comment says the dk validation required by FIPS 203 §7.3 is enforced "at key-creation- or key-load-time, which both establish the wfDecapKey condition".
 
-`mlkem.encapsulate.spec` (Encaps.lean:656-690): premise `wfEncapKey`; `NoError` concludes `∃ (tape : MLKEM.RandomTape) ..., match MLKEM.Encaps params (pk_mlkem_key.toPubKey params) tape with | some (K, c, _) => K = ... ∧ c = ... | none => False`. `MLKEM.Encaps` (Spec.lean:648-659) reads 32 bytes from the tape and returns `none` iff `Encaps.KeyCheck` (ByteEncode₁₂∘ByteDecode₁₂ round-trip, Spec.lean:636-640) fails. `RandomTape` is `def RandomTape := ℕ → Byte` (Spec.lean:610).
+`mlkem.encapsulate.spec` (Encaps.lean:656 ff.): premise `wfEncapKey`; `NoError` concludes `∃ (tape : MLKEM.RandomTape) ..., match MLKEM.Encaps params (pk_mlkem_key.toPubKey params) tape with | some (K, c, _) => K = ... ∧ c = ... | none => False`. `MLKEM.Encaps` (Spec.lean:650-660) reads 32 bytes from the tape and returns `none` iff `Encaps.KeyCheck` (ByteEncode₁₂∘ByteDecode₁₂ round-trip, Spec.lean:640-644) fails. `RandomTape` is `def RandomTape := ℕ → Byte` (Spec.lean:612).
 
-`mlkem.key_generate.spec` (KeyGen.lean:261-): premise `wfKey`; `NoError` concludes `wfPrivateSeed key' params ∧ ∃ (tape : MLKEM.RandomTape), let (ek, dk, _) := MLKEM.KeyGen params tape; ek = key'.toEncapKey params ∧ dk = key'.toDecapKey params`. `wfPrivateSeed` (`Symcrust/Properties/MLKEM/Encoding/KeySetValue/Prelude.lean:72`) extends `wfDecapKey` per the ExpandMatrix.lean:1179 docstring; its body was not quoted.
+`mlkem.key_generate.spec` (KeyGen.lean:261 ff.): premise `wfKey`; `NoError` concludes `wfPrivateSeed key' params ∧ ∃ (tape : MLKEM.RandomTape), let (ek, dk, _) := MLKEM.KeyGen params tape; ek = key'.toEncapKey params ∧ dk = key'.toDecapKey params`. `wfPrivateSeed` (`Symcrust/Properties/MLKEM/Encoding/KeySetValue/Prelude.lean:72`) extends `wfDecapKey` per the ExpandMatrix.lean:1179 docstring; its body was not quoted.
 
 The tape existential is fed by the trusted axiom `random.spec` (`Axioms/System.lean:45-52`), which fixes `err = .NoError` and states `∃ (tape : Spec.MLKEM.RandomTape), ∀ (i : ℕ) (h_i : i < s'.length), s'.val[i] = tape i`.
 
