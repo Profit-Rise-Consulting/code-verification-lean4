@@ -1,6 +1,6 @@
 # 08 — Academic Literature and Community Evidence (Phase 1b, full-read upgrade)
 
-**COUNTS: [FULL] = @@FULL@@ entries; [CODE] = @@CODE@@ entries; Unverified leads = @@LEADS@@ (excluded from evidence).**
+**COUNTS: [FULL] = 22 entries; [CODE] = 17 entries; Unverified leads = 21 (excluded from evidence).**
 
 Scope: Lean 4 and protocols, distributed systems, security and implementation verification. Papers, preprints, talks, blog posts, Zulip, GitHub repos, Lean FRO announcements. Neutral evidence record for the Phase 2 debate; no verdict is given anywhere in this file.
 
@@ -8,7 +8,7 @@ Scope: Lean 4 and protocols, distributed systems, security and implementation ve
 - Sub-claim tags follow `research/CONVENTIONS.md`: H1 expressiveness, H2 provability at scale, H3 implementation link, H4 generality ("any codebase"), H5 inference ("therefore"), D definitions of "verify"/"check".
 - [P] = primary source, [S] = secondary. [FULL] = full text of the source was retrieved and read, [CODE] = repository cloned (`git clone --depth 1`, static inspection only, no builds).
 - Read-scope note for [FULL] papers: the full PDF/page text was retrieved and read through targeted extraction (abstract, introduction, scope/trust/limitations sections, evaluation tables, conclusion and keyword passes), not line-by-line. Sections not read are named in each entry where it matters.
-- Changes from the Phase 1 version of this file: all excerpt-only entries were either re-read in full or moved to "Unverified leads". Three Phase 1 statements were corrected on re-reading (see "Conflicts" C-10, C-11, C-12).
+- Changes from the Phase 1 version of this file: all excerpt-only entries were either re-read in full or moved to "Unverified leads". Phase 1 statements corrected on re-reading are listed in Section 8.
 
 ---
 
@@ -216,15 +216,15 @@ All clones: `git clone --depth 1`, static inspection only. Metrics are naive cou
 ### C15 — Other Lean verification repos inspected [P] [CODE]
 | Repo | SHA | Last commit | Toolchain | Lean LOC | Notable counts | Stars | Notes |
 |---|---|---|---|---|---|---|---|
-| rupakm/leslie | 58e58b2502b2 | 2026-06-09 | v4.27.0 | 103,805 | sorry 44 | 16 | Lean TLA/protocol-proof library (scope not read in depth) |
+| rupakm/leslie | 58e58b2502b2 | 2026-06-09 | v4.27.0 | 103,805 | sorry 44 | 16 | scope not read |
 | leanprover/con-ron | 97eead2d5b49 | 2026-10-31 | none | 332,513 | sorry 88, axiom 10 | 34 | CLAUDE.md present (AI-assisted) |
 | Verified-zkEVM/ArkLib | 34613d617af3 | 2026-11-05 | v4.35.0 | 382,226 | sorry 29, admit 18 | 353 | cryptographic proof systems; VCV-io 172 stars |
 | Verified-zkEVM/rust-lean | 49a83d2a231c | 2026-04-18 | none | 9,970 | sorry 24, axiom 22 | 12 | |
-| leanprover/cslib | 76b7943d0b8d | 2026-11-05 | v4.36.0-rc2 | 52,113 | sorry 0 | 799 | CS library incl. process calculi (E26 lead) |
+| leanprover/cslib | 76b7943d0b8d | 2026-11-05 | v4.36.0-rc2 | 52,113 | sorry 0 | 799 | general CS library; paper is lead L11 |
 | leanprover/LNSym | 49f8a1d9e46f | 2026-11-06 | v4.35.0 | 45,232 | sorry 50, native_decide 194 | 121 | ARM machine-code symbolic simulator |
 | konnov/leanda | f7abaa1d043e | 2026-07-28 | none | 19,196 | sorry 1 | 21 | |
 | athanor-ai/pythia | 65404339b5c6 | 2026-06-15 | v4.28.0 | 66,589 | sorry 104 | 18 | |
-| AfonsoBitoque/LeanServer | 24b916aaa6ae | 2026-05-14 | v4.29.1 | 38,581 | native_decide 417, extern 77, opaque 81, sorry 2, admit 7 | 6 | Lean-written server/TLS stack; proofs not evaluated |
+| AfonsoBitoque/LeanServer | 24b916aaa6ae | 2026-05-14 | v4.29.1 | 38,581 | native_decide 417, extern 77, opaque 81, sorry 2, admit 7 | 6 | scope and proofs not evaluated |
 | solanaqubits/leanbook | 5276529c6c10 | 2026-11-05 | v4.33.1 | 165,863 | sorry 0 | 3 | |
 | runtimeverification/kernel-rust-verification-spike | dc20c29367b0 | 2026-08-12 | none | 1,556 | sorry 2, axiom 6 | 4 | RV Binder spike (E18) |
 | nocaptheorem/RaftFormalModel | 51f60b20d207 | 2026-09-18 | v4.32.2 | 655 | sorry 18 | 0 | Raft model with 18 sorry |
@@ -240,3 +240,126 @@ Other stars (HTML): leanprover/lean4 9,901 (a2f1a64); leanprover/mathlib4 4,442 
 
 ### C17 — Chronos-Vault/chronos-vault-contracts [P] [CODE]. Tags: H2, D. Flag: vendor/marketing
 - https://github.com/Chronos-Vault/chronos-vault-contracts — SHA 004ae28b73f0, 2025-12-23. Naive sorry 59 (a real placeholder `sorry -- Proof implementation` is in `Trinity.lean`), axiom 13. Its documents give inconsistent theorem counts (184 theorems; "78/78" and "778/78"; 14/22 theorems proven; 42 theorems for 14 contracts). Its developer guide states the Lean proofs cover abstract properties independent of the Solidity implementation. See Conflicts C-6.
+
+---
+
+## 4. Key researchers, groups and organisations (as named in the sources above)
+
+| Name / group | Appears in | Role in the evidence |
+|---|---|---|
+| Ilya Sergey and co-authors (Pîrlea, Gladshtein, Zhao, Kinsbruner, Kurin, Feng, Kafle); verse-lab; NUS per [NUS news](https://www.comp.nus.edu.sg/bytes/associate-professor-ilya-sergey-and-team-win-distinguished-paper-award-at-cav-2026/) | E01–E04, E13, C01–C03 | Veil, Loom, Velvet |
+| Son Ho, Jonathan Protzenko, Aymeric Fromherz, Cédric Fournet, Antoine Delignat-Lavaud and others | E07, E08, E19, E20, C14 | Aeneas/Charon, SymCrypt in Rust, jxl-rs |
+| Leonardo de Moura / Lean FRO | E14, E15, E17, E21 | kernel postmortems, SymM, Signal Shot platform, roadmap |
+| Beneficial AI Foundation (Max Tegmark named in E17), Signal (Rolfe Schmidt named in E17) | E16, E17, C05 | Signal Shot, libsignal-verify |
+| Runtime Verification (Klaus, Conejero, Tolmach) | E09, E18, C15 | Rust-to-Lean pipelines |
+| Jeanteur, Veronese, Solitro, Maffei (FBK, TU Wien); SecPriv | E05, C04 | LeanDY |
+| Guerraoui and EPFL co-authors | E06 | ConsensusVerifier |
+| Cedar team (Cutler et al.), Amazon | E10, C11, E22 | Cedar Lean model and proofs |
+| de Medeiros, Tassarotti (NYU), Tristan (Amazon) et al. | E11, C10 | SampCert |
+| Nadim Kobeissi / Symbolic Software | E12; cited in E09 | critique of Lean-based crypto proofs; Verifpal |
+| Don Syme | C06 | Lean Squad agent-generated Raft verification |
+| Daniel Selsam (OpenAI), Kiran Gopinathan | E14, E15 | kernel bug discovery |
+| Mario Carneiro | L12 | Lean4Lean (lead) |
+| NyxFoundation, Invisible Garden, fradamt (GitHub handle) | C07–C09 | Ethereum-consensus formalisations |
+
+---
+
+## 5. Conflicts between sources (unresolved)
+
+- C-1 Veil and liveness. Side A: an older search-result snippet (not re-fetched, L20) described Veil liveness as future work. Side B: the HEAD README at SHA 57447722e7f2 lists "proving safety and liveness properties" and ships `Examples/Liveness` and `Examples/LivenessMC` (C01). The papers E01/E03 evaluate safety/inductive invariants. Which commit introduced liveness support was not determined.
+- C-2 Proof-reconstruction cost. E13 (Apr 2025 Zulip): ">5x slowdown". E01 and E02: "3-5x". Different dates and versions; unresolved.
+- C-3 Number of Veil case studies. E01 and de Moura slides (L14): 16, "All 16 verified. Ivy failed on 2". E03: 17 specifications of 15 protocols (Veil 2.0 suite). Different benchmark versions or counting; unresolved.
+- C-4 Signal Shot announcement date. E16/E17: 2026-04-20. A conference slide (L14) says "announced April 21, 2026". Unresolved; minor.
+- C-5 Bugs found in raft-rs. Lean Squad blog (L19, reported as "no implementation bugs") versus a secondary PQ1 note (L16, 3 bugs across raft-rs, quiche, PX4). C06 REPORT does not settle it.
+- C-6 Chronos-Vault theorem counts: 184 vs "78/78" vs "778/78" vs 14/22 vs 42 theorems (C17), all from the repo's own documents.
+- C-7 Veil stars: 366 (HTML field on 2026-11-07) vs 350 (cached page). Likely timing; unresolved.
+- C-8 Kernel bug-hunt totals. Phase 1 said "5 kernel + 2 runtime"; E15 lists five kernel PRs but notes one (#14807/#14843) as a single bug fix pair and gives no overall total. Count depends on how PRs map to bugs.
+- C-9 Aeneas and unsafe/union code. E18: Charon extracts union/MaybeUninit code with zero changes but Aeneas "does not support union types". E07: "limited support for unsafe Rust". E19: "does not have much support for unsafe code" yet models unchecked accesses like regular accesses. These describe different tool layers/features rather than strict contradiction; the exact support boundary is not stated in one place.
+- C-10 What a Lean model-check means for the code. C06 (Lean model + `#guard` tests against Rust) vs the claim that Lean has "verified" raft-rs: the REPORT itself separates model proofs from correspondence tests. E10 likewise: proofs on the Lean model, differential testing for the Rust code.
+- C-11 Aeneas move to SymM. E21 (roadmap): SymM is used for the VC generator and Velvet "and, in the future, Aeneas". E17: Aeneas "is being ported onto it now". Different dates (roadmap Sep 2026 vs Apr 2026 post); unresolved.
+- C-12 Spec fidelity versus proof. E12 and E06 say Lean cannot check that a specification states the intended property; E07 and E16 present specification review as a separate, human step; E10 says model-vs-code agreement is measured by testing. Among the sources read, none claims that Lean itself checks specification fidelity.
+
+---
+
+## 6. How sources use the words "verify" / "check" (sub-claim D)
+
+| Source | Meaning of "verify" | Meaning of "implementation" |
+|---|---|---|
+| E01–E04 (Veil, Loom, Velvet) | Lean-checked proof of VC soundness; SMT results trusted unless reconstruction is on | A model/program in the Veil or Velvet DSL |
+| E05 LeanDY | Lean-checked trace-validity and typing lemmas | Protocol programs written in the library's eDSL |
+| E06 EPFL | Lean-checked safety (linearizability) of a Lean transition-system model | Go code written alongside; not proved |
+| E07 SymCrypt | Lean-checked functional correctness and panic-freedom of Aeneas-extracted Rust | Real Rust library code |
+| E09, E18, E19 | Lean-checked panic-freedom or functional claims over extracted subsets | Rust code in Aeneas/Hax-supported fragments |
+| E10 Cedar | Lean-checked properties of a Lean model; differential random testing for the Rust code | Rust code tested against the model |
+| E11 SampCert | Lean-checked correctness of Lean programs, then extraction | Extracted C++/Python |
+| C06 | Lean theorems about a model; `#guard` tests as correspondence | Rust, via tests |
+| E16, C05 | Planned: model security proof + Aeneas-translated code + a link to model assumptions | Real Rust (libsignal) |
+
+---
+
+## 7. Gaps
+
+Closed in Phase 1b: venues for SampCert (PLDI 2025), Velvet (CAV 2026), Veil (CAV 2025), Loom (POPL 2026), Cedar (PACMPL), Aeneas (ICFP 2022); stars and last-commit dates for the repos listed; SHA/toolchain/licence counts; full-text reads of the main papers; the Veil liveness question (partly, see C-1).
+
+Remaining:
+- Body of Kobeissi's ePrint 2026/2441 (PDF blocked by robots); ePrint papers on Lean-based cryptography proofs in general.
+- Public Lean Zulip threads were seen only through the archive listing, not the live Zulip.
+- No public paper or theorem for the Amazon Aurora claim (E22).
+- libsignal-verify security theorems still depend on admitted hops; completion state after 2026-11-06 unknown.
+- Repository stars for digama0/lean4lean; licence types not checked; many repos have not been read beyond metrics and README/key files (see C15).
+- Whether any Lean 4 proof connects a network protocol specification to an unmodified production implementation was not found in the sources read; sources found connect Lean models to code by (a) extraction with trusted tools (E07, E11, C05), (b) differential testing (E10, C06), or (c) Lean-written implementations (E05, C12).
+
+---
+
+## 8. Corrections to the Phase 1 version of this file
+
+- Veil liveness: Phase 1 said future work; current README lists it (C-1).
+- SymCrypt: authors/venue: arXiv draft technical report 2609.15648v1 (14 Sep 2026), ten authors (E07).
+- Aeneas ICFP 2022 targeted F*; Lean was a plan (E08).
+- SampCert: PLDI 2025 and arXiv 2412.01671 (an earlier guessed arXiv id was a different paper).
+- Lean4Lean title and figures are lead-level (L12).
+- Velvet: CAV 2026, LNCS 16683 pp. 228–242 (E04).
+- LeanDY: arXiv 2607.03406v2 technical report; Phase 1 venue claim not found (E05).
+- minimmit-fv: no real `sorry`; two explicit crypto axioms (C07). Chronos-Vault: a `sorry` placeholder is real (C17).
+- Kernel bug-hunt: no single total (E15).
+- Naive grep counts include comments/docstrings (Section 0).
+
+---
+
+## 9. Open Questions
+
+1. For SymCrypt-style results, what is the stated relationship between Lean theorems about the Aeneas-extracted model and the machine code run (compiler, Charon, axiomatised std)? Which of these are formally closed?
+2. Can any Lean 4 artefact be shown that states a protocol-level property (not a function-level one) about an extracted production implementation? libsignal-verify is the nearest public attempt but has admitted hops.
+3. What does "verify" mean for each audience: proof about a model, proof about extracted code, tests against a model? (Section 6.)
+4. How much of Veil's SMT trust (E13) matters in the case studies, and which results used reconstruction?
+5. Does the Veil liveness support (C01) have any published evaluation?
+6. How should unsupported Rust features (unions, interior mutability, concurrency, trait generics) be accounted for when claiming "any codebase"? (E07, E09, E18)
+7. What scale of effort do the claims by agents ("about a week for an agent", E07; $198.69, E06) hold when specs are not already available?
+8. What does Kobeissi's body argue about Lean spec fidelity beyond its abstract?
+9. Which AI-assisted repos (C06, C07, C09, C15) have independent review of their specs?
+
+---
+
+## 10. Unverified leads (excluded from evidence; Phase 2 should ignore)
+
+- L01 Kobeissi, ePrint 2026/2441 PDF body (blocked). Abstract only is in E12.
+- L02 CSF 2026 paper on symbolic cryptography in Lean (computer.org record; ePrint 2025/1700): abstract/snippet only.
+- L03 ePrint 2024/1880 (SHA-3 verification): snippet only.
+- L04 ePrint 2023/010 (McEliece): snippet only.
+- L05 LeanLTL, ITP 2025 (LIPIcs 37), arXiv 2507.01780: text downloaded, not read.
+- L06 BB84 end-to-end security proof in Lean, arXiv 2610.17286 (MIT, 12 Oct 2026): abstract/selected sections only.
+- L07 Rust-Prover / VeriContest, arXiv 2610.03994: abstract/selected only (1007 problems, 1325 theorems reported).
+- L08 Vero, arXiv 2608.13522: abstract/selected only.
+- L09 Reentrancy-guard Lean model of Solidity, arXiv 2606.01794: abstract/selected only.
+- L10 Rust standard-library verification lessons, arXiv 2510.01072v3: abstract/selected only.
+- L11 CSLib, arXiv 2602.04846 (4 Feb 2026): abstract only.
+- L12 Lean4Lean, arXiv 2403.14064v3: abstract/selected only (reports checking Mathlib, 20-50% slower than the C++ kernel).
+- L13 Lean Zulip archive threads: "Lean in the wild", "A better Lean checker", "System programming using Lean 4", "Lean kernel", "Rust verification working group": listings/snippets only.
+- L14 de Moura conference slides (Paris 2026): numbers cited in C-3/C-4 come from slide text, not re-verified.
+- L15 mjbommar/axeyum research note on SymCrypt totals: search result only.
+- L16 PQ1 note claiming 3 bugs: secondary, not re-read.
+- L17 NUS news on Velvet award: not read in full.
+- L18 SBLP 2026 lean-mqtt paper: landing record only.
+- L19 Lean Squad blog ("no implementation bugs"): not re-read in full.
+- L20 older Veil snippet saying liveness is future: unrecoverable.
+- L21 digama0/lean4lean repository: no clone metadata.
