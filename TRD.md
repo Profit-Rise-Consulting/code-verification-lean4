@@ -26,18 +26,18 @@ In scope: the Phase 1 and 1b evidence pipeline, its validation, and the interfac
 | Req ID | Requirement (MUST) | Design section | Screen | Task(s) | Test | Issue | Status |
 |---|---|---|---|---|---|---|---|
 | FR-001 | Hypothesis verbatim plus sub-claims | §6.2 | — | — | `scripts/check-research` FR-001 | — | done |
-| FR-002 | Depth headers and excerpt quarantine | §6.2 | — | — | `scripts/check-research` FR-002 | — | in progress |
-| FR-003 | 15-section dossiers plus index JSON | §6.3 | — | — | `scripts/check-research` FR-003 | — | in progress |
-| FR-004 | Generated catalogue | §6.3 | — | — | CI step "Catalogue is current" plus FR-004 check | — | in progress |
-| FR-005 | Conflict sections and register | §6.2 | — | — | `scripts/check-research` FR-005 | — | in progress |
-| FR-006 | Council kit | §6.4 | — | — | `scripts/check-research` FR-006 | — | in progress |
-| FR-007 | Handoff package | §6.4 | — | — | `scripts/check-research` FR-007 | — | in progress |
-| FR-008 | Independent review with dispositions | §6.4 | — | — | `scripts/check-research` FR-008 | — | not started |
-| FR-009 | Council report | §6.4 | — | — | Phase 2 gate (to be added) | — | not started |
-| FR-010 | Phase 3 pilot | — | — | — | Phase 3 gate (to be added) | — | not started |
-| NFR-001 | No excerpt-only evidence | §7.2 | — | — | `scripts/check-research` NFR-001 | — | in progress |
+| FR-002 | Depth headers and excerpt quarantine | §6.2 | — | — | `scripts/check-research` FR-002 | — | done |
+| FR-003 | 15-section dossiers plus index JSON | §6.3 | — | — | `scripts/check-research` FR-003 | — | done |
+| FR-004 | Generated catalogue | §6.3 | — | — | CI step "Catalogue is current" plus FR-004 check | — | done |
+| FR-005 | Conflict sections and register | §6.2 | — | — | `scripts/check-research` FR-005 | — | done |
+| FR-006 | Council kit | §6.4 | — | — | `scripts/check-research` FR-006 | — | done |
+| FR-007 | Handoff package | §6.4 | — | — | `scripts/check-research` FR-007 | — | done |
+| FR-008 | Independent review with dispositions | §6.4 | — | — | `scripts/check-research` FR-008 | — | done |
+| FR-009 | Council report | §6.4 | — | — | Phase 2 gate (to be added) | #2, #3 | not started |
+| FR-010 | Phase 3 pilot | — | — | — | Phase 3 gate (to be added) | #6 | not started |
+| NFR-001 | No excerpt-only evidence | §7.2 | — | — | `scripts/check-research` NFR-001 | — | done |
 | NFR-002 | Public repo security hygiene | §7.3 | — | — | Security workflow (CodeQL, zizmor, trufflehog) | — | done |
-| NFR-003 | Relative links resolve | §7.4 | — | — | `scripts/check-research` NFR-003 | — | in progress |
+| NFR-003 | Relative links resolve | §7.4 | — | — | `scripts/check-research` NFR-003 | — | done |
 
 ## 5. Architecture Overview
 
@@ -141,7 +141,7 @@ Cost: agent runs are credit-limited, so agents now save files incrementally. Bia
 | Layer | Scope | Tooling | Gate |
 |---|---|---|---|
 | Static | spine headings, ID formats, traceability | `scripts/check-docs` | CI blocking |
-| Corpus | FR-001 to FR-008, NFR-001, NFR-003 | `scripts/check-research` | CI blocking |
+| Corpus | FR-001 to FR-008, NFR-001, NFR-003, case-comparison structure | `scripts/check-research` | CI blocking |
 | Freshness | catalogue matches index JSON | `scripts/build-catalogue` + `git diff --exit-code` | CI blocking |
 | Security | workflows, code, secrets | CodeQL, zizmor, trufflehog | CI blocking |
 
@@ -149,7 +149,7 @@ Run all locally with `scripts/test`.
 
 ## 11. Rollout, Migration & Rollback
 
-Phase 1b lands on branch `phase1b-wip` and merges to `main` only when `scripts/test` exits 0. Rollback is a git revert. `main` keeps the Phase 1 first pass until then.
+Phase 1b/1c was developed on branch `phase1b-wip` and merged to `main` after `scripts/test` exited 0 and the independent review pass 2 was recorded. Rollback is a git revert of the merge commit.
 
 ## 12. Open Questions & Risks
 

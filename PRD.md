@@ -1,6 +1,6 @@
 # PRD: code-verification-lean4
 
-<!-- id: PRD-code-verification-lean4 · status: active (Phase 1b) · owner: Profit Rise Consulting · target release: Phase 2 council-ready · last updated: 2026-11-07 -->
+<!-- id: PRD-code-verification-lean4 · status: active (Phase 1 complete; Phase 2 next) · owner: Profit Rise Consulting · target release: Phase 2 council-ready · last updated: 2026-11-07 -->
 <!-- Rules: IDs are assigned once and NEVER renumbered. Deleted requirements are marked [withdrawn] in place. -->
 
 ## 1. Summary
@@ -36,12 +36,12 @@ Protocols such as TLS, QUIC, MQTT and Raft are typically specified in prose, som
 
 ## 6. Success Metrics
 
-| Metric | Baseline (Phase 1, first pass) | Target (Phase 1b) | How measured |
-|---|---|---|---|
-| Excerpt-only evidence entries outside quarantine | about 110 across 8 files | 0 | `scripts/check-research` NFR-001 |
-| Reference dossiers with all 15 sections | 0 | at least 20 (28 planned) | `scripts/check-research` FR-003 |
-| Recorded conflicts | 1 | at least 5 | research/CONFLICTS.md |
-| Independent review findings with disposition | none | 100% | research/REVIEW-phase1.md |
+| Metric | Baseline (Phase 1, first pass) | Target (Phase 1b) | Actual (Phase 1c close) | How measured |
+|---|---|---|---|---|
+| Excerpt-only evidence entries outside quarantine | about 110 across 8 files | 0 | 0 | `scripts/check-research` NFR-001 |
+| Reference dossiers with all 15 sections | 0 | at least 20 (28 planned) | 33 (22 Lean, 11 comparator) | `scripts/check-research` FR-003 |
+| Recorded conflicts | 1 | at least 5 | 128 (CF-001 to CF-128) | research/CONFLICTS.md |
+| Independent review findings with disposition | none | 100% | 14 of 14; pass 2: 11 closed, 3 partial, 0 open | research/REVIEW-phase1.md |
 
 ## 7. User Stories
 
@@ -122,3 +122,4 @@ the IDs; the TRD owns the mapping.
 | Date | Change | Author |
 |---|---|---|
 | 2026-11-07 | Initial research-programme PRD (Phase 1b) | coding agent for Profit Rise Consulting |
+| 2026-11-07 | Phase 1c close: actual metrics; FR-009/FR-010 linked to issues #2, #3, #6 | coding agent for Profit Rise Consulting |

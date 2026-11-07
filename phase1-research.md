@@ -10,7 +10,7 @@ Status: Phase 1 complete (1 → 1b → 1c). No verdict on the hypothesis appears
 | Review by owner | Owner rejected excerpt-based evidence and required prior work as analysed references (R3) | "EXCERPTS are not useful"; "THESE ARE REFERENCES ... ALL READY for Phase2" |
 | 1b | All 8 topic files rewritten from full reads and code inspection. Reference dossiers written for Lean and comparator work. Catalogue generator, conflict register, council kit and CI gates added. | Make the corpus debate-ready |
 | Independent review | GPT-family reviewer: 39 independent claim checks (32 confirmed, 1 wrong interpretation since repaired, 6 unverifiable). 13 findings (1 blocker, 10 major, 2 minor). | Owner prefers a cross-family adversarial review |
-| 1c | Every finding accepted and actioned. Dispositions are in [research/REVIEW-phase1.md](research/REVIEW-phase1.md). | Close the review |
+| 1c | Every finding accepted and actioned. Five more dossiers (CCF, Perennial, Telltale, Aneris/Trillium, compilation boundary), the conflict register, the case comparison and the issue backlog were added. Review pass 2 re-checked every disposition and added F-014 (Lean-SMT count discrepancy): 11 closed, 3 partial, 0 open, no blockers. | Close the review |
 
 ## How to read the corpus
 
