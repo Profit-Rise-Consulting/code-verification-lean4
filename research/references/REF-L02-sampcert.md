@@ -63,6 +63,54 @@ theorem privNoisedQuery_zCDP (query : List T → ℤ) (Δ ε₁ ε₂ : ℕ+) (b
 lemma privNoisedHistogram_DP (HN_bin : dpn.noise_priv ε₁ (ε₂ * numBins) (ε / numBins)) :
     dps.prop (privNoisedHistogram numBins B ε₁ ε₂) ε
 ```
+
+### 3a. Predicate semantics: what the quoted theorems do and do not guarantee
+Verbatim definitions, commit `a2c53bb` [C1]:
+
+`SampCert/DifferentialPrivacy/Neighbours.lean:21`
+```lean
+inductive Neighbour (l₁ l₂ : List T) : Prop where
+  | Addition : l₁ = a ++ b → l₂ = a ++ [n] ++ b → Neighbour l₁ l₂
+  | Deletion : l₁ = a ++ [n] ++ b → l₂ = a ++ b → Neighbour l₁ l₂
+```
+`SampCert/DifferentialPrivacy/Sensitivity.lean:26`
+```lean
+noncomputable def sensitivity (q : List T → ℤ) (Δ : ℕ) : Prop :=
+  ∀ l₁ l₂ : List T, Neighbour l₁ l₂ → Int.natAbs (q l₁ - q l₂) ≤ Δ
+```
+`SampCert/DifferentialPrivacy/Pure/DP.lean:20,24`
+```lean
+def DP (m : Mechanism T U) (ε : ℝ) : Prop :=
+  ∀ l₁ l₂ : List T, Neighbour l₁ l₂ → ∀ S : Set U,
+  (∑' x : U, if x ∈ S then m l₁ x else 0) / (∑' x : U, if x ∈ S then m l₂ x else 0) ≤ ENNReal.ofReal (Real.exp ε)
+def PureDP (m : Mechanism T U) (ε : NNReal) : Prop :=
+  DP m ε
+```
+`SampCert/DifferentialPrivacy/ZeroConcentrated/DP.lean:46,53,58`
+```lean
+def zCDPBound (q : List T → PMF U) (ε : ℝ) : Prop :=
+  ∀ α : ℝ, 1 < α → ∀ l₁ l₂ : List T, Neighbour l₁ l₂ →
+  RenyiDivergence (q l₁) (q l₂) α ≤ ENNReal.ofReal (ε * α)
+def ACNeighbour (p : List T -> PMF  U) : Prop := ∀ l₁ l₂, Neighbour l₁ l₂ -> AbsCts (p l₁) (p l₂)
+def zCDP (q : List T → PMF U) (ε : NNReal) : Prop := ACNeighbour q ∧ zCDPBound q ε
+```
+`SampCert/Util/Gaussian/DiscreteGaussian.lean:29,68`
+```lean
+def gauss_term_ℝ (σ μ : ℝ) (x : ℝ) : ℝ :=
+  Real.exp ((-(x - μ)^2) / (2 * σ^2))
+def discrete_gaussian (σ μ : ℝ) (x : ℝ) : ℝ :=
+  gauss_term_ℝ σ μ x / ∑' x : ℤ, gauss_term_ℝ σ μ x
+```
+Noise conditions: `laplace_pureDP_noise_priv (ε₁ ε₂ : ℕ+) (ε : NNReal) : Prop := (ε₁ : NNReal) / ε₂ = ε` (`Pure/Mechanism/Properties.lean:121`); `gaussian_zCDP_noise_priv (ε₁ ε₂ : ℕ+) (ε : NNReal) : Prop := (1/2) * ((ε₁ : NNReal) / ε₂)^2 ≤ ε` (`ZeroConcentrated/System.lean:51`). Mechanism: `privNoisedQuery query Δ ε₁ ε₂ l := DiscreteGaussianGenPMF (Δ * ε₂) ε₁ (query l)` (`ZeroConcentrated/Mechanism/Code.lean:21`), and `DiscreteGaussianGenSample` fixes `mix = 7` (`Samplers/GaussianGen/Code.lean:23`).
+
+What the theorems guarantee and what they do not:
+- Neighbouring means adding or deleting one record anywhere in a list ("unbounded" DP). Substituting one record is not a primitive neighbour step, and the paper notes group privacy cannot be expressed because databases are lists [S1]. Privacy claims are relative to this relation only.
+- `sensitivity` is defined only for integer-valued queries and is a hypothesis (`bounded_sensitivity`) of each mechanism theorem. The user must prove it for their own query; SampCert supplies such proofs for its own queries, e.g. `exactBinCount_sensitivity` (`Queries/Histogram/Properties.lean:29`), `exactBoundedSum_sensitivity` (`Queries/BoundedSum/Properties.lean:26`), `exactDiffSum_sens` (`Queries/UnboundedMax/Privacy.lean:21`); AboveThreshold takes `∀ i, sensitivity (qs i) 1` as a hypothesis.
+- `privNoisedQuery_zCDP` gives ρ-zCDP with ρ = ½(ε₁/ε₂)² when Gaussian noise of scale σ = Δ·ε₂/ε₁ is added. Here `zCDP` also includes absolute continuity between neighbouring outputs. The guarantee covers the probability distribution `PMF ℤ` defined in Lean. It assumes the Lean mass-function semantics of the SLang primitives (`probUniformByte` uniform, `probWhile` as a limit) and says nothing about the executed C++/Python code beyond that model.
+- `PureDP` is stated as an ENNReal ratio over all output sets. In ENNReal, `x / 0 = ⊤` for `x ≠ 0` and `0 / 0 = 0`, so this matches the usual multiplicative ε-DP condition (noted from Mathlib ENNReal semantics, not re-proved here).
+- `DiscreteGaussianSample_apply` concerns the scale parameter σ = num/den, with `discrete_gaussian` normalised over ℤ, so σ is not a variance. The result holds for every `mix`, which affects only the algorithm (performance), not the distribution. The theorem says nothing about running time. Together with `DiscreteGaussianSample_normalizes` (total mass 1), it implies almost-sure termination within the model but gives no bound on loop iterations.
+- None of the theorems covers timing side channels or floating-point implementations (section 8).
+
 The paper-to-code map is in `paper_mapping.md` [C1]. Proofs use Mathlib results such as the Poisson summation formula [C1]. The "adversary" in DP is implicit in the definition (neighbouring databases, quantification over all outputs); there is no protocol, messaging or state.
 
 ## 4. Property classes covered
@@ -141,7 +189,7 @@ To apply to an arbitrary codebase: the algorithm must be rewritten in the Lean D
 | Sub-claim | Fact from this reference | Source ID |
 |---|---|---|
 | H1 | Lean (with Mathlib) expresses probabilistic programs, infinite discrete distributions, unbounded loops and DP definitions (pure DP, zCDP) with a generic abstraction. No message passing or concurrency. | C1, S1 |
-| H2 | 0 sorry/axiom/native_decide; ~12k lines of proof for privacy and sampler correctness using deep Mathlib results (Poisson summation). | C1, S1 |
+| H2 | 0 sorry/axiom/native_decide; ~12k lines of proof for privacy and sampler correctness using deep Mathlib results (Poisson summation). Guarantees are relative to add/remove-one neighbours on lists, user-supplied sensitivity hypotheses, and the mass-function model of the primitives (section 3a). | C1, S1 |
 | H3 | Executable link via `@[extern]` C++ (57 trusted lines per paper) or an unverified Lean→Dafny→Python translator; deployed samplers in AWS Clean Rooms. | S1, S2, C1 |
 | H4 | Requires re-implementing the algorithm in Lean's SLang; translator supports only "a limited subset of Lean". | S1 |
 | H5 | Not directly applicable (no separate implementation is checked against the spec; the spec program is executed). | S1 |

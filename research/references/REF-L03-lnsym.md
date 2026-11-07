@@ -59,21 +59,73 @@ Proof status of the headline routines (theorem-level scan of `Proofs/` excluding
 | Theorem | File:line | Status |
 |---|---|---|
 | `gcm_init_v8_program_correct` | Proofs/AES-GCM/GCMInitV8Sym.lean:32 | complete (partial postcondition, see above) |
-| `aes_hw_encrypt_program_run_60` | Proofs/AES-GCM/AESHWEncryptSym.lean:19 | complete |
+| `aes_hw_encrypt_program_run_60` | Proofs/AES-GCM/AESHWEncryptSym.lean:19 | complete, but the conclusion is only `read_err sf = .None` (60 steps run without a decode/fetch error); no claim that the output equals AES (section 3a) |
 | `gcm_polyval_mul_eq_polynomial_mult`, `DPSFP.polynomial_mult_append` | Proofs/AES-GCM/GCMGmultV8Sym.lean:51,166 | `sorry` |
 | `aes_gcm_enc_kernel_program_run_xx` | Proofs/AES-GCM/AESGCMEncKernelSym.lean:22 | `sorry` |
 | `sha512_loop_sym` | Proofs/SHA512/SHA512BlockSym.lean:76 | `sorry` ("this theorem still ends in its pre-existing `sorry`", line 71) |
 | `spec_simp_a` | Proofs/SHA512/SHA512BlockSym.lean:20 | `sorry` |
 | `sha512_block_armv8_loop_2` | Proofs/SHA512/SHA512Loop.lean:186 | `sorry` |
 | prelude theorem (16-step) | Proofs/SHA512/SHA512Prelude.lean:~120 | `sorry`, "PARKED (v4.19 port): this 16-step symbolic-simulation proof term triggers `(kernel) deep recursion detected` ... The full proof is preserved in git history (tag port-v4.18.0, where it still type-checked)" |
-| `popcount32_sym_meets_spec` | Proofs/Popcount32.lean:76 | complete |
+| `popcount32_sym_meets_spec` | Proofs/Popcount32.lean:76 | complete: `w0 sf = popcount32_spec (w0 s0)` plus register and memory frame conditions |
 
 So no end-to-end "SHA-512 machine code equals FIPS spec for all inputs" theorem is complete at this commit; the SHA-512 work consists of per-basic-block lemmas (`Proofs/SHA512/SHA512LoopBlocks.lean`, 5,543 lines, 46 theorems) and loop/prelude theorems with `sorry` [C1].
+
+### 3a. Predicate semantics: what the quoted theorems do and do not guarantee
+Verbatim definitions, commit `49f8a1d` [C1]:
+
+`Arm/Exec.lean:105-132` (abridged to the control structure)
+```lean
+def stepi (s : ArmState) : ArmState :=
+  let err := read_err s
+  match err with
+  -- We take a step only if the starting state is error-free.
+  | StateError.None =>
+    (let pc := read_pc s
+     let raw_inst := fetch_inst pc s
+     match raw_inst with
+      | none =>
+        write_err (StateError.NotFound s!"No instruction found at PC {pc}!") s
+      | some i =>
+        let eai := decode_raw_inst i
+        match eai with
+          | none =>
+            write_err (StateError.Unimplemented s!"Could not decode instruction {i} at PC {pc}!") s
+          | some arm_inst => exec_inst arm_inst s)
+  | _ => s
+
+def run (n : Nat) (s : ArmState) : ArmState :=
+  match n with
+  | 0 => s
+  | n' + 1 =>
+    let s' := stepi s
+    run n' s'
+```
+`Arm/State.lean:250` `def fetch_inst (addr : BitVec 64) (s : ArmState) : Option (BitVec 32) := s.program.find? addr`. `ArmState` docstring (`Arm/State.lean:156-158`): "Program: maps 64-bit addresses to 32-bit instructions. Note that we have the following assumption baked into our machine model: the program is always disjoint from the rest of the memory."
+
+`Arm/Insts/Common.lean:211`
+```lean
+def CheckSPAlignment (s : ArmState) : Prop :=
+  -- (FIXME) Incomplete specification: should also check PSTATE.EL
+  -- after we model that.
+  let sp := read_gpr 64 31#5 s
+  (Aligned sp 4)
+```
+`Arm/Memory/Separate.lean:672` `def Memory.Region.pairwiseSeparate (mems : List Memory.Region) : Prop := mems.Pairwise Memory.Region.separate`.
+
+What the theorems guarantee and what they do not:
+- `read_err sf = .None` means: during the `n` steps, every PC hit an instruction in the `program` map that decoded to a modelled instruction, and no instruction set an error (`stepi` freezes the state once an error is set). It is a "no unmodelled or unfetchable instruction" property, not functional correctness. This is the whole conclusion of `aes_hw_encrypt_program_run_60` (`Proofs/AES-GCM/AESHWEncryptSym.lean:32`: `: read_err sf = .None := by`).
+- All results describe the state after exactly `n` steps (`h_run : sf = run n s0`), with `n` chosen by the prover (27 for popcount, `gcm_init_v8_program.length` for GCM init, 60 for AES). They do not say the program terminates or returns for other inputs. `gcm_init_v8_program_correct` does add `read_pc sf = read_gpr 64 30#5 s0` (PC equals the link register, i.e. the function has returned).
+- Instructions are fetched from `s.program`, a separate map, never from `mem`. Self-modifying code, code/data aliasing and instruction-fetch faults are outside the model by construction, and stores cannot change the code that is proved.
+- `CheckSPAlignment` is a precondition, and its own comment marks it an "Incomplete specification" (exception level not modelled).
+- `pairwiseSeparate` premises (e.g. H and Htable regions in GCM init; in, key and out regions in AES) are assumptions. The guarantees do not cover aliased buffers.
+- `gcm_init_v8_program_correct` constrains only `v20` and two pointers; the full Htable memory contents and register non-effects are commented out (section 3). `popcount32_sym_meets_spec` is the only completed theorem here with full register and memory frame conditions (`REGS_UNCHANGED_EXCEPT`, `MEM_UNCHANGED_EXCEPT`, `Proofs/Popcount32.lean:88-89`).
+- The model includes no timing, caches, interrupts or concurrency, so nothing is guaranteed about constant-time behaviour.
+
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
-| Functional correctness | partial | GCM init (one output register) and AES-256 block encrypt proved for the specific machine code; SHA-512 and GCM gmult/enc-kernel incomplete (`sorry`) [C1]. |
+| Functional correctness | partial | Functional results proved: GCM init (one output register, v20) and popcount32. `aes_hw_encrypt_program_run_60` proves only error-free execution, not AES correctness. SHA-512 and GCM gmult/enc-kernel are incomplete (`sorry`) [C1]. |
 | Safety invariant | partial | Postconditions include "no instruction decoding error", program unchanged, SP aligned [C1]. |
 | Liveness | no | Bounded step counts `run n`; loops handled for one iteration (`h_N : N = 1#64`) [C1]. |
 | Refinement | partial | Machine code vs Lean functional spec (`GCMV8.GCMInitV8`, `SHA2.*`) [C1]. |
@@ -146,7 +198,7 @@ To apply to an arbitrary codebase: needs an ISA model covering all instructions 
 | Sub-claim | Fact from this reference | Source ID |
 |---|---|---|
 | H1 | Lean can express an executable AArch64 ISA model and pre/postconditions on machine code; no protocol state machine or concurrency. | C1, S1 |
-| H2 | Headline SHA-512 and GCM-gmult/enc-kernel proofs contain `sorry` (12 in non-experimental Proofs); complete: gcm_init_v8 (partial postcondition), aes_hw_encrypt, popcount. | C1 |
+| H2 | Headline SHA-512 and GCM-gmult/enc-kernel proofs contain `sorry` (12 in non-experimental Proofs). Complete with functional content: gcm_init_v8 (one register of output) and popcount32. aes_hw_encrypt is complete but proves only `read_err sf = .None`. All results are at a fixed step count, under a model where code is disjoint from data memory. | C1 |
 | H3 | Proofs target AWS-LC assembly transcribed into Lean; ELF tests extract instruction words from AWS-LC `.o` files and compare with recorded lists; ISA model validated by random co-simulation on hardware. | C1 |
 | H4 | Requires an ISA model per architecture; AArch64 host needed for conformance testing; tooling (SymSim tactics) specific to this model. | C1 |
 | H5 | The machine code is checked against Lean functional specs (`Specs/SHA512.lean` etc.) independently of any protocol-level proof. | C1 |
