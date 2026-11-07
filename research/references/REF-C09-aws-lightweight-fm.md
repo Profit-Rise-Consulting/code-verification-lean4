@@ -25,13 +25,45 @@ Use of words (sub-claim D): ShardStore uses "refines" and "formal methods" for r
 ## 3. What is actually formalised
 ShardStore [S1]:
 - Reference models: "an executable specification in Rust that provides the same interface as the component but using a simpler implementation"; e.g. the LSM-tree index model "is a hash map". Reference models total 450 lines versus 44,048 implementation lines (Fig. 6).
-- Durability property decomposed three ways: (1) sequential crash-free equivalence (same key-value mapping after each API call); (2) sequential crashing executions against a model extended with allowed losses, via `Dependency` objects: "persistence: if a dependency says an operation has persisted before a crash, it should be readable after a crash" and "forward progress: after a non-crashing shutdown, every operation's dependency should indicate it is persistent"; (3) concurrent crash-free executions checked for linearizability against sequential models.
-- Harness example: `#[proptest] fn proptest_index(ops: Vec<IndexOp<u32, u32>>)` applying each op to `PersistentLSMTIndex` and `ReferenceIndex` and calling `compare_results!` then `check_invariants` (Fig. 3).
+- Durability property decomposed three ways: (1) sequential crash-free equivalence (same key-value mapping after each API call); (2) sequential crashing executions against a model extended with allowed losses, via `Dependency` objects: "persistence: if a dependency says an operation has persisted before a crash, it should be readable after a crash (unless superseded by a later persisted operation)" and "forward progress: after a non-crashing shutdown, every operation’s dependency should indicate it is persistent"; (3) concurrent crash-free executions checked for linearizability against sequential models.
+- Harness example: `#[proptest] fn proptest_index(ops: Vec<IndexOp<u32, u32>>)` applying each op to `PersistentLSMTIndex` and `ReferenceIndex` and calling `compare_results!` then `check_invariants(&reference, &implementation)` (Fig. 3).
 - Deserialisers: "for any sequence of on-disk bytes (up to a size bound), our deserializers cannot panic" (Crux) [S1 sec 7].
 - Environment: in-memory user-space disk; fault model of fail-stop crashes (`DirtyReboot(RebootType)`), injected IO failures (`FailDiskOnce(ExtentId)`); resource exhaustion not tested [S1 sec 4.4].
 P [S2, S3]:
 - Designs modelled "as communicating state machines"; "Specifications in P are written as **global runtime monitors**. These monitors observe the execution of the system and can assert any global safety or liveness invariants. Monitors are synchronously composed with the P state machines." Each machine has "an **unbounded FIFO buffer**", and sends are "reliable, buffered, non-blocking, and directed" unless loss is modelled explicitly (P Semantics page) [S6].
 - PObserve inputs: a service-specific log parser producing `PObserveEvent` (key, timestamp, event, logLine, customPayload), a sequencer that globally sorts by timestamp, and a demultiplexer feeding P monitors [S3 `logparser.md`, `pobserve.md`].
+
+### 3a. Predicate semantics: what a passing check does and does not guarantee
+ShardStore source is not public, so file:line references are to the paper's figures [S1]. The conformance predicate is the harness in Fig. 3 (verbatim):
+```rust
+#[proptest]
+fn proptest_index(ops: Vec<IndexOp<u32, u32>>) {
+    let mut reference = ReferenceIndex::new();
+    let mut implementation = PersistentLSMTIndex::new();
+    for op in ops {
+        match op {
+            Put(key, value) => {
+                compare_results!(
+                    implementation.put(key, value),
+                    reference.put(key, value),
+                );
+            }
+            Get(key) => { ... }
+            ...
+        }
+        check_invariants(&reference, &implementation);
+    }
+}
+```
+(Fig. 3, lines 9-26; the `...` elisions are the authors'.) The text adds that line 24 performs "additional invariant checks comparing the implementation and the reference (e.g., checking that both store the same key-value mapping)" [S1 sec 4.1].
+Crash consistency premises: "persistence: if a dependency says an operation has persisted before a crash, it should be readable after a crash (unless superseded by a later persisted operation)" and "forward progress: after a non-crashing shutdown, every operation’s dependency should indicate it is persistent" [S1 sec 5]. Concurrency: results must be linearizable against the sequential model, checked by Loom (bounded, sound within its bound and memory model) or Shuttle (randomized) [S1 sec 6]. Crux: "for any sequence of on-disk bytes (up to a size bound), our deserializers cannot panic" [S1 sec 7].
+
+P/PObserve: a monitor fails if any P `assert` in a spec monitor is violated on the event sequence it observes; specs "can assert any global safety or liveness invariants" [S6]. PObserve evaluates monitors over the parsed, timestamp-sorted log of one run [S3].
+
+Plain language.
+- A passing ShardStore run shows that, on the generated operation sequences (tens of millions per deployment), results equalled the reference model's and invariants held. "their reporting success does not mean the code is correct, only that they could not find a bug" [S1].
+- The only exhaustive claim is Crux panic-freedom, within a size bound; Loom is exhaustive only within its bound and harness.
+- Not covered: concurrent crashing executions, resource exhaustion, the S3 messaging-protocol parsing and business logic [S1]. For PObserve: events not logged, or misparsed, are invisible to the monitor; a finite log cannot establish liveness.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |

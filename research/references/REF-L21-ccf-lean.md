@@ -45,6 +45,70 @@ Other packages, examples [S1]: `consistency/consistency/Properties.lean:29 commi
 
 Scope exclusions (verbatim, `lean/consensus/README.md`): "Node join and snapshot installation are not modeled." "Actions are local inputs (including timeouts) or delivery of a queued message; no clock is modeled." [S1] Consistency: "There is no refinement proof connecting it to the [CCF consensus protocol model]" [S1 `lean/consistency/README.md`].
 
+### 3a. Predicate semantics: what the quoted theorems do and do not guarantee
+All definitions are verbatim from commit `6404230`, paths relative to `lean/` [S1].
+
+Quantified traces. `consensus/Consensus/Properties.lean:19`:
+```lean
+abbrev GlobalTrace (config : Finset Model.Node.NodeID) (nodes : List Model.Node.NodeID) :=
+  CCF.Execution.Trace (Model.transitionSystem config nodes)
+```
+`common/CCF/Execution.lean:35-48` (docstrings kept):
+```lean
+/-- The initial state is allowed and each recorded action reaches its paired state. -/
+def TraceImpl.Valid {system : TransitionSystem} (trace : TraceImpl system) : Prop :=
+  system.init trace.init
+  /\ forall n before action,
+      (Stream'.Seq.cons trace.init (trace.steps.map Prod.snd)).get? n = some before
+      -> (trace.steps.map Prod.fst).get? n = some action
+      -> system.step before action = (trace.steps.map Prod.snd).get? n
+
+/-- A nonempty, valid finite or infinite execution. -/
+abbrev Trace (system : TransitionSystem) :=
+  {trace : TraceImpl system // trace.Valid}
+```
+`state ∈ trace` is membership in the recorded state sequence (`common/CCF/Execution.lean:91-92`). So "for all `trace : GlobalTrace`, for all `state ∈ trace`" ranges over every state reachable in the model; `Execution.lean:151` proves `system.Reachable state <-> exists trace : Trace system, state ∈ trace`.
+
+Initial states. `consensus/Consensus/Model.lean:74-84`:
+```lean
+/-- The network of `nodes`, initialized from a nonempty membership configuration. -/
+abbrev transitionSystem (initialConfiguration : Finset NodeID) (nodes : List NodeID)
+    : TransitionSystem :=
+  let system := MultiNodeTransitionSystem.lift (protocol initialConfiguration)
+  {
+    system with
+      init :=
+        fun state =>
+          initialConfiguration.Nonempty
+          /\ state.nodes.map Prod.fst = nodes
+          /\ system.init state
+  }
+```
+`initialNodeState` (`Model.lean:36`) makes the minimum node of the initial configuration the bootstrap primary.
+
+Network. `common/CCF/MultiNodeTransitionSystem.lean:11-16`: "The network is a multiset of envelopes; delivery picks any queued envelope, not just the head. Each global step runs exactly one node once ... then appends that node's sends to the network." Delivery removes one copy (`removeOne`, line 80). Messages can stay queued forever (in effect, loss), and delivery order is arbitrary. The model has no duplication of a sent message and no clock.
+
+Conclusion predicates. `consensus/Consensus/Model/NodeState.lean:82-83`:
+```lean
+def committedLog (state : NodeState) : List Entry :=
+  state.log.take state.commitIndex
+```
+`<+:` is the core `List.IsPrefix` relation. `NodeState.lean:94-97`:
+```lean
+def isSignatureAt (log : List Entry) (index : Nat) : Bool :=
+  match entryAt? log index with
+  | some entry => entry.content.isSignature
+  | none => false
+```
+`Role` (`NodeState.lean:48`) has constructors `none | follower | preVoteCandidate | candidate | primary`.
+
+Plain language.
+- `committed_logs_prefix`: in any reachable model state pair on one trace, the committed prefixes (`log.take commitIndex`) of any two nodes are prefix-comparable. This covers states at different times (stateA and stateB may differ).
+- `single_node_committed_log_monotonic`: one model step never shrinks or rewrites a node's committed prefix, given distinct node ids (`Nodup`).
+- `election_safety`: within one model state, two nodes with role `primary` and the same `currentTerm` are the same node. It does not rule out two primaries in different terms at the same time (the witness lemma exhibits that case).
+- `committed_frontier_is_signature`: a positive `commitIndex` always points at a signature entry.
+- Not guaranteed: anything about the C++ code (that link is replay testing only, section 5); liveness or progress; node join and snapshot installation (not modelled); safety under message duplication or Byzantine faults (not modelled). Model-level: if the model forbids a real behaviour, the theorems still hold vacuously for it (PR #8683, [S7]).
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|

@@ -44,6 +44,17 @@ Two layers of formality.
 
 Environment and adversary: the network "provides no guarantees about delivery, except that it will not invent messages" [S2]. There is no explicit attacker model; the tester produces only legal (spec-conforming) stimulus, and "We are also interested in incorporating specific attacker models into the methodology" is listed as future work [S2]. Encryption/decryption, OS, network and TLS 1.3 are black boxes [S1, sec 4.4].
 
+### 3a. Predicate semantics: what a passing test does and does not guarantee
+There is no mechanised theorem. The paper theorems are pen-and-paper. Theorem 3 (SECDEV'19) states "⟨φ⟩ π ⟨φ⟩ holds iff M^φ_π ∥ π ⊨ φ", i.e. a process satisfies an assume/guarantee spec iff composing it with the mirror satisfies the spec [S2]. The tester runs one finite execution of that composition. The oracle at each wire event is the conjunction of Ivy `require` guards on the event, for example (commit `9f3c7ec`, `doc/examples/quic/`) [S3]:
+- `quic_packet.ivy:325` `require ~sent_pkt(scid,pkt.ptype,pkt.seq_num);  # [4]`: a sender never reuses a packet number at one encryption level.
+- `quic_frame.ivy:556` `require f.data = stream_app_data(dcid,f.id).segment(offset,offset+f.length);`: STREAM bytes equal the application data at that offset.
+- `quic_frame.ivy:568` `require ((offset) + (f.length)) <= stream_max_data(dcid,f.id);  # [2]`: flow-control limit respected.
+
+Plain language.
+- A failing run shows a concrete execution where the implementation output violated a `require`, assuming the shim, the TLS library and the spec are correct. This is how the 27 errors were found [S1].
+- A passing run shows only that the guards held on the events of that run. It does not show that the implementation satisfies the spec on all executions. The safety properties are therefore tested, not proved.
+- Not covered: liveness, congestion control, error handling (in [S1]), serialisation formats, and any attacker behaviour beyond spec-legal stimulus [S1, S2, S4].
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
