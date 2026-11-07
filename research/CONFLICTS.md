@@ -2,17 +2,17 @@
 
 This register aggregates every recorded disagreement between sources in the Phase 1 corpus, for use in the Phase 2 council debate (docs/phase2/council-kit.md, rule 4: conflicts listed here must be argued, not ignored). It resolves nothing and gives no verdict on the hypothesis.
 
-Sources aggregated: the Conflicts sections of research/01 to research/08; section 13 of every research/references/REF-*.md present at the time of writing (REF-C01 to REF-C09, REF-L01 to REF-L08, REF-L10 to REF-L21); and the "Unrecorded conflicts" table of research/REVIEW-phase1.md (every row is carried; the QUIC attribution row is entered as a correction with provenance). Dossiers still landing (REF-L22 Perennial, REF-L23 Telltale, REF-C10 Aneris/Trillium/Grove, REF-C11 compilation boundary) will be folded in by a refresh pass; new entries will take the next free numbers.
+Sources aggregated: the Conflicts sections of research/01 to research/08; section 13 of every research/references/REF-*.md present at the time of writing (REF-C01 to REF-C09, REF-C11, REF-L01 to REF-L08, REF-L10 to REF-L23); and the "Unrecorded conflicts" table of research/REVIEW-phase1.md (every row is carried; the QUIC attribution row is entered as a correction with provenance). REF-C10 (Aneris/Trillium/Grove) was not on disk at the time of writing and will be folded in by a refresh pass; new entries will take the next free numbers.
 
 Conventions:
-- Entries are numbered CF-001 onward in document order and are never renumbered; later additions are appended with new numbers.
+- Entries are numbered CF-001 onward and are never renumbered. CF-001 to CF-119 follow document order; later additions take the next free number and are placed in their sub-claim section, so numbers after CF-119 are not in document order.
 - Source IDs are written `file:ID`, for example `01:S19` (research/01) or `REF-L04:S2` (research/references/REF-L04-veil.md); a bare dossier ID such as `REF-L12 [CODE]` means the dossier's own repository inspection.
 - Quotes are reproduced verbatim as recorded in the cited corpus file. Where a side is the researcher's own static count, the quoted text is the researcher's recorded statement, marked [CODE].
 - Admissibility follows research/CONVENTIONS.md: a side counts only if it rests on [FULL], [SECT] or [CODE] sources. Conflicts with an excluded side are in the final section. Where only part of a recorded conflict rests on a lead, the admissible part is entered here and the lead part is listed in the final section.
 - Deduplication: where several files record the same disagreement, one entry is made and the "Recorded in" line lists every recording.
 - Status is "open" for every entry. Where a recording file or the review already gives a reading (for example "likely a version difference"), it is quoted, not adopted.
 
-Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Implementation link: 55; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 119.
+Entries per section: H1 Expressiveness: 10; H2 Provability at scale: 46; H3 Implementation link: 58; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 125.
 
 ## Index
 
@@ -30,8 +30,8 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 | CF-010 | Leslie sorry status | H2 | claim-vs-code | 01, REF-L19 |
 | CF-011 | Leslie README example list versus repository | H2 | doc-vs-doc | REF-L19 |
 | CF-012 | tla-plus-lean-workflow sorry count | H2, H3 | claim-vs-code | 01, 06, REF-L18 |
-| CF-013 | Telltale axiom inventory | H2 | doc-vs-doc | 01, REVIEW-phase1 |
-| CF-014 | Telltale placeholder families versus top-level verification claim | H2, D | claim-vs-code | 01, REVIEW-phase1 |
+| CF-013 | Telltale axiom inventory | H2 | doc-vs-doc | 01, REF-L23, REVIEW-phase1 |
+| CF-014 | Telltale placeholder families versus top-level verification claim | H2, D | claim-vs-code | 01, REF-L23, REVIEW-phase1 |
 | CF-015 | leanbook Raft: conditional premises versus derived invariants | H2 | doc-vs-doc | 01 |
 | CF-016 | raft-lean-squad: are the RaftReachable.step hypotheses discharged | H2, H3 | doc-vs-doc | 02, REF-L17, 08 |
 | CF-017 | raft-lean-squad theorem and file counts | H2 | number mismatch | 01, REF-L17, 08 |
@@ -137,6 +137,12 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 | CF-117 | Evidence policy: meaning of [FULL] | D (affects admissibility for all sub-claims) | definitional | REVIEW-phase1 |
 | CF-118 | Trace-validation and lightweight-FM claims resting partly on excerpts | H3, H5b | interpretive | REVIEW-phase1 |
 | CF-119 | Catalogue yes/partial cells versus dossier qualifications | H2, H3, D | interpretive | REVIEW-phase1 |
+| CF-120 | Perennial Lean branch versus Rocq branch: crash reasoning | H1, H2 | doc-vs-doc | REF-L22 |
+| CF-121 | Telltale file, line and theorem totals | H2 | number mismatch | REF-L23, 01 |
+| CF-122 | Perennial ArraySemantics soundness | H2, H3 | interpretive | REF-L22 |
+| CF-123 | Perennial default branch | H3 | doc-vs-doc | REF-L22 |
+| CF-124 | Wording of the CompCert guarantee | H3, D | doc-vs-doc | REF-C11, 03 |
+| CF-125 | CakeML in-logic bootstrapping versus CompCert extraction trust | H3, D | interpretive | REF-C11 |
 
 ## H1 Expressiveness
 
@@ -221,6 +227,15 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 - Status: open
 - Recorded in: REF-L18 §13
 
+### CF-120 Perennial Lean branch versus Rocq branch: crash reasoning
+- Sub-claims: H1, H2
+- Type: doc-vs-doc
+- Side A: the Rocq master README describes "crash weakest preconditions, crash invariants, idempotence, and crash refinement reasoning" in `src/program_logic/` (REF-L22:S5, research/references/REF-L22-perennial-goose.md)
+- Side B: the Lean README says the Lean branch has "no crash program logic" and no `wpc` (REF-L22:S1); AGENTS.md calls the Rocq sources "frozen and out of date" and says "the Lean statements are authoritative" (REF-L22:S6)
+- Why it matters for the debate: Claims about Perennial's crash-reasoning capability in Lean depend on which branch is meant.
+- Status: open
+- Recorded in: REF-L22 §13
+
 ## H2 Provability at scale
 
 ### CF-010 Leslie sorry status
@@ -254,19 +269,19 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 - Sub-claims: H2
 - Type: doc-vs-doc
 - Side A: `lean/CODE_MAP.md`: "The repository is currently axiom-free"; the Telltale scan "has 0 axioms in 830 files" (01:S15, research/01-lean4-protocol-modeling.md)
-- Side B: "the same file's table still lists files with \"2 axioms\" and \"8 axioms\"" (01:S15); the same author's rumpsteak-aura "has 35 axioms in 221 files, including `deadlock_free` and `not_stuck`" (01:S16)
+- Side B: "the same file's table still lists files with \"2 axioms\" and \"8 axioms\"" (01:S15); the same author's rumpsteak-aura "has 35 axioms in 221 files, including `deadlock_free` and `not_stuck`" (01:S16); at c8c6a7f, "CODE_MAP per-file rows say Monitor/Preservation has \"2 axioms\" and Deployment/Linking \"8 axioms\" (`CODE_MAP.md:560,568`), while the same file's global inventory (`:1024`, `:1035`) and a lexical check of the current files find 0 axioms" (REF-L23:S8, research/references/REF-L23-telltale.md)
 - Why it matters for the debate: An axiom-free headline and residual axiom counts give different trust bases for the same proof stack.
 - Status: open
-- Recorded in: 01 C7; REVIEW-phase1 "Unrecorded conflicts" (Telltale row)
+- Recorded in: 01 C7; REF-L23 §13; REVIEW-phase1 "Unrecorded conflicts" (Telltale row)
 
 ### CF-014 Telltale placeholder families versus top-level verification claim
 - Sub-claims: H2, D
 - Type: claim-vs-code
 - Side A: "formally verified for the declared shipped surface" (01:S15, Telltale top-level claim, research/01-lean4-protocol-modeling.md)
-- Side B: the distributed-family table "marks Nakamoto and Reconfiguration as `placeholder` (\"some exported guarantee is vacuous or backed by True-style assumptions\")" (01:S15, same file)
+- Side B: the distributed-family table "marks Nakamoto and Reconfiguration as `placeholder` (\"some exported guarantee is vacuous or backed by True-style assumptions\")" (01:S15, same file). Within Side B the dossier records a further difference of degree: "`lean/Distributed/README.md:34` labels Nakamoto \"placeholder\" while `Nakamoto/Core.lean:208` proves common prefix from a longest-chain refinement assumption plus `LongestChain.common_prefix`; the probability budget remains an assumption" (REF-L23:S6, research/references/REF-L23-telltale.md)
 - Why it matters for the debate: Quoting only the headline would conceal vacuous guarantees inside the claimed verified surface (REVIEW-phase1 asks that this not be erased).
 - Status: open
-- Recorded in: 01 C7; REVIEW-phase1 "Unrecorded conflicts" (Telltale row)
+- Recorded in: 01 C7; REF-L23 §13; REVIEW-phase1 "Unrecorded conflicts" (Telltale row)
 
 ### CF-015 leanbook Raft: conditional premises versus derived invariants
 - Sub-claims: H2
@@ -618,6 +633,24 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 - Why it matters for the debate: Effort figures differ by scope and date.
 - Status: open
 - Recorded in: REF-L02 §13
+
+### CF-121 Telltale file, line and theorem totals
+- Sub-claims: H2
+- Type: number mismatch
+- Side A: "CODE_MAP and inventory 767 files / 152,326 lines"; research/01 S15 "recorded 5,101 theorems, implemented_by 8, partial 1" (REF-L23:S8, research/references/REF-L23-telltale.md; 01:S15, research/01-lean4-protocol-modeling.md)
+- Side B: "my lexical 830 / 164,896 (different scope)"; "my counts are 5,105, 14 attributes, 1 (different counting rules and/or commit)" (REF-L23 [CODE] @ c8c6a7f)
+- Why it matters for the debate: Scale figures for the Telltale proof stack differ between its own inventory and two corpus counts.
+- Status: open
+- Recorded in: REF-L23 §13; 01 S15 entry
+
+### CF-122 Perennial ArraySemantics soundness
+- Sub-claims: H2, H3
+- Type: interpretive
+- Side A: "a design note dated 2026-10-24 records that it proved `False`" (REF-L22:S4, research/references/REF-L22-perennial-goose.md)
+- Side B: "The 2026-10-25 decision removed the cause. At the inspected commit the defect is described as fixed, but no model instance was found to confirm consistency"; "`rg` found no `instance` of `go.Semantics`, `go.PreSemantics` or `ArraySemantics` in the repository" (REF-L22:S4)
+- Why it matters for the debate: Go-program proofs in Perennial are conditional on typeclass assumptions that were once inconsistent and have no instance in the repository.
+- Status: open
+- Recorded in: REF-L22 §13 and §3a
 
 ## H3 Implementation link
 
@@ -1115,6 +1148,33 @@ Entries per section: H1 Expressiveness: 9; H2 Provability at scale: 44; H3 Imple
 - Why it matters for the debate: The yield of model-learning methods varies by target; the recording file notes the targets differ.
 - Status: open
 - Recorded in: 05 #6
+
+### CF-123 Perennial default branch
+- Sub-claims: H3
+- Type: doc-vs-doc
+- Side A: `AGENTS.md`: "GitHub's default branch is `master`" (REF-L22:S6, research/references/REF-L22-perennial-goose.md)
+- Side B: "`git ls-remote --symref` on the access date reports `HEAD` → `refs/heads/lean`" (REF-L22 [CODE])
+- Why it matters for the debate: Minor; which branch is cited determines whether Lean or Rocq Perennial is being discussed.
+- Status: open
+- Recorded in: REF-L22 §13
+
+### CF-124 Wording of the CompCert guarantee
+- Sub-claims: H3, D
+- Type: doc-vs-doc
+- Side A: "the executable code it produces is proved to behave exactly as specified by the semantics of the source C program" (03:E38, research/03-lean4-code-extraction-and-fidelity.md; quoting the CompCert manual)
+- Side B: the same manual says the theorem takes C to "abstract syntax trees for the assembly-level Asm language (before assembling and linking)", and that assembly and linking have "no formal guarantees yet" (REF-C11:C11-S1 §1.2, §1.3, research/references/REF-C11-verified-compilation.md)
+- Why it matters for the debate: The reference point for verified compilation carries an unverified assembly and linking boundary that the headline wording omits.
+- Status: open
+- Recorded in: REF-C11 §13; 03 E38
+
+### CF-125 CakeML in-logic bootstrapping versus CompCert extraction trust
+- Sub-claims: H3, D
+- Type: interpretive
+- Side A: CakeML §11 contrasts CakeML's in-logic bootstrapping with CompCert's reliance on extraction and OCaml (REF-C11:C11-S4, research/references/REF-C11-verified-compilation.md)
+- Side B: "no bugs due to the use of axioms for interfacing untrusted code, or the use of the extractor to OCaml, were found." (REF-C11:C11-S3 §7)
+- Why it matters for the debate: How much an extraction step weakens a compilation guarantee is argued differently by the two sources.
+- Status: open
+- Recorded in: REF-C11 §13
 
 ## H4 Generality
 

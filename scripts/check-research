@@ -121,6 +121,28 @@ if conf is None:
 elif len(re.findall(r"^### CF-\d{3}", conf, re.M)) < 5:
     err("FR-005", "CONFLICTS.md has fewer than 5 CF-NNN entries")
 
+# FR-004 / review F-011: case comparison is structurally complete and current.
+cc = read(R / "CASE-COMPARISON.md")
+if cc is None:
+    err("FR-004", "research/CASE-COMPARISON.md missing")
+else:
+    for h in ("## Comparator", "## Lean"):
+        if not re.search(rf"^{h}", cc, re.M):
+            err("FR-004", f"CASE-COMPARISON.md missing a '{h}...' table section")
+    if re.search(r"index not yet v2", cc, re.I):
+        err("FR-004", "CASE-COMPARISON.md still has 'index not yet v2' cells; refresh from _index JSON")
+    for rid in index:
+        short = rid.replace("REF-", "")
+        if not re.search(rf"\b{short}\b", cc):
+            err("FR-004", f"CASE-COMPARISON.md has no row for {rid}")
+    hdr_cols = None
+    for ln in cc.splitlines():
+        if ln.startswith("| Reference |"):
+            hdr_cols = ln.count("|")
+        elif hdr_cols and ln.startswith("|") and not ln.startswith("|---") and ln.count("|") != hdr_cols:
+            err("FR-004", f"CASE-COMPARISON.md malformed row (cell count): {ln[:60]}")
+            break
+
 # FR-006: council kit.
 kit = read(ROOT / "docs" / "phase2" / "council-kit.md")
 KIT_H = ["## Motion", "## Definitions", "## Sub-claims", "## Roles and model families", "## Rules of evidence",
