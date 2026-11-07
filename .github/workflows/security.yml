@@ -29,8 +29,10 @@ jobs:
           languages: actions, python
       - uses: github/codeql-action/analyze@9418214df1f2c4b8128c770156c409013b07d6b9 # v3
 
+  # Requires the repository Dependency graph setting (issue #16). Set the repository variable
+  # DEPENDENCY_GRAPH_ENABLED=true once the owner enables it.
   dependency-review:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_GRAPH_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
