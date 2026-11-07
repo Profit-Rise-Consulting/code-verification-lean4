@@ -50,6 +50,10 @@ jobs:
   # and dangerous privileged-trigger usage.
   workflow-audit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      security-events: write # zizmor uploads SARIF to code scanning on push
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
