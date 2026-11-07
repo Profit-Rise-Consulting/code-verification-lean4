@@ -41,13 +41,13 @@ R6. Fairneris (S3): a liveness-preserving refinement between distributed program
 
 ### 3.2 Network assumptions (each stated separately)
 - A-N1 Aneris (current code). Messages may be dropped and duplicated. `aneris/aneris_lang/lang.v:1032` `MessageDuplicateStep` adds a copy of an in-flight message (`state_ms σ ⊎ {[+ m +]}`). `:1040` `MessageDropStep` removes one. `:1020` `MessageDeliverStep` delivers any message addressed to a socket. These are UDP-style semantics with no ordering.
-- A-N2 Aneris (ESOP 2020 paper). S4 assumed a network that does not duplicate (see §13 Conflicts).
+- A-N2 Aneris (ESOP 2020 paper). S4: "we assume duplicate protection" (see §13 Conflicts).
 - A-N3 Grove. In the sosp2023 code, `SendOp` (`src/goose_lang/ffi/grove_ffi.v:172-183`) adds the message to the destination's set (`ms ∪ {[Message c_l data]}`) and may non-deterministically report an error before or after (`err_early`, `err_late`). `RecvOp` (`:185-194`) returns `None` (error) or any message in the set from the right sender, without removing it. As a result, messages can be lost from the receiver's perspective (receive may always error), received more than once, and reordered. S2 describes its network as "unreliable".
-- A-N4 Fairneris. Programs run on an unreliable network. Liveness is proved under a fairness assumption on that network (A-F2).
+- A-N4 Fairneris. S3: "it is possible for a message to never be delivered, preventing liveness" without fairness. Liveness is proved under A-F2.
 
 ### 3.3 Fairness assumptions
 - A-F1 Fairis: fair scheduling of threads, which is premise "fair execution" of R5. Shared memory only.
-- A-F2 Fairneris: network fairness, meaning that a message sent infinitely often is eventually delivered. This is author-reported (S3); I could not inspect a matching definition in public code.
+- A-F2 Fairneris: "a flexible network fairness assumption". S3 glosses a fair network as one where "it does not drop all messages", and says it defines "new network fairness conditions at both the operational semantics level and the model level" (S3 §1). This is author-reported; I could not inspect a matching definition in public code.
 - Trillium's Aneris instantiation (R2, R3) and Grove (R4) prove no liveness, so they carry no fairness assumption. S2 states: "One limitation is that Grove is only able to verify safety".
 
 ### 3.4 Crash assumptions
@@ -56,7 +56,7 @@ R6. Fairneris (S3): a liveness-preserving refinement between distributed program
   - `grove_dist_adequate` (`src/program_proof/simplepb/apps/closed_proof.v:21-29`) takes `init_restart := fst ebσ` for each node. A crashed node restarts with its main program.
   - The paper (S2): "independent node crashes" are among the new reasoning principles. The trusted "Filesystem library" models durable storage.
   - A failstop variant (`grove_ffi_dist_adequacy_failstop`, `grove_ffi_adequacy.v:42`) requires a WP only for the initial threads.
-- A-C3 Fairneris. Crash-recovery is listed as future work in S3 (author-reported; not checked in code).
+- A-C3 Fairneris. S3 says of Grove's crash recovery and reconfiguration: "An interesting and important future work is to prove liveness properties of such distributed systems." The S3 sections I read give no crash model for Fairneris itself. S3's comparison table did not extract legibly (check and cross marks were lost), so it is not used.
 
 ### 3.5 Time and clock assumptions
 - A-T1 Grove. `GetTimeRangeOp` (`grove_ffi.v:244-254`) returns a pair bounding the global time, so each node's clock has bounded uncertainty around a single global time. Lease reasoning depends on this. `GetTscOp` (`:235`) gives a monotone local counter.
@@ -73,7 +73,21 @@ Paxos (Aneris/Trillium). Model-level conclusion, `aneris/examples/consensus/paxo
 
   Definition Chosen s val := ∃ bal, ChosenAt s bal val.
 ```
-Implementation-level corollary, `paxos_adequacy.v:412-423`: `ChosenImpl` is phrased over messages actually sent by acceptors. `paxos_correct_impl` concludes that two values both "chosen" in the implementation's sent-message history of a valid execution of the runner are equal.
+Implementation-level corollary, `paxos_adequacy.v:412-423`:
+```coq
+Definition ChosenImpl (s : state) (v : Value) :=
+  ∃ b Q,
+    QuorumA Q ∧
+    ∀ a, a ∈ Q →
+         ∃ (l : Learner),
+           mkMessage (`a) (`l) (msg2b_ser b v) ∈ s.(state_ms).
+
+Corollary paxos_correct_impl v1 v2 tp σ ex:
+  trace_starts_in ex ([runner_expr], init_state) →
+  trace_ends_in ex (tp, σ) →
+  valid_exec ex →
+  ChosenImpl σ v1 → ChosenImpl σ v2 → v1 = v2.
+```
 
 Strongest premises:
 - The execution is of the fixed runner `runner_topo` (`paxos_runner.v`), which has a fixed set of proposers, acceptors and learners.
@@ -81,13 +95,13 @@ Strongest premises:
 - The Paxos model is the hand-translated STS.
 - `classical_instances` imports Trillium's `FunExt`, `PropExt` and `Choice` axioms (`trillium/prelude/classical.v:3,6,18`).
 
-Plain language: in every finite execution prefix of this specific Aneris runner, no two different values are both chosen in the implementation's message history. Not guaranteed:
+Plain language: in the final state of every valid finite execution of this specific Aneris runner, no two different values both have a quorum of serialised 2b messages in the in-flight message multiset `state_ms`. Because `MessageDropStep` removes messages from `state_ms`, the predicate concerns messages currently in flight, not all messages ever sent. Not guaranteed:
 - Liveness (a value is eventually chosen).
 - Other topologies.
 - Crash behaviour.
 - Correspondence of the AnerisLang program to the OCaml source. `ml_sources/` are translated by the unverified `o2a` tool (README lines 66-80).
 
-Two-phase commit. `tpc_consistent` (`two_phase_adequacy.v:186-196`) is a consistency (atomic-commit agreement) property for the runner, obtained through R3. The same premises and exclusions apply.
+Two-phase commit. `tpc_consistent` (`two_phase_adequacy.v:186-196`) concludes `¬ (st1 = ABORTED ∧ st2 = COMMITTED)` for two resource managers whose state messages `m1`, `m2` are in `σ.(state_ms)` at the end of a valid execution of the runner. It is obtained through R3, and the same premises and exclusions apply.
 
 Grove vKV/bank. `closed_bank` (`closed_proof.v:109-156`) instantiates `grove_dist_adequate` with `φinv := λ _, True`. The guarantee is therefore that no node ever gets stuck (Goose assertion failure or undefined behaviour is "stuck"). The bank auditor's balance-sum check `SimpleAudit` (`external/Goose/github_com/mit_pdos/gokv/bank.v:89-98` @ `820a2a9`) panics when the sum is wrong. So "never stuck" implies the auditor never observes a wrong total.
 
@@ -134,7 +148,7 @@ Trusted pieces stated by authors or code:
 ## 8. Limitations stated by the authors (verbatim)
 - Grove (S2): "One limitation is that Grove is only able to verify safety".
 - Trillium (S1): "We have manually translated the TLA+ protocol specifications into STSs in Coq".
-- Aneris ESOP 2020 (S4) assumed the network does not duplicate messages (see Conflicts for the code change).
+- Aneris ESOP 2020 (S4): "We assume duplicate protection to simplify our examples, as otherwise the code of all of our examples would have to be adapted to cope with duplication of messages."
 
 ## 9. Independent evidence
 No independent rebuild by me (no toolchains policy). These are peer-reviewed venues (ESOP 2020, POPL 2024, SOSP 2023). Fairneris is an unrefereed preprint. Grove is used in the MIT 6.5840 reading list (S2 hosted on pdos.csail.mit.edu/6.824); this is not evidence of correctness.
@@ -168,15 +182,18 @@ No independent rebuild by me (no toolchains policy). These are peer-reviewed ven
 | D | "verify" means Iris WP plus adequacy to a stated trace/invariant property; "refinement" means `continued_simulation` to a model STS | S1, S6 |
 
 ## 13. Conflicts
-- Trillium (S1) vs REF-C02 (IronFleet). S1, §8 Related Work, says IronFleet "does not support node-local concurrency" and that its liveness used a "pen-and-paper argument for proving liveness". REF-C02 records IronFleet as having mechanically checked liveness in Dafny/TLA embedding, with a reduction obligation for the event loop. The two characterisations of IronFleet's liveness are not reconciled here.
-- Fairneris (S3) vs REF-C02. S3 describes IronFleet as requiring each node to be "a simple single-threaded event loop" with liveness obtained by proving that event handlers terminate. This differs in emphasis from REF-C02's account.
-- Grove (S2) vs REF-C02. S2 says "IronFleet also includes a proof of liveness, though it does not handle thread concurrency". This agrees with REF-C02 on liveness being proved, and with S1 on the absence of thread concurrency.
-- Aneris paper vs code. S4 (ESOP 2020) assumes no message duplication. The current semantics (`lang.v:1032`, `MessageDuplicateStep`) permits duplication. Both are cited only for their own versions.
+- Trillium (S1) vs REF-C02 (IronFleet).
+  - S1 (§6 Related Work): "IronFleet uses the Dafny verifier to verify implementations and encodes the refinement of an STS in preconditions and postconditions of programs but does not support node-local concurrency. IronFleet uses a pen-and-paper argument for proving liveness of simple programs (programs that consist of a simple event loop which calls terminating event handlers)."
+  - REF-C02 quotes IronFleet as claiming "the first machine-verified liveness proofs" and records a mechanised IronRSL liveness lemma (`LivenessProof.i.dfy:192-198`, with one live `assume TimeNotZeno`). REF-C02 also records that IronFleet's reduction argument is informal ("we sketch an informal argument").
+  - Possible reading, not settled here: S1's "pen-and-paper" may refer to the informal reduction step, not to the protocol-level liveness proof. On concurrency, REF-C02 records a reduction obligation that lets atomic host steps stand for interleaved I/O. This is a single event loop per host, which is consistent with "no node-local concurrency".
+- Fairneris (S3) vs REF-C02. S3: "IronFleet supports a limited class of liveness properties for a limited class of programs by reducing liveness to termination of sequential programs. In IronFleet each node of the distributed system must be implemented as a simple single-threaded event loop—liveness is proved by showing that all event handlers terminate." This is narrower than REF-C02's account of a protocol-level TLA-embedded liveness proof under the `LivenessAssumptions` conjunction.
+- Grove (S2) vs S1. S2: "IronFleet also includes a proof of liveness, though it does not handle thread concurrency, leases, crashes, or reconfiguration". S2 agrees with REF-C02 that liveness is proved, and with S1 that thread concurrency is absent.
+- Aneris paper vs code. S4 (ESOP 2020): "Aneris provides no guarantee of delivery or ordering although we assume duplicate protection." The current semantics (`lang.v:1032`, `MessageDuplicateStep`) permits duplication. Both are cited only for their own versions.
 
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Notes |
 |---|---|---|---|---|---|
-| S1 | Timany et al., "Trillium: Higher-Order Concurrent and Distributed Separation Logic for Intensional Refinement", POPL 2024 | https://iris-project.org/pdfs/2024-popl-trillium.pdf | P | [SECT] | Whole PDF retrieved. Read: abstract, Aneris/TLA+ case studies, Related Work (IronFleet) |
+| S1 | Timany et al., "Trillium: Higher-Order Concurrent and Distributed Separation Logic for Intensional Refinement", POPL 2024 | https://iris-project.org/pdfs/2024-popl-trillium.pdf | P | [SECT] | Whole PDF retrieved. Read: abstract, Aneris/TLA+ case studies, §6 Related Work (IronFleet) |
 | S2 | Sharma et al., "Grove: a Separation-Logic Library for Verifying Distributed Systems" (extended), SOSP 2023 | https://pdos.csail.mit.edu/6.824/papers/grove.pdf | P | [SECT] | Whole PDF retrieved. Read: abstract, intro limitation, execution model (crashes, network, time), §6 Implementation table, Related Work |
 | S3 | Hinrichsen, Stefanesco, Birkedal, Timany, "A Higher-Order Separation Logic for Verifying Liveness-Preserving Refinements of Distributed Systems", HAL hal-05647709 (2026-06-07) | https://hal.science/hal-05647709/document | P | [SECT] | Whole preprint retrieved. Read: abstract, intro and contributions, network fairness, Related Work (IronFleet), future work |
 | S4 | Krogh-Jespersen et al., "Aneris: A Mechanised Logic for Modular Reasoning about Distributed Systems", ESOP 2020 | https://iris-project.org/pdfs/2020-esop-aneris-final.pdf | P | [SECT] | Whole PDF retrieved. Read: abstract, network semantics assumptions |

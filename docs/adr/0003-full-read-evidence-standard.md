@@ -18,6 +18,13 @@ The first Phase 1 pass relied heavily on search-engine excerpts; one topic file 
 ## Decision Outcome
 Chosen: option 2, as codified in research/CONVENTIONS.md. Evidence must be [FULL] (the primary page, paper or document read in full) or [CODE] (source inspected at a recorded commit). Excerpt-only material lives under "Unverified leads (excluded from evidence)". `scripts/check-research` fails CI if excerpt markers appear outside that section (NFR-001).
 
+### Amendment 1 (2026-11-07, review F-002)
+The independent review found that [FULL] had been used both for whole reads and for selected-section reads. The standard now has three admissible levels, defined in research/CONVENTIONS.md "Evidence depth levels":
+- [FULL]: whole source read.
+- [SECT]: whole source retrieved and named sections read, admissible only for claims quoted verbatim from those sections.
+- [CODE]: repository inspected at a recorded SHA.
+[PART], [EXT], abstract-only and excerpt material stay inadmissible. `scripts/check-research` fails on [PART]/[EXT] outside Unverified leads.
+
 ### Consequences
 - Good: council debaters can quote theorem statements, numbers and author scope statements directly.
 - Bad: coverage shrinks where sources are paywalled or unreachable. Those gaps are reported, not hidden.
