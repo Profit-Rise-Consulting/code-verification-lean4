@@ -9,7 +9,7 @@
 | Primary URLs | https://github.com/dsyme/raft-lean-squad ; blog https://dsyme.net/2026/04/20/lean-squad-automated-software-verification-with-near-zero-human-labour/ |
 | Repo, commit SHA, last commit date, licence | `dsyme/raft-lean-squad` @ `ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc` ("update workflows"), 2026-06-03 15:38 +0100, Apache-2.0 (inherited from raft-rs) |
 | Lean toolchain (or other tool and version) | `formal-verification/lean/lean-toolchain`: `leanprover/lean4:v4.28.0`; stdlib only (`lake-manifest.json` has no packages). REPORT.md and CRITIQUE.md say "Lean 4.30.0-rc2" (see Conflicts) |
-| Maturity | AI-generated research experiment. Determined from: README/REPORT banner "Lean Squad — automated formal verification"; blog "Every definition and every statement of every theorem is AI written"; `paper/paper.tex` lists authors "Don Syme", "LeanSquad", "Copilot CLI", "Claude Sonnet 4.6"; workflows `.github/workflows/lean-squad.md` and `lean-squad.lock.yml`. The human contribution was "three GitHub nudge comments" and merging PRs [S2] |
+| Maturity | Research experiment. AI provenance: `author-reported` (the author states the content is AI-written). Determined from: README/REPORT banner "Lean Squad — automated formal verification"; blog "Every definition and every statement of every theorem is AI written"; `paper/paper.tex` lists authors "Don Syme", "LeanSquad", "Copilot CLI", "Claude Sonnet 4.6"; workflows `.github/workflows/lean-squad.md` and `lean-squad.lock.yml`. The human contribution was "three GitHub nudge comments" and merging PRs [S2] |
 
 ## 2. Claim as stated by the authors (verbatim)
 REPORT.md (dated 2026-04-28):
@@ -90,6 +90,41 @@ So a caller of `fullProtocolStep_safe` must supply objects that contain these co
 
 Function-level components (e.g. `committedIndex_safety`, `committedIndex_maximality`, `limitSize_maximality`, `voteResult_Won_iff`) are Lean re-implementations of individual Rust functions over `Nat`/`List`, with theorems about those Lean functions (CRITIQUE.md Layers 1-2). Environment: no network, message loss, crashes, timing or concurrency is modelled; numbers are `Nat`; voter sets are `List Nat` rather than `HashSet<u64>` (CRITIQUE "Concern 1", "Concern 3").
 
+## 3a. Predicate semantics
+Conclusion predicate, `FVSquad/RaftSafety.lean:283-289` @ `ab7a184`:
+```lean
+def nodeHasApplied [DecidableEq E] (cs : ClusterState E) (v : Nat) (k : Nat) (e : E) : Prop :=
+  cs.committed v ≥ k ∧ cs.logs v k = some e
+
+/-- A cluster is safe if no two nodes ever apply different entries at the same index. -/
+def isClusterSafe [DecidableEq E] (cs : ClusterState E) : Prop :=
+  ∀ v1 v2 : Nat, ∀ k : Nat, ∀ e1 e2 : E,
+    nodeHasApplied cs v1 k e1 → nodeHasApplied cs v2 k e2 → e1 = e2
+```
+Quorum notion, `FVSquad/RaftSafety.lean:78,85-87`:
+```lean
+abbrev VoterLogs (E : Type) := Nat → Nat → Option E
+def isQuorumCommitted [DecidableEq E]
+    (voters : List Nat) (logs : VoterLogs E) (k : Nat) (e : E) : Prop :=
+  hasQuorum voters (fun v => decide (logs v k = some e)) = true
+```
+Strongest premises of `fullProtocolStep_safe` (`FVSquad/ElectionLifecycle.lean:248`): `RaftReachable cs_pre` (`FVSquad/RaftTrace.lean:110`), an `ElectionEpoch` (`FVSquad/ElectionLifecycle.lean:90`), and `hstep : ValidAEStep ...`. `ValidAEStep` (`FVSquad/ConcreteProtocolStep.lean:145-181`) is a `Prop` structure whose fields include:
+```lean
+  hnew_cert : ∀ w k e, cs'.committed w ≥ k → cs.committed w < k →
+      cs'.logs w k = some e →
+      isQuorumCommitted cs'.voters cs'.logs k e
+  /-- Quorum-certified entries in the old state remain quorum-certified in the new state.
+      ...
+      `LeaderCompleteness.lean` LC3 + `hasQuorum_monotone` discharges this condition
+      when `CandidateLogCovers` holds (see `validAEStep_hqc_preserved_from_lc`, CPS13). -/
+  hqc_preserved : ∀ k e, isQuorumCommitted cs.voters cs.logs k e →
+      isQuorumCommitted cs'.voters cs'.logs k e
+```
+Plain language. Guaranteed: in an abstract snapshot (`committed` index per node, plus a log function per node), if the step from a reachable snapshot satisfies every `ValidAEStep` field, then no two nodes have different entries at the same index up to their committed index. Not guaranteed:
+- The commit rule (`hnew_cert`) and quorum preservation (`hqc_preserved`) are inputs, not consequences. The docstring points to a separate lemma (CPS13) that discharges `hqc_preserved` under `CandidateLogCovers`. `fullProtocolStep_safe` still takes `ValidAEStep` with the field already present. This was confirmed independently in review S29.
+- Nothing connects `ClusterState` to the Rust `Raft`/`RaftLog` structs.
+- Messages, network, crashes, persistence and term numbers outside `ElectionEpoch` are not modelled.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
@@ -106,7 +141,7 @@ Mechanism: manual (agent) transcription plus differential example testing. The b
 Correspondence: shared fixtures in `formal-verification/tests/<target>/cases.json` are mirrored (a) as Lean `#guard` checks, e.g. `FVSquad/FindConflictCorrespondence.lean` ("each `#guard` assertion runs the Lean model on a concrete test case and verifies the result at compile time"), and (b) as Rust unit tests, e.g. `src/raft_log.rs:2118 fn test_find_conflict_correspondence()`. 39 occurrences of "correspondence" across `src/`. Guarantee: agreement on finitely many hand-picked inputs (17 cases for `find_conflict`); CRITIQUE: "`#guard` tests are bounded to small inputs". Documented divergences include `JointCommittedIndex` returning 0 vs Rust `u64::MAX` on empty configs, an `UncommittedState` noLimit path divergence, and only the non-group-commit path being modelled.
 
 ## 6. Trusted computing base and soundness hygiene
-Static count at `ab7a184` over 80 `.lean` files, with comments and strings stripped: `sorry` 0, `admit` 0, `axiom` 0, `native_decide` 2, `implemented_by` 0, `extern` 0, `opaque` 0, `partial def` 0. (A raw word grep gives sorry=29, axiom=2, all inside doc comments.) The 2 `native_decide` uses: `FVSquad/ConfigurationInvariantsCorrespondence.lean:81` (an `example`) and `FVSquad/ConfigValidate.lean:184 theorem defaultCfg_valid`. They add the Lean compiler to the TCB for those two facts.
+Static lexical count (not a proof-closure audit) at `ab7a184` over 80 `.lean` files, with comments and strings stripped: `sorry` 0, `admit` 0, `axiom` 0, `native_decide` 2, `implemented_by` 0, `extern` 0, `opaque` 0, `partial def` 0. (A raw word grep gives sorry=29, axiom=2, all inside doc comments.) The 2 `native_decide` uses: `FVSquad/ConfigurationInvariantsCorrespondence.lean:81` (an `example`) and `FVSquad/ConfigValidate.lean:184 theorem defaultCfg_valid`. They add the Lean compiler to the TCB for those two facts.
 Unverified assumptions: the faithfulness of each hand-written Lean model to its Rust function (checked only by `#guard` examples and AI-written CORRESPONDENCE.md, 2,710 lines); the fields of `ElectionEpoch` and `ValidAEStep`; `HLogConsistency` (CRITIQUE: "still taken as a conditional hypothesis in `LeaderCompleteness.lean` (LC7/LC8)").
 
 ## 7. Scale, effort, automation
@@ -141,7 +176,7 @@ Pattern: an AI agent writes a hand-transcribed Lean model of each implementation
 | Sub-claim | Fact from this reference | Source ID |
 |---|---|---|
 | H1 | Raft cluster state, quorum certification and a reachability relation are expressed in Lean stdlib. Messages, network and time are not modelled | S1 |
-| H2 | 769 theorems with 0 sorry and 0 axiom. The headline safety theorem takes `ElectionEpoch`/`ValidAEStep` structures that contain protocol conditions (including `hqc_preserved`) as fields | S1, S2 |
+| H2 | 769 theorems with 0 sorry and 0 axiom (lexical count). The headline safety theorem takes `ElectionEpoch`/`ValidAEStep` structures that contain protocol conditions (including `hqc_preserved`) as fields | S1, S2, S4 |
 | H3 | The link to Rust is hand transcription plus shared-fixture `#guard`/`cargo test` example agreement. Aeneas extraction was attempted and failed | S1, S2 |
 | H4 | The same agent workflow was reportedly applied to Rust (raft-rs, quiche) and C++ (PX4) | S2 |
 | H5 | Function-level Lean models were checked against Rust by testing, independently of the protocol-level proof chain (25 of 50 proof files are standalone, REPORT) | S1 |
@@ -157,8 +192,10 @@ Pattern: an AI agent writes a hand-transcribed Lean model of each implementation
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | dsyme/raft-lean-squad repo @ ab7a184 (FVSquad Lean, REPORT.md, CRITIQUE.md, CORRESPONDENCE.md, src/ tests) | https://github.com/dsyme/raft-lean-squad | P | CODE | Fork of raft-rs with an AI-generated `formal-verification/` tree: 80 Lean files, 769 theorems, 0 sorry, 2 native_decide. Abstract Raft safety is proved over a hypothesis-carrying reachability relation, with fixture-based Rust correspondence |
-| S2 | Don Syme, "Lean Squad: Exploring Automated Software Verification with Near-Zero Human Labour" (2026-04-20) | https://dsyme.net/2026/04/20/lean-squad-automated-software-verification-with-near-zero-human-labour/ | P | FULL | Describes the agentic workflow, cost (~$240 for 34 runs), the three nudges, the Aeneas failure, the "pseudo-completion" problem and explicit limitations |
+| S1 | dsyme/raft-lean-squad @ ab7a184: Lean sources `formal-verification/lean/FVSquad/*.lean`, `src/raft_log.rs` correspondence tests | https://github.com/dsyme/raft-lean-squad/tree/ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc/formal-verification/lean | P | [CODE] | 80 Lean files, 769 theorem/lemma declarations, 0 sorry, 2 native_decide. Abstract Raft safety is proved over a reachability relation that carries hypotheses, and Rust correspondence is fixture-based |
+| S2 | Don Syme, "Lean Squad: Exploring Automated Software Verification with Near-Zero Human Labour" (2026-04-20) | https://dsyme.net/2026/04/20/lean-squad-automated-software-verification-with-near-zero-human-labour/ | P | [FULL] | Describes the agentic workflow, cost (~$240 for 34 runs), the three nudges, the Aeneas failure, the "pseudo-completion" problem and explicit limitations |
+| S3 | `formal-verification/REPORT.md` @ ab7a184 | https://github.com/dsyme/raft-lean-squad/blob/ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc/formal-verification/REPORT.md | P | [CODE] | Agent-written project report: status line, "716 theorems", "all 5 ... hypotheses fully discharged", 129 runs, 25 of 50 proof files standalone |
+| S4 | `formal-verification/CRITIQUE.md` @ ab7a184 | https://github.com/dsyme/raft-lean-squad/blob/ab7a184fbdfe22ac3b894e92791fb9f324e2ccbc/formal-verification/CRITIQUE.md | P | [CODE] | Agent-written critique: no bugs found, the group-commit path is unmodelled, Nat-only numbers, `hqc_preserved` "Conditionally discharged", `HLogConsistency` still assumed |
 
 Access date for all: 2026-11-07.
 

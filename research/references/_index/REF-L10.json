@@ -15,11 +15,11 @@
   "liveness": "no",
   "refinement": "partial",
   "symbolic_security": "no",
-  "computational_security": "yes",
+  "computational_security": "proved",
   "parsing": "partial",
   "constant_time": "no"
  },
- "impl_link": "none",
+ "impl_link": "model-only",
  "impl_language": "Lean 4 models; native C via FFI for tests; Rust via dormant hax/Aeneas Interop",
  "tcb": {
   "sorry": 0,
@@ -42,5 +42,11 @@
   "H5",
   "D"
  ],
- "full_read_sources": 4
+ "full_read_sources": 4,
+ "ai_provenance": "author-reported",
+ "impl_links": [
+  "model-only",
+  "differential-testing"
+ ],
+ "evidence_level": "static-inspected"
 }

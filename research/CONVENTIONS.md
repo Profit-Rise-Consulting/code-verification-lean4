@@ -33,7 +33,7 @@ Every ruling and every evidence summary that generalises should state: quantifie
 Attach one to each principal result: `author-reported`, `static-inspected` (source read, not built), `rebuilt` (independently built and rechecked, for example `#print axioms`), `deployed` (externally used or replicated). Static counts of sorry or axiom are lexical measurements, not proof-closure audits.
 
 ## AI-provenance categories (review F-006)
-Use exactly one: `agent-config-present` (AGENTS.md, CLAUDE.md, .claude and similar exist; says nothing about who wrote the proofs), `commit-trailers` (co-author trailers on N of M commits), `author-reported` (the authors state AI assistance), `independently-established`. Never use the first category to discount a mathematical result.
+Use exactly one: `none-found` (no indicator observed; shallow clones may hide trailers), `agent-config-present` (AGENTS.md, CLAUDE.md, .claude and similar exist; says nothing about who wrote the proofs), `commit-trailers` (co-author trailers on N of M commits), `author-reported` (the authors state AI assistance), `independently-established`. Never use the first category to discount a mathematical result.
 
 ## Evidence rules
 1. No excerpt-only evidence. A search-result snippet may be used only to find a source. A claim counts as evidence only at depth [FULL], [SECT] or [CODE] (see above). Move anything you could not read in full to a final "Unverified leads" section, which Phase 2 will ignore.

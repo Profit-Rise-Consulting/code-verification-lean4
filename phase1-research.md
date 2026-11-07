@@ -1,52 +1,60 @@
-# Phase 1 Research: Handoff to Phase 2
+# Phase 1 Research: Brief for Phase 2
 
-Status: Phase 1 (evidence gathering) complete. No analysis has been performed and no verdict on the hypothesis is recorded anywhere in `research/`.
+Status: Phase 1 complete (1 → 1b → 1c). No verdict on the hypothesis appears anywhere in the corpus. Verdicts belong to the Phase 2 council ([docs/phase2/council-kit.md](docs/phase2/council-kit.md)). Execution steps are in [handoff.md](handoff.md).
 
-## Objective and hypothesis
-- Objective: enable protocol implementation verification on any codebase using Lean 4.
-- Hypothesis to test: Lean 4 cannot verify protocols, and therefore cannot check code implementations of those protocols.
-- Phase 1 rule: gather sourced evidence only. Supporting and contradicting statements sit side by side. Source tags (supports / contradicts / neutral) describe what a source says, not our conclusion.
+## How Phase 1 evolved
 
-## Inventory
-All access dates are 2026-11-07. Every claim carries a URL and a primary [P] or secondary [S] tag. Many sources were read only as search excerpts, and each file marks which.
-
-| File | Scope | Size / sources (as self-reported) |
+| Stage | What happened | Why |
 |---|---|---|
-| research/01-lean4-protocol-modeling.md | Lean protocol models, state machines, temporal logic, consensus | 357 lines, 70-source register, 15 open questions |
-| research/02-lean4-crypto-and-network-verification.md | Cedar, SymCrypt, zk, VCVio, tls13-lean, LeanMqtt, Veil, industry use | 284 lines, about 125 URLs, side-by-side section 8 |
-| research/03-lean4-code-extraction-and-fidelity.md | Aeneas, hax, LNSym, FFI, Std.Do/mvcgen, Loom/Velvet, TCB | 407 lines, 58 indexed sources, 15 open questions |
-| research/04-other-tools-protocol-verification.md | 17 comparator tools and protocol case studies | 463 lines, 108 register entries |
-| research/05-implementation-conformance-methods.md | MBT, trace validation, fuzzing, automata learning, RV, oracles | 168 lines, about 120 URLs |
-| research/06-lean4-language-limits-and-automation.md | IO/concurrency, trusted base, automation, releases to v4.36.0-rc2 | 191 lines, about 100 URLs |
-| research/07-protocol-spec-formats-and-corpora.md | Spec formats; 17-protocol candidate corpus with models, implementations, CVEs | 145 lines, about 140 URLs |
-| research/08-academic-literature-and-community.md | 61-entry annotated bibliography, researchers, repos | 464 lines, 120+ URLs |
+| 1 | 8 topic agents gathered evidence into research/01-08 | R1: research many aspects with multiple agents; do not analyse yet |
+| Review by owner | Owner rejected excerpt-based evidence and required prior work as analysed references (R3) | "EXCERPTS are not useful"; "THESE ARE REFERENCES ... ALL READY for Phase2" |
+| 1b | All 8 topic files rewritten from full reads and code inspection. Reference dossiers written for Lean and comparator work. Catalogue generator, conflict register, council kit and CI gates added. | Make the corpus debate-ready |
+| Independent review | GPT-family reviewer: 39 independent claim checks (32 confirmed, 1 wrong interpretation since repaired, 6 unverifiable). 13 findings (1 blocker, 10 major, 2 minor). | Owner prefers a cross-family adversarial review |
+| 1c | Every finding accepted and actioned. Dispositions are in [research/REVIEW-phase1.md](research/REVIEW-phase1.md). | Close the review |
 
-## Known evidence gaps (agent-reported, to be closed or accepted in Phase 2)
-- Source depth: many primary sources were read from search excerpts only. Anything Phase 2 relies on must be re-fetched in full. Files 03, 04, 06 and 08 flag this most.
-- No Lean 3 protocol/TLA/consensus lineage found (01). No Veil code-extraction path or full Lean liveness proof of a message-passing consensus protocol confirmed (01).
-- No Lean 4 models found for TLS, QUIC, SSH, Noise, WireGuard, Signal, Raft, TCP, BGP, DNS, Kerberos, OAuth, 5G, Bluetooth or EMV in file 07. File 02 lists tls13-lean, quiche, flare, libp2p-fv and VeriDNS. These two reports have not been reconciled; reconcile in Phase 2.
-- No source found for "SampleCore" (probably SampCert) or for "IETF FMBF" (02, 07).
-- No sound C-to-Lean or Go-to-Lean extractor found; no Move verification in Lean; no Aeneas/hax extraction-success rates or hax TCB statement (03). Lean compiler is not formally verified (03).
-- Std.Do/IO/Task semantics for concurrency and nondeterminism not confirmed in primary docs; liveness, real-time evidence thin (06).
-- Not found: eBay trace validation, Quint/Jepsen/Tamarin-to-code, Coq/QuickChick oracles, angr conformance paper (05).
-- Not fetched: Bhargavan TLS 1.3 ProVerif paper, Signal and Noise Explorer papers, Dafny docs, P/Stateright limitation pages (04).
-- Live Lean Zulip not searchable; only the public archive. GitHub star counts and push dates missing for about 9 repos (08).
-- Several Lean repos are AI-generated with no independent review (02). Treat their claims as unverified.
-- Recorded conflict, unresolved: web pages say miTLS is verified against RFC 8446, while the 2026 Everest retrospective says the TLS handshake implementation proof was not completed (04).
-- Releases 4.25 to 4.27, 4.31 and 4.33 not read individually (06). Some quotes came through a page summariser, marked "(extractor)".
+## How to read the corpus
 
-## Instructions for Phase 2 (analysis)
-1. Re-verify load-bearing claims. For each, fetch the full primary source. Downgrade anything that cannot be verified.
-2. Decompose the hypothesis into testable sub-claims: (a) Lean cannot express protocols (safety, liveness, concurrency, nondeterminism, adversary models); (b) Lean cannot prove protocol properties; (c) Lean cannot connect a model to implementation code; (d) (a)-(c) imply the conclusion. Map evidence from files 01-08 to each.
-3. Build an evidence matrix: sub-claim x supporting / contradicting / absent, with source IDs and strength (primary and fully read beats excerpt).
-4. Compare against the other tools (file 04) on the same axes, to separate "Lean-specific limit" from "field-wide limit".
-5. Classify implementation-link routes (file 03, 05): proof-level extraction, translation validation, conformance testing against a Lean spec (Cedar-style), runtime monitoring. State the trust assumptions of each.
-6. Select a pilot protocol from the file 07 corpus with a rationale. Use criteria such as existing formal model, small reference implementation, known CVEs.
-7. Produce `phase2-analysis.md`: verdict on the hypothesis with confidence, a recommended architecture for "any codebase", and a risk list. Update PRD.md, TRD.md and docs/architecture from it.
-8. Track every implementation gap in a GitHub issue until verified closed.
+1. **Rules first.** [research/CONVENTIONS.md](research/CONVENTIONS.md) defines the sub-claims (D, H1-H4, H5a, H5b) and the scope axes every ruling must state. It also sets the evidence depth levels: [FULL] whole read, [SECT] claim-scoped section read, [CODE] inspected at a SHA. Result evidence levels and AI-provenance categories are defined there too.
+2. **Breadth.** research/01-08 ([index](research/README.md)). Each file opens with depth counts and ends with Conflicts and quarantined Unverified leads. Leads are inadmissible.
+3. **Depth.** Reference dossiers in research/references/, listed in the [generated catalogue](research/references/README.md). Each dossier gives:
+   - what the authors claim;
+   - verbatim theorem statements with file:line;
+   - §3a predicate semantics in plain language;
+   - property status (proved / tested / assumed);
+   - the exact link to implementation code;
+   - TCB and soundness hygiene;
+   - scale and effort;
+   - author-stated limitations;
+   - independent evidence;
+   - generalisation into a reusable pattern;
+   - facts mapped to sub-claims.
+4. **Cross-cutting views.** [research/CONFLICTS.md](research/CONFLICTS.md) (disagreements, both sides quoted) and [research/CASE-COMPARISON.md](research/CASE-COMPARISON.md) (effort, scale and trust per result; unknowns marked, no ranking).
+5. **Known weaknesses of the corpus itself.** [research/REVIEW-phase1.md](research/REVIEW-phase1.md), "Coverage by sub-claim". The reviewer notes a structural asymmetry: many positive examples are narrow existential results, while broad negative readings claim universal impossibility or impracticality. The council should expose this rather than count citations.
 
-## Repo notes
-- Scaffolded from bughunt8/skills start-github-repo (internal-tool profile, Apache-2.0). Validators pass.
-- Node-oriented scaffold leftovers (vitest.config.ts, .nvmrc, npm CI steps) need replacing with Lean (`lake`) tooling.
-- Remote hardening not yet applied (each needs separate approval): branch ruleset, secret scanning and push protection, Dependabot, CodeQL, private vulnerability reporting.
-- PRD.md, TRD.md and docs/architecture still contain template TODOs.
+## Generalised implementation-link patterns found
+
+The catalogue's "Implementation-link patterns" and "Reusable patterns" tables are generated from the dossiers. The mechanisms observed across Lean and comparator references are below. These are descriptions of prior work, not recommendations.
+
+| Mechanism | What reaches code | Typical trust gap (from dossiers §5-§6) |
+|---|---|---|
+| Lean is the implementation | Lean code compiled and run (sometimes via FFI to C primitives) | Lean compiler and runtime, `@[extern]`/`implemented_by`, unverified exporters |
+| Extraction from source language | Rust (Aeneas/Charon, hax) or Go (Goose) translated into Lean or Rocq; proofs over the translation | Translator soundness, supported language subset, pinned versions |
+| Binary semantics | Machine code symbolically simulated against Lean functional specs | ISA model fidelity, transcribed code, partial specifications |
+| Differential testing | An independent implementation tested against an executable Lean model | Test coverage; agreement is evidence, not proof |
+| Trace validation / replay | Instrumented implementation traces replayed against a Lean or TLA+ model in CI | Instrumentation placement, dropped events, finite traces |
+| Manual transcription | Hand-written Lean models of implementation functions, plus fixture tests | Transcription fidelity |
+| Model only | Protocol or algorithm proofs with no code link | Entire model-to-code gap |
+
+## Gaps that remain (consolidated)
+
+- No local builds or `#print axioms` checks; all counts are lexical and static. Remedy: a Phase 3 CI reproducibility job.
+- No Lean 4 mechanical refinement from a protocol model to mainstream-language code was found in the Lean topic files. The dossiers record the nearest cases (extraction-based functional proofs; trace replay). Phase 2 must argue what this absence means, per CONVENTIONS rule on absence of evidence.
+- No semantics for Lean `IO`/`Task` in Std.Do (lexical search of Std/Do, Std/WP and Std/Tactic/Do; research/06).
+- No formal models read for Noise, Kerberos, OAuth/OIDC, Bluetooth, EMV or BGP. No EMV implementation found (research/07).
+- Not found: eBay trace validation, Quint/Jepsen, Tamarin-to-code beyond Arquint, Coq/QuickChick oracles, angr conformance (research/05).
+- Live Lean Zulip not searchable (research/08). Some primary papers were paywalled. Each file lists its own residual gaps.
+- Several 2026 references are fast-moving and AI-assisted. Rely on the recorded SHAs.
+
+## What Phase 2 must produce
+
+`phase2-council-report.md` per the council-kit output template: a ruling for each of D, H1-H4, H5a and H5b with scope axes, confidence and dissent; the compound-motion ruling under at least two definition sets; red-team findings; evidence gaps; and implications for Phase 3 (what may be built, at which assurance level, on which pilot protocol from research/07).
