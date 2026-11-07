@@ -132,7 +132,7 @@ Fairis R5. Conclusion: every fair execution of the program terminates. Premises:
 
 ## 6. Trusted computing base and soundness hygiene
 Static lexical counts (not a proof-closure audit):
-- logsem/aneris @ `59ae379`: 476 `.v` files, about 114,012 lines (including the empty submodule directories). 2 `Admitted`/`admit` lines. 14 `Axiom`/`Parameter`/`Conjecture` lines; the visible ones are in `aneris/examples/echo_groups`, not on the Paxos/2PC path. I did not determine whether these are section-local.
+- logsem/aneris @ `59ae379`: 476 `.v` files, about 114,012 lines (including the empty submodule directories). 2 `Admitted` lines, at `aneris/examples/dscm/implementations/one_server/proof/one_server_client_proxy_proof.v:150` and `aneris/examples/crdt/statelib/proof/time.v:16`. 14 `Axiom`/`Parameter`/`Conjecture` lines, all in `aneris/examples/echo_groups/proof.v`. None of these files is under `examples/consensus` or `examples/transaction_commit`. I did not run `Print Assumptions` to confirm that they are absent from the Paxos/2PC closure.
 - logsem/trillium @ `43d0cf4`: 44 `.v` files, about 19,675 lines. 0 `Admitted`. 3 `Axiom` lines (`FunExt`, `PropExt`, `Choice` in `trillium/prelude/classical.v`).
 - perennial `sosp2023` @ `820a2a9`, `src/program_proof/simplepb`: 36 files, about 21,038 lines. 0 `Admitted`/`admit` lines in `simplepb`, `grove_shared`, `grove_ffi.v` and `grove_ffi_adequacy.v`. `simplepb/apps/print_assumptions.v` runs `Print Assumptions closed_proof.closed.closed_bank`; I did not run it.
 

@@ -14,7 +14,7 @@
   "safety": "proved",
   "liveness": "proved",
   "refinement": "partial",
-  "symbolic_security": "partial",
+  "symbolic_security": "no",
   "computational_security": "partial",
   "parsing": "n/a",
   "constant_time": "n/a"
@@ -49,5 +49,5 @@
  "evidence_level": "static-inspected",
  "ai_provenance": "agent-config-present",
  "ai_provenance_basis": "CLAUDE.md (AI Agent Instructions), .claude/ agents and commands, lintLlmProofs dependency",
- "property_notes": "refinement: paxos_refines_consensus proved via refinement_mapping_stutter_with_invariant; generic SimulationRel.soundness is sorry. security: Leslie/Prob (AVSS, secrecy) known at file level only, not inspected. impl: Rust crate linked by tests named after Lean models, no formal or fixture tie"
+ "property_notes": "refinement: paxos_refines_consensus proved via refinement_mapping_stutter_with_invariant; generic SimulationRel.soundness is sorry. security: symbolic none; computational 'partial' = information-theoretic share-view secrecy only (shamir_secrecy Shamir.lean:165, avss_secrecy AVSSAbstract.lean:2020 grid form), no computational reduction or protocol-execution secrecy inspected. impl: Rust crate linked by tests named after Lean models, no formal or fixture tie"
 }

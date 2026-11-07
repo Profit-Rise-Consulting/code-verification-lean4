@@ -91,6 +91,21 @@ Generic simulation. `SimulationRel.soundness` (`Leslie/Refinement.lean:382-386`)
 
 Cutoff. `cutoff_reliable` (`Leslie/Cutoff.lean:446-452`) has premises `(hα : α_num < α_den) (h_half : 2 * α_num ≥ α_den)`, `(h_thresh : inv.threshDetermined α_num α_den)` and `(h_all_small : ∀ n, n ≤ cutoffBound k α_num α_den → ∀ c : Config k n, inv n c)`. Its conclusion is `∀ n (c : Config k n), inv n c`. Plain language: a threshold-determined predicate that holds on all configurations up to the cutoff holds for every n. The premise quantifies over all configurations, not only reachable ones.
 
+Secrecy (added in Phase 1c for F-013). `shamir_secrecy` (`Leslie/Examples/Prob/Shamir.lean:165-173`):
+```lean
+theorem shamir_secrecy {t : ℕ}
+    (partyPoint : Fin n → F)
+    (h_nz_pp : ∀ i, partyPoint i ≠ 0)
+    (h_F : t + 1 ≤ Fintype.card F)
+    (C : Coalition n t) (s s' : F) :
+    (Leslie.Prob.Polynomial.uniformWithFixedZero t s).map
+        (fun f => fun (i : C.val) => some (f.eval (partyPoint i.val)))
+      =
+    (Leslie.Prob.Polynomial.uniformWithFixedZero t s').map
+        (fun f => fun (i : C.val) => some (f.eval (partyPoint i.val)))
+```
+Plain language: for a uniformly random degree-t polynomial with constant term s, the joint distribution of the shares seen by a coalition of at most t parties (evaluation points ≠ 0) is the same for any two secrets. This is information-theoretic secrecy of one dealing step. It is not a protocol-execution secrecy theorem against an adaptive adversary, and not a computational result. The framework predicate `Secrecy` (`Leslie/Prob/Secrecy.lean:77`) quantifies over adversaries over traces. I did not check which examples instantiate it. The `Secrecy.lean` header says a framework sorry remains in `RandomisedAdversary.lean` (`randomisedTraceDist_eq_bind_traceDist`). However, the theorem at `RandomisedAdversary.lean:1296` has no lexical `sorry`, and the `Leslie/Prob` lexical count is 1 `sorry`, in `Spike/ASTSanity.lean` only. The header appears stale; this is a lexical observation, not a closure audit.
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
@@ -98,7 +113,8 @@ Cutoff. `cutoff_reliable` (`Leslie/Cutoff.lean:446-452`) has premises `(hα : α
 | Safety invariant | yes | `otr_agreement`, Paxos `agreement`, BallotLeader, Ben-Or, VR view change, KVStore |
 | Liveness | yes | `*Liveness.lean` examples (BallotLeader, AllGather, BindingCrusaderAgreement, Counter, KVStore, Peterson), `Rules/WF.lean` WF1 |
 | Refinement | yes (with a gap) | `paxos_refines_consensus`, 2PC, FloodMin, CounterRefinement. The general `SimulationRel.soundness` is stated and sorry'd (Section 6) |
-| Symbolic / computational security | partial | `Leslie/Prob/Secrecy.lean`, `Coupling.lean`, `RandomisedAdversary.lean`; AVSS work per `PHASE-8-5d-CHECKPOINT.md` (not inspected in depth) |
+| Symbolic security | no | No symbolic (Dolev-Yao) model found in the inspected files (lexical search of `Leslie/Prob` and `Leslie/Examples/Prob` file names and theorem names) |
+| Computational security | partial (information-theoretic secrecy only) | Proved theorems: `shamir_secrecy` (`Leslie/Examples/Prob/Shamir.lean:165-173` @ `58e58b2`) and `avss_secrecy` (`Leslie/Examples/Prob/AVSSAbstract.lean:2020-2031`, grid form; its docstring says full row+column view secrecy is "explicitly deferred"). No computational-hardness reduction was found; the subset proved is perfect (distributional-equality) secrecy of share views for coalitions of size ≤ t. See §3a |
 | Parsing, constant-time | no | none |
 | Other: parameterized cutoff | yes | `Cutoff.lean` |
 
@@ -160,5 +176,5 @@ Access date: 2026-11-07.
 
 ## 15. Unverified leads (excluded from evidence)
 - Reservoir page https://reservoir.lean-lang.org/@rupakm/leslie was not fetched.
-- `Leslie/Prob` (AVSS, secrecy, couplings) was not inspected beyond file names and the checkpoint header ("AVSS.lean has **0 sorries**").
+- `Leslie/Prob` beyond `Secrecy.lean`, `Shamir.lean:150-185` and `AVSSAbstract.lean:2005-2035` (coupling, randomised adversary and AVSS protocol-level theorems) was not inspected.
 - Any paper by Majumdar describing Leslie was not searched for.

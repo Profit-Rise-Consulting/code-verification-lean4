@@ -12,7 +12,7 @@ Conventions:
 - Deduplication: where several files record the same disagreement, one entry is made and the "Recorded in" line lists every recording.
 - Status is "open" for every entry. Where a recording file or the review already gives a reading (for example "likely a version difference"), it is quoted, not adopted.
 
-Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 46; H3 Implementation link: 58; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 126.
+Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 47; H3 Implementation link: 59; H4 Generality: 1; H5 Inference (H5a, H5b): 1; D Definitions: 4; Cross-cutting: 5; total 128.
 
 ## Index
 
@@ -144,6 +144,8 @@ Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 46; H3 Impl
 | CF-124 | Wording of the CompCert guarantee | H3, D | doc-vs-doc | REF-C11, 03 |
 | CF-125 | CakeML in-logic bootstrapping versus CompCert extraction trust | H3, D | interpretive | REF-C11 |
 | CF-126 | Aneris network model: no duplication (paper) versus duplication step (code) | H1 | paper-vs-repo | REF-C10 |
+| CF-127 | Aeneas and Charon soundness: trusted translators versus pen-and-paper metatheory with a repaired flaw | H3 | doc-vs-doc | REF-L07 |
+| CF-128 | Lean-SMT finite-field reconstruction count (paper-internal): 247 versus 348 of 403 | H2 | number mismatch | 06, REVIEW-phase1 |
 
 ## H1 Expressiveness
 
@@ -661,6 +663,15 @@ Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 46; H3 Impl
 - Why it matters for the debate: Go-program proofs in Perennial are conditional on typeclass assumptions that were once inconsistent and have no instance in the repository.
 - Status: open
 - Recorded in: REF-L22 §13 and §3a
+
+### CF-128 Lean-SMT finite-field reconstruction count (paper-internal): 247 versus 348 of 403
+- Sub-claims: H2
+- Type: number mismatch
+- Side A: introduction (page 2): "Out of 403 unsat QF_FF instances, CVC 5 with proof production solves 392, all verified by Carcara, while LEAN-SMT reconstructs 247." (06:A03, research/06-lean4-language-limits-and-automation.md; https://hanielbarbosa.com/papers/2026fmcad-ffproofs.pdf)
+- Side B: §VI-B Results (page 10): "LEAN-SMT can solve and reconstruct 348 instances."; Table I row LEAN-SMT 348 solved / 24 TO / 31 MO of 403 total unsat; Table II covers "the 348 benchmarks solved by all configurations" (06:A03, same paper)
+- Why it matters for the debate: Any lean-smt reconstruction rate for finite-field reasoning differs by about 25 percentage points depending on which figure in the same paper is cited.
+- Status: open
+- Recorded in: 06 C11 and A03; REVIEW-phase1 F-014 (per /root)
 
 ## H3 Implementation link
 
@@ -1185,6 +1196,15 @@ Entries per section: H1 Expressiveness: 11; H2 Provability at scale: 46; H3 Impl
 - Why it matters for the debate: How much an extraction step weakens a compilation guarantee is argued differently by the two sources.
 - Status: open
 - Recorded in: REF-C11 §13
+
+### CF-127 Aeneas and Charon soundness: trusted translators versus pen-and-paper metatheory with a repaired flaw
+- Sub-claims: H3
+- Type: doc-vs-doc
+- Side A: "We trust that Charon correctly extracts MIR into LLBC and that Aeneas correctly translates LLBC into Lean" (REF-L07:A1 §3, research/references/REF-L07-aeneas-symcrypt.md)
+- Side B: "The proofs of the article by Ho et al. are only done with pen and paper; sometimes, the authors only sketch the reasoning over large case analyses" (REF-L07:A6 §1); the mechanisation "found a flaw in the proofs of some of their fundamental lemmas. We repair their methodology using techniques from rewriting theory" (REF-L07:A6); a "lacking argument ... could have invalidated their strategy" (REF-L07:A6 §1, as quoted in REF-L07 §13 item 7)
+- Why it matters for the debate: The trust placed in the Rust-to-Lean translation rests on a metatheory that the paper lists as a trust assumption and that a secondary source describes as partly informal and since repaired.
+- Status: open
+- Recorded in: REF-L07 §13 item 7 and §6
 
 ## H4 Generality
 

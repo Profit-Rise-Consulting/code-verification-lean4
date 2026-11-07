@@ -1,0 +1,53 @@
+{
+ "id": "REF-C10",
+ "name": "Aneris / Trillium / Grove / Fairneris",
+ "subject": "Iris-based separation logics for distributed systems: Aneris (sockets), Trillium (intensional refinement to TLA+-derived STSs: Paxos, 2PC; Fairis fair termination), Grove (Go, leases, crash recovery; vKV), Fairneris (liveness-preserving refinement under network fairness)",
+ "kind": "comparator",
+ "tool": "Rocq/Coq + Iris",
+ "org": "Aarhus University Logsem / MPI-SWS / Cambridge; MIT PDOS (Grove)",
+ "repo": "https://github.com/logsem/aneris",
+ "commit": "59ae37946838df77fb2c573803b68462a3af9d0f",
+ "toolchain": "Coq 8.16.1 (coq-aneris.opam); trillium 43d0cf4021cc1d08da008c5aa104aa6f5ea75f17; perennial sosp2023 820a2a9ab088d298f9854961c55c010d6ea1858d",
+ "maturity": "research",
+ "properties": {
+  "functional": "partial",
+  "safety": "proved",
+  "liveness": "partial",
+  "refinement": "proved",
+  "symbolic_security": "n/a",
+  "computational_security": "n/a",
+  "parsing": "n/a",
+  "constant_time": "n/a"
+ },
+ "property_notes": "safety: Paxos paxos_correct_impl and 2PC tpc_consistent (Aneris, no crashes, drop+duplicate network); Grove closed_bank (never-stuck, includes auditor balance check) under crash-restart, unreliable network, bounded-uncertainty clock. liveness: proved only for Fairis (shared-memory, fair scheduling); distributed liveness (Fairneris) author-reported, no matching public code. refinement: Trillium continued_simulation to hand-translated TLA+ STSs. functional: Grove per-component specs. No Rocq result is transferred to Lean.",
+ "impl_link": "manual",
+ "impl_links": [
+  "manual",
+  "model-only"
+ ],
+ "impl_language": "AnerisLang (from OCaml via unverified o2a); Go (via Goose to GooseLang)",
+ "evidence_level": "static-inspected",
+ "ai_provenance": "none-found",
+ "ai_provenance_basis": "No agent config files in the inspected checkouts; commit trailers not checked (shallow clones)",
+ "tcb": {
+  "sorry": 2,
+  "axiom": 17,
+  "native_decide": 0,
+  "unverified_translator": "o2a (OCaml->AnerisLang); Goose (Go->GooseLang); TLA+->Coq STS manual translation; trusted Grove network (120 LoC) and filesystem (50 LoC) models"
+ },
+ "tcb_notes": "Lexical counts: sorry = 2 Admitted in logsem/aneris (dscm one_server proxy proof; crdt statelib time.v), none under examples/consensus or transaction_commit; axiom = 14 Axiom lines in aneris examples/echo_groups/proof.v + 3 classical axioms in trillium (FunExt, PropExt, Choice; imported via classical_instances by paxos_adequacy.v). Grove simplepb/grove_ffi: 0 Admitted. Print Assumptions not run.",
+ "loc": {
+  "spec": null,
+  "proof": null,
+  "impl": null
+ },
+ "built": "no",
+ "pattern": "Iris WP proofs over a source-level language semantics, adequacy theorem to a trace simulation (Trillium) or global invariant (Grove); models hand-translated from TLA+",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "D"
+ ],
+ "full_read_sources": 0
+}
