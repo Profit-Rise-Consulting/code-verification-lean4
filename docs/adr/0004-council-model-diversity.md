@@ -13,7 +13,7 @@ The hypothesis is compound: "LEAN4 cannot verify protocols AND therefore unable 
 
 ## Decision Outcome
 - The council debates sub-claims H1-H5 and the definitions question D separately (research/CONVENTIONS.md), then the compound motion.
-- Proposition, opposition and judges must come from at least three different model families. Judges must not share a family with either advocate.
+- Each role (proposition, opposition, red team, three judges) comes from a different model family: six in total. No judge shares a family with an advocate or the red team.
 - Only [FULL] or [CODE] evidence may be cited, by source ID.
 - Details: docs/phase2/council-kit.md.
 

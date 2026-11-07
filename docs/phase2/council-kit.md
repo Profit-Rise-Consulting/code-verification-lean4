@@ -35,15 +35,17 @@ The verdict must state which readings it used. Different readings legitimately p
 
 ## Roles and model families
 
-At least three different model families must take part ([ADR-0004](../adr/0004-council-model-diversity.md)). Judges must not share a family with either advocate. Record the actual model IDs used in the report.
+Every role uses a different model family: six families in total ([ADR-0004](../adr/0004-council-model-diversity.md)). No judge shares a family with any advocate or with the red team. Families available to the orchestrator as of 2026-11-07 include Anthropic Claude, OpenAI GPT, Google Gemini, Moonshot Kimi, xAI Grok, DeepSeek and Zhipu GLM. Record the exact model IDs in the report.
 
-| Role | Count | Brief | Example assignment |
+| Role | Count | Brief | Family slot |
 |---|---|---|---|
-| Proposition | 1 per sub-claim | Argue the sub-claim is TRUE under the adopted definitions | family A |
-| Opposition | 1 per sub-claim | Argue the sub-claim is FALSE | family B |
-| Red team | 1 | Attack the strongest argument on each side; hunt for overclaims (AI-generated repos, sorry/axiom counts, unverified translators) | family C |
-| Judges | 3 | Score, then rule per sub-claim; write dissent | one each from families A/B/C cross-assigned so no judge shares the family of the advocate they score, or families D/E if available |
-| Clerk (orchestrator) | 1 | Enforce rules, keep the citation ledger, compile the report | any |
+| Proposition | 1 (argues every sub-claim) | Argue each sub-claim is TRUE under the adopted definitions | A |
+| Opposition | 1 (argues every sub-claim) | Argue each sub-claim is FALSE | B |
+| Red team | 1 | Attack the strongest argument on each side; hunt for overclaims (AI-generated repos, sorry/axiom counts, unverified translators, lexical-only counts) | C |
+| Judges | 3 | Score independently, then rule per sub-claim and write dissent | D, E, F |
+| Clerk (orchestrator) | 1 | Enforce rules, keep the citation ledger, compile the report; does not vote | any |
+
+Example assignment (illustrative, not binding): A = GPT, B = Gemini, C = Grok, D = Kimi, E = DeepSeek, F = GLM, clerk = Claude. The Phase 1 corpus was written mainly by Claude models, so the kit keeps Claude out of the advocate and judge seats to limit authoring bias. If fewer than six families are available, drop the red-team slot first and record the deviation.
 
 ## Rules of evidence
 
