@@ -30,6 +30,51 @@ Use of words (sub-claim D): CCF calls the approach "smart casual verification" w
 - MongoDB `RaftMongo.tla`: four per-node variables (role, term, commitPoint, oplog), election abstracted as `BecomePrimaryByMagic`; TLC with 3 nodes, 3 terms, 3 entries: "371,368 distinct states" [S2 sec 4.1].
 - Environment: CCF spec makes "no assumptions about clock synchrony"; network abstraction varies (set vs multiset, ordering, loss) [S1]. No adversary model; Byzantine behaviour not covered (CCF is CFT here).
 
+### 3a. Predicate semantics: what a passing check does and does not guarantee
+No headline result is a machine-checked theorem. The checked objects are TLA+ invariants evaluated by TLC, and a trace-acceptance property. Verbatim from etcd-io/raft commit `c51f010` [S4]:
+
+`tla/etcdraft.tla:772` and `:780-788`:
+```tla
+Committed(i) == SubSeq(log[i],1,commitIndex[i])
+
+\* Committed log entries should never conflict between servers
+LogInv ==
+    \A i, j \in Server :
+        \/ IsPrefix(Committed(i),Committed(j)) 
+        \/ IsPrefix(Committed(j),Committed(i))
+
+\* Note that LogInv checks for safety violations across space
+\* This is a key safety invariant and should always be checked
+THEOREM Spec => []LogInv
+```
+`tla/etcdraft.tla:790-797`:
+```tla
+\* There should not be more than one leader per term at the same time
+\* Note that this does not rule out multiple leaders in the same term at different times
+MoreThanOneLeaderInv ==
+    \A i,j \in Server :
+        (/\ currentTerm[i] = currentTerm[j]
+         /\ state[i] = Leader
+         /\ state[j] = Leader)
+        => i = j
+```
+The `THEOREM Spec => []LogInv` line is a TLA+ statement; no TLAPS proof of it is in the repo, and TLC checks it only over the states it explores.
+
+Trace acceptance, `tla/Traceetcdraft.tla:461-471`:
+```tla
+\* The property TraceMatched below will be violated if TLC runs with more than a single worker.
+ASSUME TLCGet("config").worker = 1
+
+TraceMatched ==
+    ...
+    [](l <= Len(TraceLog) => [](TLCGet("queue") = 1 \/ l > Len(TraceLog)))
+```
+`tla/Traceetcdraft.cfg` comment: "The following property is a poorman's hyperproperty that asserts that TLC generated *at least one* trace that fully matches the log file." It checks `INVARIANTS LogInv MoreThanOneLeaderInv ElectionSafetyInv LogMatchingInv QuorumLogInv MoreUpToDateCorrectInv LeaderCompletenessInv CommittedIsDurableInv` along the matching behaviours, with `CHECK_DEADLOCK FALSE`. The generic CCF and SEFM form is `TraceAccepted ≜ TLCGet("stats").diameter - 1 = Len(Trace)` [S3 sec 4.2].
+
+Plain language.
+- A pass means: for this one recorded execution, TLC found at least one spec behaviour whose states agree with the logged variables (missing variables chosen nondeterministically), and the listed invariants held on the states TLC visited (S ∩ T ≠ ∅) [S3].
+- Not guaranteed: correctness of untraced executions; that the spec invariants hold in all spec states (this needs separate model checking, which is bounded, or a proof); any liveness property. A finite trace cannot show that something eventually happens, and `CHECK_DEADLOCK FALSE` disables even the deadlock check. If the implementation is more restrictive than the spec, a spec bug cannot surface (issue #456, [S8]).
+
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|

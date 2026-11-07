@@ -1,14 +1,14 @@
 # 02 - Lean 4 in crypto and network/security verification (Phase 1b, full-read upgrade)
 
-Header: 43 evidence entries; [FULL] 27; [CODE] 25 (an entry can carry both); unverified leads (excluded from evidence): 8. Access date for all entries: 2026-11-07. Replaces the Phase 1 version of this file. Evidence only; no verdict is given anywhere in this file.
+Header: 41 evidence entries; [FULL] 20 (16 FULL only, 4 also CODE); SECT 0; [CODE] 24 (20 CODE only); unverified leads (excluded from evidence): 11. Access date for all entries: 2026-11-07. Phase 1c re-tag of the Phase 1b file. Evidence only; no verdict is given anywhere in this file.
 
-Tags: H1 expressiveness, H2 provability at scale, H3 spec-to-implementation link, H4 generality, H5 inference H1/H2 to H3, D definitions of "verify"/"check". [P] primary, [S] secondary. Depth [FULL] = whole source read; [CODE] = repository inspected statically (shallow clone, SHA recorded, counts in section 9; no builds).
+Tags: H1 expressiveness, H2 provability at scale, H3 spec-to-implementation link, H4 generality, H5 inference H1/H2 to H3, D definitions of "verify"/"check". [P] primary, [S] secondary. Depth [FULL] = whole source retrieved and read; SECT = named sections read (none used here); [CODE] = repository inspected statically (shallow clone, SHA recorded, counts in section 9; no builds).
 
 Per-project dossiers by other agents live in `research/references/` and are not duplicated here: Cedar, SampCert, LNSym, Veil/Lentil/Velvet/Loom, Aeneas/SymCrypt, hax, VCVio, tls13-lean, Clean/zkEVM, LeanMqtt, Std.Http, libp2p-fv, raft-lean-squad, leanda, leslie, verified-consensus, Everest, IronFleet, Verdi, Tamarin/ProVerif, Ivy QUIC, TLA+ trace validation.
 
-Phase 1c note: depth tags were re-assigned per CONVENTIONS ([FULL], [SECT], [CODE]); no entry here relies on a selected-sections read, so no [SECT] tag is used. Repository README reads are tagged [CODE]. Entries read only as abstract pages, search snippets or truncated text were moved to the leads section. Quotes in C1, C2, C3, V1, V3 were re-verified against fresh fetches in Phase 1c. Each entry carries a "Result level" (author-reported or static-inspected; nothing here was rebuilt or independently deployed-checked) and one AI-provenance category.
+Phase 1c note: depth tags were re-assigned per CONVENTIONS (FULL, SECT, CODE); no entry here relies on a selected-sections read, so SECT is not used. Repository README reads are tagged [CODE]. Entries read only as abstract pages, search snippets or truncated text were moved to the leads section. Quotes in C1, C2, C3, V1, V3 were re-verified against fresh fetches in Phase 1c. Each entry carries a "Result level" (author-reported or static-inspected; nothing here was rebuilt or independently deployed-checked) and one AI-provenance category.
 
-## 1. AWS: Cedar, SymCert, SampCert, LNSym
+## 1. AWS: Cedar, SampCert, LNSym
 
 Deep per-project dossiers: see `references/` (Cedar, SampCert, LNSym). This section records only the facts used for cross-project comparison.
 
@@ -270,10 +270,6 @@ Deep dossiers: `references/` (Veil/Lentil/Velvet/Loom, leslie, leanda, verified-
 - Result level: static-inspected. AI provenance: none determined.
 - The README has a "premise ledger" listing assumptions; its contents were not retained in this pass, so only the code counts (table) are recorded. See Open Questions.
 
-### D8. raft-lean-squad (dsyme): code counts only
-- URL: https://github.com/dsyme/raft-lean-squad | accessed 2026-11-07 | [P] | [CODE] (counts only; README and REPORT.md not read) | Tags: H2
-- Result level: static-inspected (lexical counts in section 9 only). AI provenance: author-reported (the Lean Squad blog, N3, describes the repository as produced by the agent workflow). Claims from its REPORT.md are in the leads section, not here.
-
 ## 7. Industry and programme-level sources
 
 Deep dossiers: Cedar, SampCert, LNSym, Aeneas/SymCrypt, hax (see section 1-2 above and `references/`).
@@ -305,11 +301,11 @@ Recorded without resolution. Each item lists both sides.
 - C-1. Rust verification. Side 1: the Cedar paper (A1) says "tools for verifying Rust code are not (yet) up to the task" and uses differential random testing to link Lean model and Rust code. Side 2: the SymCrypt/Aeneas paper (M1, 2026) reports Lean proofs about Rust code translated by Aeneas. Dates and targets differ (2024 paper on Cedar; 2026 paper on SymCrypt); whether both statements hold for the same Rust subset is not established by these sources.
 - C-2. Lean proofs of full handshake security. Side 1: CatCrypt (C1) claims machine-checked computational security theorems for TLS 1.3, SSH, WireGuard and Noise variants, while the VCVio paper (V1, Table 1) records the CatCrypt repository as "not publicly available" and the CatCrypt paper says its sources are in a private repository (so independent replication was impossible in this pass). Side 2: tls13-lean (N1) states "No security argument is claimed for confidentiality, authentication, or the handshake as a cryptographic protocol", and qssh (N10) states its handshake security is "Not verified". These are different projects with different aims; the sources do not compare them.
 - C-3. Treatment of polynomial time. ePrint 2025/1700 (V4): "we use an axiomatic approach to model polynomial time". Hopscotch (V3): does not verify polynomial-time complexity and relies on concrete bounds or user-verified external conditions. CatCrypt (C1) states concrete (not asymptotic) bounds. The VCVio treatment of efficiency was not compared line by line here.
-- C-4. LeanServer (N2). README: "935 formal theorems", 0 sorry, "no spec-impl gap", Lean v4.27.0. My static count at SHA 24b916aaa6: 929 theorem/lemma declarations, 0 sorry, 3 `admit`, 5 `axiom` lines, about 399 `native_decide`, 77 `extern`/`opaque` bindings with about 1,000 lines of C FFI, toolchain v4.29.1. Whether the `admit` and `axiom` lines are in proof code or in tests was not triaged.
-- C-5. quiche theorem counts. Blog (N3), Apr 2026: 518 theorems, 24 files, 3 sorry. Repo at SHA 5a8195ebf9 (2026-06-03): my count 1,592 theorem/lemma declarations in 81 files, 0 sorry, 258 `native_decide`. The repo's CRITIQUE.md (read in part) gives yet another figure (1,348). The differences may reflect later agent runs; not verified.
+- C-4. LeanServer (N2). README: "935 formal theorems", 0 sorry, "no spec-impl gap", Lean v4.27.0. My lexical count (keyword tokens, not a proof-closure audit) at SHA 24b916aaa6: 929 theorem/lemma declarations, 0 sorry, 3 `admit`, 5 `axiom` lines, about 399 `native_decide`, 77 `extern`/`opaque` bindings with about 1,000 lines of C FFI, toolchain v4.29.1. Whether the `admit` and `axiom` lines are in proof code or in tests was not triaged.
+- C-5. quiche theorem counts. Blog (N3), Apr 2026: 518 theorems, 24 files, 3 sorry. Repo at SHA 5a8195ebf9 (2026-06-03): my lexical count 1,592 theorem/lemma keyword declarations in 81 files, 0 sorry, 258 `native_decide`. The repo's CRITIQUE.md (read in part) gives yet another figure (1,348). The differences may reflect later agent runs; not verified.
 - C-6. VeriDNS (N7). README: "Verified to what spec? To the RFC itself!" Same README: the "honesty oracle" is assumed and the FFI transport and live network are outside the proof.
 - C-7. Veil liveness. Veil README: safety supported, liveness a future item. The SoK (arXiv 2608.21935, partially read, see leads) says that as of March 2026 Veil does not support liveness natively. The two statements agree on direction; the Leslie README (D3) lists liveness-style round-based results under a different framework. No contradiction is established, but the SoK was not fully read.
-- C-8. raft-lean-squad. Snippet of its REPORT.md says all five `RaftReachable.step` hypotheses were "fully discharged"; the Phase 1 version of this file read earlier states of the same repository that some hypotheses were bundled axioms. Not re-read in full in this pass, so unresolved.
+- C-8. raft-lean-squad (candidate conflict from a search snippet; repository not inspected, see leads). Snippet of its REPORT.md says all five `RaftReachable.step` hypotheses were "fully discharged"; the Phase 1 version of this file read earlier states of the same repository that some hypotheses were bundled axioms. Not read in full in this pass, so this is a candidate conflict only and is unresolved.
 - C-9. "Verified" with AI-generated, unread proofs. Hydrozoan paper (D4) states safety and liveness are machine-checked and that proofs are "AI-generated and never read by humans"; the kernel is the only reviewer of proof text, and the human-audited part is the statements (about 1,000 lines). The README of the same repo says "Read critically." The sources frame this as acceptable under kernel checking; other sources in this file (qssh, tls13-lean, libp2p-fv) emphasise explicit non-claims.
 - C-10. "Verified" for model versus implementation. EVMYulLean (Z3) is validated by conformance tests (22,330 of 22,332); flare (N4) links Mojo to Lean by hashes plus differential tests; Cedar (A1) uses differential random testing; SymCrypt (M1/M2) uses Aeneas translation of Rust; LeanServer (N2) claims no gap because implementation is Lean. The sources use "verify" for these different relations (see D).
 
@@ -369,7 +365,7 @@ Still open:
 4. leanVM formal verification: news only.
 5. Independent replication of CatCrypt; its Lean source.
 6. The "Verification Theatre" paper and the Bhargavan et al. multi-tool paper on Rust protocol implementations were not located or read.
-7. verified-consensus premise ledger contents and the raft-lean-squad REPORT.md were not read in full.
+7. The verified-consensus premise ledger contents and the raft-lean-squad REPORT.md (not cloned) were not read.
 8. Whether any Lean route links a protocol spec to C, Go or Java code with a stated guarantee (as opposed to Rust via Aeneas, Mojo via anchors, or Lean-native code).
 9. Sources used on the pages above that were AI-authored (VeriDNS, lean-dag, CatCrypt, Hopscotch, quiche proofs) were not independently reviewed by a human for specification adequacy in this pass.
 
@@ -377,10 +373,12 @@ Still open:
 
 Not read in full or not located; do not use as evidence.
 - Position of Veil on liveness: SoK arXiv 2608.21935, https://arxiv.org/html/2608.21935v1 (fetched text truncated at 65,535 characters; only the sentence quoted in C-7 was used).
-- raft-lean-squad REPORT.md (https://github.com/dsyme/raft-lean-squad): 716 theorems, 79 files, 0 sorry, Lean 4.30.0-rc2 (search snippet).
 - eBPF mechanised semantics paper, SBLP 2026 (cbsoft.sbc.org.br): IPv4/TCP packet filter claimed proven (search snippet).
 - leanVM news: https://cryptobriefing.com/ethereum-leanvm-formal-verification-quantum-resistance/ (news only).
 - FlashProve (Anthropic; soundness of a verifier in the random oracle model), thevilledev/ocaml-merkle PR 3 (Lean model plus 59,999-check conformance), positive-intentions hax+Lean Signal repo, lean-verification-components Reservoir package (Raft/Paxos), Leo de Moura NFM 2026 slides (Waimea, Strata; snippet), Veil "Lessons from Building an Auto-Active Verifier in Lean" (https://verse-lab.org/papers/veil-dafny26.pdf; snippet).
 - Repos with code counts only and no README read: lean-grpc (RileyBetts), pg-lean (pb64-lean; reuses TLS code), formal-leanSpec, etheorem, lean4-security-proofs (tutorial text, 0 Lean files). Their counts appear in the table but no claims are made about them.
 - CatCrypt Lean sources (private) and the CatCrypt-core public release (https://github.com/spitters/CatCrypt-core) were not inspected.
 - Amazon Aurora segment repair Lean proof (no primary source).
+- SymCert (Torlak, 2026), Amazon Science abstract page only: https://www.amazon.science/publications/symcert-verifying-smt-based-policy-analyses. The abstract describes a Lean framework for verified SMT-based analyses of Cedar policies, five analyses verified in "one work day"; the full paper was not obtained.
+- LeanMqtt SBLP 2025 paper (https://sol.sbc.org.br/index.php/sblp/article/view/46205): abstract only; the repository entry N5 does not rely on it.
+- raft-lean-squad (https://github.com/dsyme/raft-lean-squad): the repository was not cloned and REPORT.md was seen only as a search snippet (716 theorems, 79 files, 0 sorry, Lean 4.30.0-rc2, "fullProtocolStep_safe (EL7) ... all 5 RaftReachable.step hypotheses fully discharged"). AI provenance, per the Lean Squad blog (N3): produced by the agent workflow (author-reported).

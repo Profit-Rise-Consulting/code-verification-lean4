@@ -11,7 +11,7 @@ This dossier covers three related "TLA+-style specs in Lean 4" projects. leanda 
 | Primary URLs | https://github.com/konnov/leanda ; blogs https://protocols-made-fun.com/tendermint-safety.html ("Proving safety of Tendermint consensus with Apalache and AI", 2026-07-23, updated 2026-07-28) and https://protocols-made-fun.com/proofs-are-closer.html ("Formal proofs for distributed protocols with AI may be closer than you think", 2026-06-26) | https://github.com/yihuang/lean-tla | https://github.com/akkeshavan/tla-plus-lean-workflow (Zenodo DOI 10.5281/zenodo.21027111) |
 | Repo, commit SHA, last commit date, licence | `f7abaa1d043e2902f0081937f0b29eb9f302736e`, 2026-07-28, MIT | `99d8be4103c065ed7bc3b8d1a6e3b3f6f488cbdc`, 2026-08-17, no LICENSE file found | `991034218346a0983e6bbb116096002be0e043bf`, 2026-06-29, no LICENSE file found |
 | Lean toolchain | Per subproject: Ben-Or and tendermint-single v4.30.0; twophase v4.23.0-rc2; epfd v4.20.0-rc5; all depend on Mathlib | v4.33.0-rc2; Mathlib + cslib | VerificationContinuum v4.31.0; VeilProofs v4.24.0 (Veil, smt, auto, cvc5, Mathlib) |
-| Maturity | Research and blog companion, AI-generated proofs. Determined from: the blogs describe proofs written by "Claude Code Opus 4.8 and Codex GPT 5.5" ("C1"/"C2") under the author's supervision [S2, S3] | Exploration workspace. README: "Exploration workspace for a deep embedding of TLA+ in Lean 4" | Paper replication artifact. README "Paper: A Design-to-Runtime Verification Continuum"; `paper-sttt/`, `REPLICATION.md` |
+| Maturity | Research and blog companion. AI provenance for the dossier: `author-reported`. Determined from: the blogs describe proofs written by "Claude Code Opus 4.8 and Codex GPT 5.5" ("C1"/"C2") under the author's supervision [S2, S3] | Exploration workspace. README: "Exploration workspace for a deep embedding of TLA+ in Lean 4" | Paper replication artifact. README "Paper: A Design-to-Runtime Verification Continuum"; `paper-sttt/`, `REPLICATION.md` |
 
 ## 2. Claim as stated by the authors (verbatim)
 leanda, Ben-Or blog [S3]:
@@ -66,6 +66,66 @@ def ElectionSafety (s : ProtocolState Node) : Prop :=
   (∀ n : Node, (s.votesGranted n).length ≤ 1)
 ```
 `indinv_implies_safety` concludes with `exfalso` from conjuncts 2 and 4 (`2 ≤ length` and `length ≤ 1`). The invariant therefore implies that no node is ever leader, because `GrantVote` never adds to `votesGranted` while `BecomeLeader` requires `2 ≤ (s.votesGranted n).length`. `ElectionSafety` holds vacuously in this model. This is my reading of the code at the cited commit, not an author statement. OpenRaft (`OpenRaft/Propositional.lean`) proves `next_preserves_election_safety` and `next_preserves_log_safety` for "leader election + one-round log replication". Each takes auxiliary invariants (`VotedForGranted`, `LeaderHasMajority`, etc.) as hypotheses, and those are proved separately in the same file.
+
+## 3a. Predicate semantics
+leanda Tendermint. The conclusion is `tendermint-single/TendermintSingle/Defs.lean:432-436` @ `f7abaa1`:
+```lean
+def agreement (s : State) : Prop :=
+  ∀ _v86 ∈ s.Corr,
+    ∀ _v87 ∈ s.Corr,
+      (Finmap.lookupD _v86 s.decision = -1 ∨ Finmap.lookupD _v87 s.decision = -1) ∨
+        Finmap.lookupD _v86 s.decision = Finmap.lookupD _v87 s.decision
+```
+Headline `run_agreement` (`tendermint-single/TendermintSingle/Proofs/Agreement.lean:129-132`) has premises `(hmodel : model_assumptions (tr 0)) (hrun : IsRun tr) (i : Nat)`. `model_assumptions` is defined at `tendermint-single/TendermintSingle/Proofs/Basic.lean:7-16`:
+```lean
+def model_assumptions (s : State) : Prop :=
+  s.N > 3 * s.T ∧
+    s.N = 3 * s.T + 1 ∧
+      (s.Faulty.card : Int) ≤ s.T ∧
+        s.Corr ∩ s.Faulty = ∅ ∧
+          s.N = (s.Corr.card : Int) + (s.Faulty.card : Int) ∧
+            0 ≤ s.N ∧
+              0 ≤ s.T ∧
+                0 ≤ s.MaxRound ∧
+                  -1 ∉ s.ValidValues ∧ s.ValidValues.Nonempty
+```
+The assumptions are required only at state 0. Their preservation is proved (`next_preserves_model_assumptions`, used at `Agreement.lean:122`).
+
+Plain language: in every state of a run of the single-height model, any two correct processes that have both decided (decision ≠ -1) decided the same value. This holds when exactly \(N = 3T+1\) and at most T processes are faulty. Not guaranteed:
+- \(N > 3T+1\) is excluded by the equality conjunct.
+- Multi-height (chain) agreement, liveness and any implementation are not covered.
+- `Defs.lean` comes from a private translator that is not in the repo, so its faithfulness to the TLA+ spec is unchecked.
+
+leanda Ben-Or. The conclusion is `Ben-Or/BenOr/Defs.lean:55-59` (`agreement_inv`), which has the same shape over `s.CORRECT`. Headline `agreement_inv_invariant` (`Ben-Or/BenOr/Proofs.lean:6671-6676`):
+```lean
+theorem agreement_inv_invariant {tr : Nat → State}
+    (hmodel : ∀ i, model_assumptions (tr i))
+    (htype : ∀ i, type_ok (tr i))
+    (hinit : init_with_faults (tr 0))
+    (hnext : ∀ i, Next (tr i) (tr (i + 1))) :
+    ∀ i, agreement_inv (tr i)
+```
+`model_assumptions` (`Ben-Or/BenOr/Proofs.lean:254-259`) includes `assumptions_hold s` (`Defs.lean:61-64`: `s.N > 5 * s.T ∧ ...`) and `s.F ≤ s.T`.
+
+Plain language: agreement holds for \(N > 5T\), assuming the parameter assumptions and the type invariant `type_ok` (`Defs.lean:69`) hold at every index. A lexical search for `theorem .*type_ok` in `Ben-Or/BenOr/*.lean` found no preservation lemma. So `type_ok` is a premise at every step, not a proved invariant. I did not check whether some other construction proves it.
+
+lean-tla Minimmit. `consistency` (`Bft/Examples/Minimmit.lean:278-285` @ `99d8be4`) has premises `(hn : 5 * f + 1 ≤ n) (hB : Byz.card ≤ f)`. Its conclusion is a TLA `Entails` from `Init ∧ □[Next]_vars` to `□` of:
+```lean
+        (∀ v b b', LNot n f s v b → LNot n f s v b' → b = b') ∧
+        (∀ v b b', b ≠ b' → LNot n f s v b → ¬ MNot n f s v b') ∧
+        (∀ v b, LNot n f s v b → ¬ Null n f s v)
+```
+Plain language: in every reachable vote-pool state, at most one block per view has an L-notarisation. An L-notarised block excludes a conflicting M-notarisation and excludes nullification of that view. These are quorum facts about vote sets. They do not cover block finalisation at the chain level, networking or timing.
+
+tla-plus-lean-workflow Raft election. `ElectionSafety` (`VerificationContinuum/VerificationContinuum/RaftElection/Propositional.lean:71-75` @ `9910342`):
+```lean
+def ElectionSafety (s : ProtocolState Node) : Prop :=
+  ∀ n1 n2 : Node,
+    s.role n1 = leader → s.role n2 = leader →
+    s.currentTerm n1 = s.currentTerm n2 →
+    n1 = n2
+```
+`indinv_implies_safety` (line 262) is proved by `exfalso` from `IndInv` conjuncts 2 (`2 ≤ (s.votesGranted n).length`) and 4 (`(s.votesGranted n).length ≤ 1`, lines 78-93). The file's own comment (lines 259-261) says: "Hence no leader is ever elected; ElectionSafety holds vacuously." Plain language: the result guarantees nothing about real Raft elections, because no state with a leader is reachable in this model.
 
 ## 4. Property classes covered
 | Class | leanda | lean-tla | tla-plus-lean-workflow |
@@ -131,11 +191,11 @@ Pattern: write the protocol as a Lean transition system that mirrors a TLA+ spec
 ## 14. Sources
 | ID | Title | URL | P/S | Depth | Summary |
 |---|---|---|---|---|---|
-| S1 | konnov/leanda @ f7abaa1 | https://github.com/konnov/leanda | P | CODE | Four Lean 4 subprojects (Ben-Or, Tendermint, 2PC, EPFD). 19k lines, 0 sorry, 0 axiom. Safety via typed inductive invariants |
-| S2 | Igor Konnov, "Proving safety of Tendermint consensus with Apalache and AI" (2026-07-23, upd. 2026-07-28) | https://protocols-made-fun.com/tendermint-safety.html | P | FULL | AI-assisted repair of the TLA+ inductive invariant, AI-written TLAPS proof (N = 3T+1), and a 2.5-hour Codex transfer to Lean 4 |
-| S3 | Igor Konnov, "Formal proofs for distributed protocols with AI may be closer than you think" (2026-06-26) | https://protocols-made-fun.com/proofs-are-closer.html | P | FULL | Ben-Or safety proofs in Lean 4 and TLAPS by Claude/Codex from a given invariant. Documents AI cheating via assumptions and a non-inductive lemma found in the general case |
-| S4 | yihuang/lean-tla @ 99d8be4 | https://github.com/yihuang/lean-tla | P | CODE | TLA embedding/DSL, BFT framework, Streamlet/Minimmit safety and liveness, relational-ranking rules, CSLib bridge. 0 sorry in built sources |
-| S5 | akkeshavan/tla-plus-lean-workflow @ 9910342 (Lean, Rust, paper-sttt/main.tex) | https://github.com/akkeshavan/tla-plus-lean-workflow | P | CODE | Six abstract protocol models with Lean invariants, Veil proofs and LLM-synthesised Rust. The paper admits the Rust path has no proof |
+| S1 | konnov/leanda @ f7abaa1 | https://github.com/konnov/leanda | P | [CODE] | Four Lean 4 subprojects (Ben-Or, Tendermint, 2PC, EPFD). 19k lines, 0 sorry, 0 axiom. Safety via typed inductive invariants |
+| S2 | Igor Konnov, "Proving safety of Tendermint consensus with Apalache and AI" (2026-07-23, upd. 2026-07-28) | https://protocols-made-fun.com/tendermint-safety.html | P | [FULL] | AI-assisted repair of the TLA+ inductive invariant, AI-written TLAPS proof (N = 3T+1), and a 2.5-hour Codex transfer to Lean 4 |
+| S3 | Igor Konnov, "Formal proofs for distributed protocols with AI may be closer than you think" (2026-06-26) | https://protocols-made-fun.com/proofs-are-closer.html | P | [FULL] | Ben-Or safety proofs in Lean 4 and TLAPS by Claude/Codex from a given invariant. Documents AI cheating via assumptions and a non-inductive lemma found in the general case |
+| S4 | yihuang/lean-tla @ 99d8be4 | https://github.com/yihuang/lean-tla | P | [CODE] | TLA embedding/DSL, BFT framework, Streamlet/Minimmit safety and liveness, relational-ranking rules, CSLib bridge. 0 sorry in built sources |
+| S5 | akkeshavan/tla-plus-lean-workflow @ 9910342 (Lean, Rust, paper-sttt/main.tex) | https://github.com/akkeshavan/tla-plus-lean-workflow | P | [CODE] | Six abstract protocol models with Lean invariants, Veil proofs and LLM-synthesised Rust. The paper admits the Rust path has no proof |
 
 Access date for all: 2026-11-07.
 
