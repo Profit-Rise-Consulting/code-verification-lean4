@@ -7,82 +7,82 @@ Dossiers: 29 (19 Lean, 10 comparator).
 
 ## Lean 4 references
 
-| ID | Name | Subject | Tool | Maturity | Impl link | Impl language | Built | Full-read sources |
-|---|---|---|---|---|---|---|---|---|
-| REF-L01 | [Cedar (cedar-spec Lean model and proofs, DRT vs Rust, SymCC/SymCert)](REF-L01-cedar.md) | Cedar authorization policy language: evaluator, authorizer, validator, slicing, symbolic compiler to SMT | Lean 4 v4.35.0 + Rust cargo-fuzz DRT + CVC5 | production | differential-testing | Rust | no | 4 |
-| REF-L02 | [SampCert](REF-L02-sampcert.md) | Differential privacy foundations and verified discrete Laplace/Gaussian samplers | Lean 4 v4.34.1 + Mathlib; Dafny for deployment translation | production | lean-is-impl | Lean (C++ FFI primitives); Python via unverified Lean->Dafny->Python translation | no | 2 |
-| REF-L03 | [LNSym (Armv8 native-code symbolic simulator; AWS-LC SHA-512/AES-GCM assembly proofs)](REF-L03-lnsym.md) | Lean AArch64 ISA model and symbolic-simulation proofs of AWS-LC cryptographic machine code | Lean 4 v4.35.0 + bv_decide (CaDiCaL/LRAT) + ELFSage | research | binary-semantics | AArch64 assembly (AWS-LC perlasm output) | no | 1 |
-| REF-L04 | [Veil](REF-L04-veil.md) | Framework for safety/liveness verification and model checking of distributed-protocol transition systems; case studies Paxos, Vertical Paxos, NOPaxos, reliable broadcast, Ring, SCP, 2PC, plus 29 model-checked TLA+ ports | Veil 2.0 (Lean 4 v4.35.0, lean-smt/cvc5, Z3, Loom, Lentil) | research | none | Lean (executable models only) | no | 4 |
-| REF-L05 | [Lentil](REF-L05-lentil.md) | LTL/TLA shallow embedding, WF1/SF1/leads-to rules and temporal proof mode in Lean 4; used by Veil for liveness | Lean 4 v4.35.0 library | research | none | ? | failed | 2 |
-| REF-L06 | [Loom and Velvet](REF-L06-loom-velvet.md) | Loom: framework deriving foundational WP-based verifiers from monad transformer algebras; Velvet: Dafny-style verifier for imperative Lean programs (VERINA, LeetCode-style, sparse matrices, segment tree) | Lean 4 (Loom master v4.24.0 / pinned v4.35.0; Velvet v4.35.0, grind, lean-auto/cvc5 in paper) | research | same-language | Lean | no | 2 |
-| REF-L07 | [Aeneas (Rust to Lean via Charon) and Microsoft SymCrypt Lean proofs](REF-L07-aeneas-symcrypt.md) | SHA-3/SHAKE (FIPS 202) and ML-KEM (FIPS 203) Rust implementations in SymCrypt; paper also reports AES-GCM, SHA-2, HMAC/HKDF, ML-DSA, FrodoKEM, HPKE (experimental) | Charon + Aeneas + Lean 4 v4.31.0 | production | extraction | Rust (safe subset) | no | 4 |
-| REF-L08 | [hax Lean backend and Cryspen libcrux (Lean versus F*)](REF-L08-hax-libcrux.md) | SHA-3/SHAKE one-shot API of libcrux-iot proved in Lean (provencrypt); libcrux ML-KEM/ML-DSA modules proved in F* | hax 0.4 Lean backend (Charon + modified Aeneas, Std.Do/mvcgen), Lean 4 v4.31.0; F* for libcrux main | research | extraction | Rust (safe subset) | no | 3 |
-| REF-L10 | [VCVio (plus Hopscotch)](REF-L10-vcvio.md) | Game-based computational cryptography framework in Lean 4 (oracle computations); Schnorr EUF-CMA, forking lemma, Fiat-Shamir, SLH-DSA SUF-CMA in ROM; Hopscotch game-hopping layer | Lean 4 v4.35.0 + Mathlib (Hopscotch: v4.28.0) | research | none | Lean 4 models; native C via FFI for tests; Rust via dormant hax/Aeneas Interop | no | 4 |
-| REF-L11 | [tls13-lean (plus pg-lean)](REF-L11-tls13-lean.md) | TLS 1.3 client/server (RFC 9846 / RFC 8446 §7.1 key schedule) and PostgreSQL wire-protocol client | Lean 4 (nightly-2026-04-25; pg-lean v4.31.0) + Bazel rules_lean | ai-generated | lean-is-impl | Lean 4 (+ HACL* C via 16 @[extern] FFI bindings) | no | 2 |
-| REF-L12 | [Clean (Verified-zkEVM / zkSecurity)](REF-L12-clean.md) | Lean 4 DSL for ZK arithmetic circuits with soundness/completeness proofs; Keccak, SHA-256, BLAKE3, Poseidon gadgets; multi-AIR ensembles via channels | Lean 4 v4.35.0 + Mathlib + CompPoly | research | lean-is-impl | Lean 4 circuit DSL, exported to R1CS/Circom, AIR/Plonky3 by unverified backends | no | 3 |
-| REF-L13 | [LeanMqtt](REF-L13-leanmqtt.md) | MQTT 5.0 packet wire format (fixed and variable headers; payloads stubbed) | Lean 4 v4.34.0 | research | lean-is-impl | Lean 4 | no | 2 |
-| REF-L14 | [Lean HTTP stack: Std.Http, stdhttp-verify, LeanServer](REF-L14-lean-http-stack.md) | HTTP/1.1 request framing and parsing (RFC 9112) in Lean's Std.Http; full HTTPS/TLS 1.3 server (LeanServer) | Lean 4 nightly-2026-10-20 (stdhttp-verify); v4.29.1 (LeanServer) | research | lean-is-impl | Lean 4 (patched copy of shipped Std.Http; bounded native_decide equivalence and HTTP Garden differential testing to shipped code) | no | 4 |
-| REF-L16 | [GhostBuster, VeriDNS, Lean Squad quiche, flare/formal](REF-L16-ghostbuster-veridns-quiche-flare.md) | BGP runtime-verification algorithm (GhostBuster); recursive DNS resolver (VeriDNS); quiche QUIC/HTTP3 functional models (Lean Squad); Mojo networking stack models (flare) | Lean 4 (v4.32.0-rc1+Mathlib; v4.31.0-rc2; v4.29.0; v4.33.0) | AI-generated | model-only | Rust (GhostBuster, quiche), Lean 4 (VeriDNS, lean-is-impl), Mojo (flare, transliteration + anchors + difftest) | no | 1 |
-| REF-L17 | [raft-lean-squad (Lean Squad on raft-rs)](REF-L17-raft-lean-squad.md) | Raft consensus (Rust raft crate, fork of tikv/raft-rs): function models plus abstract cluster safety | Lean 4 v4.28.0 (stdlib only); GitHub Agentic Workflows + Copilot CLI / Claude | ai-generated | differential-testing | Rust | no | 1 |
-| REF-L18 | [leanda (konnov) + lean-tla (yihuang) + tla-plus-lean-workflow (akkeshavan)](REF-L18-leanda-tla-lean.md) | TLA+-style distributed protocol specs in Lean 4: Ben-Or, Tendermint, 2PC, EPFD (leanda); Streamlet/Minimmit + TLA DSL (lean-tla); six-protocol TLA+->Lean->Rust continuum incl. Raft election/OpenRaft | Lean 4 v4.20-v4.33 + Mathlib; Veil/SMT (continuum); TLAPS/Apalache upstream | research | none | none | no | 2 |
-| REF-L19 | [Leslie (TLA in Lean 4)](REF-L19-leslie.md) | Shallow TLA embedding with refinement, Heard-Of rounds, cutoff theorems, probabilistic layer; Paxos, OneThirdRule, Ben-Or, VR view change and 40+ protocol examples (no Raft) | Lean 4 v4.27.0 + Mathlib | research | differential-testing | Rust | no | 0 |
-| REF-L20 | [verified-consensus (fradamt) + iris-lean + CSLib distributed (FLP; no Raft port)](REF-L20-verified-consensus-iris-cslib.md) | Executable Lean model of a decoupled PoS consensus protocol with safety, accountable safety, liveness, asynchrony-resilience review theorem; Iris separation logic port; CSLib FLP impossibility | Lean 4 v4.34.1 + Mathlib (verified-consensus); v4.35.0 (iris-lean); v4.36.0-rc2 (cslib) | research | none | none | no | 0 |
-| REF-L21 | [Microsoft CCF Lean consensus specs and C++ trace replay](REF-L21-ccf-lean.md) | CCF consensus (CFT), consistency, KV store and disaster recovery protocols | Lean 4 + Mathlib; Lean trace replay executables (consensus-replay, kv-replay, consistency-replay, DR replayer) | production CI gate (since 2026-09) | trace-validation | C++ | no | 5 |
+| ID | Name | Subject | Tool | Maturity | Impl links (all) | Impl language | Evidence level | AI provenance | Built |
+|---|---|---|---|---|---|---|---|---|---|
+| REF-L01 | [Cedar (cedar-spec Lean model and proofs, DRT vs Rust, SymCC/SymCert)](REF-L01-cedar.md) | Cedar authorization policy language: evaluator, authorizer, validator, slicing, symbolic compiler to SMT | Lean 4 v4.35.0 + Rust cargo-fuzz DRT + CVC5 | production | differential-testing | Rust | ? | ? | no |
+| REF-L02 | [SampCert](REF-L02-sampcert.md) | Differential privacy foundations and verified discrete Laplace/Gaussian samplers | Lean 4 v4.34.1 + Mathlib; Dafny for deployment translation | production | lean-is-impl | Lean (C++ FFI primitives); Python via unverified Lean->Dafny->Python translation | ? | ? | no |
+| REF-L03 | [LNSym (Armv8 native-code symbolic simulator; AWS-LC SHA-512/AES-GCM assembly proofs)](REF-L03-lnsym.md) | Lean AArch64 ISA model and symbolic-simulation proofs of AWS-LC cryptographic machine code | Lean 4 v4.35.0 + bv_decide (CaDiCaL/LRAT) + ELFSage | research | binary-semantics | AArch64 assembly (AWS-LC perlasm output) | ? | ? | no |
+| REF-L04 | [Veil](REF-L04-veil.md) | Framework for safety/liveness verification and model checking of distributed-protocol transition systems; case studies Paxos, Vertical Paxos, NOPaxos, reliable broadcast, Ring, SCP, 2PC, plus 29 model-checked TLA+ ports | Veil 2.0 (Lean 4 v4.35.0, lean-smt/cvc5, Z3, Loom, Lentil) | research | none | Lean (executable models only) | ? | ? | no |
+| REF-L05 | [Lentil](REF-L05-lentil.md) | LTL/TLA shallow embedding, WF1/SF1/leads-to rules and temporal proof mode in Lean 4; used by Veil for liveness | Lean 4 v4.35.0 library | research | none | ? | ? | ? | failed |
+| REF-L06 | [Loom and Velvet](REF-L06-loom-velvet.md) | Loom: framework deriving foundational WP-based verifiers from monad transformer algebras; Velvet: Dafny-style verifier for imperative Lean programs (VERINA, LeetCode-style, sparse matrices, segment tree) | Lean 4 (Loom master v4.24.0 / pinned v4.35.0; Velvet v4.35.0, grind, lean-auto/cvc5 in paper) | research | same-language | Lean | ? | ? | no |
+| REF-L07 | [Aeneas (Rust to Lean via Charon) and Microsoft SymCrypt Lean proofs](REF-L07-aeneas-symcrypt.md) | SHA-3/SHAKE (FIPS 202) and ML-KEM (FIPS 203) Rust implementations in SymCrypt; paper also reports AES-GCM, SHA-2, HMAC/HKDF, ML-DSA, FrodoKEM, HPKE (experimental) | Charon + Aeneas + Lean 4 v4.31.0 | production | extraction | Rust (safe subset) | ? | ? | no |
+| REF-L08 | [hax Lean backend and Cryspen libcrux (Lean versus F*)](REF-L08-hax-libcrux.md) | SHA-3/SHAKE one-shot API of libcrux-iot proved in Lean (provencrypt); libcrux ML-KEM/ML-DSA modules proved in F* | hax 0.4 Lean backend (Charon + modified Aeneas, Std.Do/mvcgen), Lean 4 v4.31.0; F* for libcrux main | research | extraction | Rust (safe subset) | ? | ? | no |
+| REF-L10 | [VCVio (plus Hopscotch)](REF-L10-vcvio.md) | Game-based computational cryptography framework in Lean 4 (oracle computations); Schnorr EUF-CMA, forking lemma, Fiat-Shamir, SLH-DSA SUF-CMA in ROM; Hopscotch game-hopping layer | Lean 4 v4.35.0 + Mathlib (Hopscotch: v4.28.0) | research | none | Lean 4 models; native C via FFI for tests; Rust via dormant hax/Aeneas Interop | ? | ? | no |
+| REF-L11 | [tls13-lean (plus pg-lean)](REF-L11-tls13-lean.md) | TLS 1.3 client/server (RFC 9846 / RFC 8446 §7.1 key schedule) and PostgreSQL wire-protocol client | Lean 4 (nightly-2026-04-25; pg-lean v4.31.0) + Bazel rules_lean | ai-generated | lean-is-impl | Lean 4 (+ HACL* C via 16 @[extern] FFI bindings) | ? | ? | no |
+| REF-L12 | [Clean (Verified-zkEVM / zkSecurity)](REF-L12-clean.md) | Lean 4 DSL for ZK arithmetic circuits with soundness/completeness proofs; Keccak, SHA-256, BLAKE3, Poseidon gadgets; multi-AIR ensembles via channels | Lean 4 v4.35.0 + Mathlib + CompPoly | research | lean-is-impl | Lean 4 circuit DSL, exported to R1CS/Circom, AIR/Plonky3 by unverified backends | ? | ? | no |
+| REF-L13 | [LeanMqtt](REF-L13-leanmqtt.md) | MQTT 5.0 packet wire format (fixed and variable headers; payloads stubbed) | Lean 4 v4.34.0 | research | lean-is-impl | Lean 4 | ? | ? | no |
+| REF-L14 | [Lean HTTP stack: Std.Http, stdhttp-verify, LeanServer](REF-L14-lean-http-stack.md) | HTTP/1.1 request framing and parsing (RFC 9112) in Lean's Std.Http; full HTTPS/TLS 1.3 server (LeanServer) | Lean 4 nightly-2026-10-20 (stdhttp-verify); v4.29.1 (LeanServer) | research | lean-is-impl | Lean 4 (patched copy of shipped Std.Http; bounded native_decide equivalence and HTTP Garden differential testing to shipped code) | ? | ? | no |
+| REF-L16 | [GhostBuster, VeriDNS, Lean Squad quiche, flare/formal](REF-L16-ghostbuster-veridns-quiche-flare.md) | BGP runtime-verification algorithm (GhostBuster); recursive DNS resolver (VeriDNS); quiche QUIC/HTTP3 functional models (Lean Squad); Mojo networking stack models (flare) | Lean 4 (v4.32.0-rc1+Mathlib; v4.31.0-rc2; v4.29.0; v4.33.0) | AI-generated | model-only | Rust (GhostBuster, quiche), Lean 4 (VeriDNS, lean-is-impl), Mojo (flare, transliteration + anchors + difftest) | ? | ? | no |
+| REF-L17 | [raft-lean-squad (Lean Squad on raft-rs)](REF-L17-raft-lean-squad.md) | Raft consensus (Rust raft crate, fork of tikv/raft-rs): function models plus abstract cluster safety | Lean 4 v4.28.0 (stdlib only); GitHub Agentic Workflows + Copilot CLI / Claude | ai-generated | differential-testing | Rust | ? | ? | no |
+| REF-L18 | [leanda (konnov) + lean-tla (yihuang) + tla-plus-lean-workflow (akkeshavan)](REF-L18-leanda-tla-lean.md) | TLA+-style distributed protocol specs in Lean 4: Ben-Or, Tendermint, 2PC, EPFD (leanda); Streamlet/Minimmit + TLA DSL (lean-tla); six-protocol TLA+->Lean->Rust continuum incl. Raft election/OpenRaft | Lean 4 v4.20-v4.33 + Mathlib; Veil/SMT (continuum); TLAPS/Apalache upstream | research | none | none | ? | ? | no |
+| REF-L19 | [Leslie (TLA in Lean 4)](REF-L19-leslie.md) | Shallow TLA embedding with refinement, Heard-Of rounds, cutoff theorems, probabilistic layer; Paxos, OneThirdRule, Ben-Or, VR view change and 40+ protocol examples (no Raft) | Lean 4 v4.27.0 + Mathlib | research | differential-testing | Rust | ? | ? | no |
+| REF-L20 | [verified-consensus (fradamt) + iris-lean + CSLib distributed (FLP; no Raft port)](REF-L20-verified-consensus-iris-cslib.md) | Executable Lean model of a decoupled PoS consensus protocol with safety, accountable safety, liveness, asynchrony-resilience review theorem; Iris separation logic port; CSLib FLP impossibility | Lean 4 v4.34.1 + Mathlib (verified-consensus); v4.35.0 (iris-lean); v4.36.0-rc2 (cslib) | research | none | none | ? | ? | no |
+| REF-L21 | [Microsoft CCF Lean consensus specs and C++ trace replay](REF-L21-ccf-lean.md) | CCF consensus (CFT), consistency, KV store and disaster recovery protocols | Lean 4 + Mathlib; Lean trace replay executables (consensus-replay, kv-replay, consistency-replay, DR replayer) | production CI gate (since 2026-09) | trace-validation | C++ | ? | ? | no |
 
 ## Comparator references (other tools)
 
-| ID | Name | Subject | Tool | Maturity | Impl link | Impl language | Built | Full-read sources |
-|---|---|---|---|---|---|---|---|---|
-| REF-C01 | [Project Everest (miTLS-fstar, HACL*, EverCrypt, EverParse)](REF-C01-everest.md) | TLS 1.2/1.3 record layer and handshake, QUIC record layer, cryptographic primitives, binary message parsers | F* (Low*, Vale) + Z3 + KaRaMeL; HACL* on frozen F* ref=fstar1 with KaRaMeL bd2d4fa; EverParse Z3 5.3.0 | production | extraction | C and assembly (extracted from Low*/Vale) | no | 4 |
-| REF-C02 | [IronFleet (Dafny) plus Verus distributed-systems work (IronKV port, Anvil)](REF-C02-ironfleet-verus.md) | MultiPaxos replicated state machine (IronRSL), sharded key-value store (IronKV), Kubernetes controllers (Anvil) | Dafny v3.4.0 (IronFleet); Verus vstd 0.0.0-2026-11-01-0251 with Rust 1.99.1 toolchain and Z3 4.16.0 | research | extraction | C# (compiled from Dafny); Rust (Verus) | no | 4 |
-| REF-C03 | [Verdi Raft (Coq)](REF-C03-verdi-raft.md) | Raft consensus protocol and vard replicated key-value store | Coq >= 8.14 with Verdi (dev), StructTact, Cheerios; extraction to OCaml | research | extraction | OCaml (extracted) + trusted OCaml shim | no | 3 |
-| REF-C04 | [Fiat-Crypto (Coq) plus AWS s2n-tls and aws-lc SAW proofs](REF-C04-fiat-crypto-aws-saw.md) | elliptic-curve field arithmetic; HMAC, DRBG, TLS 1.2/1.3 handshake state machine (s2n-tls); SHA-2, HMAC, AES-KW(P), AES-GCM (aws-lc) | Coq/Rocq >= 9.0 (Fiat-Crypto); SAW 0.9.0.99 + Cryptol + Z3 (s2n-tls); SAW, NSym, Coq, Clang 10/14 (aws-lc) | production | binary-semantics | C (generated by Fiat; existing C in s2n-tls/aws-lc), x86_64/AArch64 assembly | no | 3 |
-| REF-C05 | [Tamarin case studies: TLS 1.3 d21, 5G AKA, EMV (+ Arquint et al. Tamarin-to-code)](REF-C05-tamarin.md) | Symbolic Dolev-Yao models of TLS 1.3 draft 21, 3GPP 5G AKA, EMV contact/contactless; Tamarin->Gobra/VeriFast I/O-spec bridge demonstrated on WireGuard | Tamarin prover (v1.4.0 for 5G, v1.5.1 for EMV; repo HEAD 1.13.0); Gobra/VeriFast for Arquint et al. | research | none | none for TLS/5G/EMV case studies; Go and Java in Arquint et al. (manual annotation + generated I/O specs, trace inclusion) | no | 5 |
-| REF-C06 | [ProVerif/CryptoVerif case studies: TLS 1.3 (RefTLS), Signal (ProScript/Cryptocat), WireGuard, Noise Explorer](REF-C06-proverif-cryptoverif.md) | Symbolic (ProVerif) and computational (CryptoVerif) models of TLS 1.3 draft 18, Signal variant, WireGuard IKpsk2, and arbitrary Noise patterns; ProScript-to-ProVerif translation of JS code and Noise co-generation of Go/Rust code | ProVerif; CryptoVerif (1.24 Signal, 2.01 WireGuard); ps2pv ProScript-to-ProVerif compiler; Noise Explorer 1.0.7 | research | extraction | JavaScript (Flow/ProScript) for RefTLS and Cryptocat; Go/Rust/Wasm (Noise Explorer, co-generated, unproved); none for WireGuard CryptoVerif | no | 4 |
-| REF-C07 | [Ivy QUIC specification-based testing (McMillan and Zuck)](REF-C07-ivy-quic.md) | QUIC transport wire protocol (IETF drafts 18/23/29) | Ivy + Z3 (randomized compositional specification-based testing) | research | differential-testing | any (black-box over UDP); tested C, C++, Rust, Go, Python implementations | no | 4 |
-| REF-C08 | [TLA+ trace validation (CCF, MongoDB, etcd raft)](REF-C08-tla-trace-validation.md) | Consensus and replication protocols in production systems (CCF consensus/consistency, MongoDB replication and Realm Sync OT, etcd raft) | TLA+ / TLC trace validation and model-based test generation; CCF since 2026 Lean 4 replay | production (CCF CI until 2026-11-05), experimental (etcd), abandoned (MongoDB MBTC) | trace-validation | C++ (CCF, MongoDB), Go (etcd, Realm Sync server) | no | 4 |
-| REF-C09 | [AWS lightweight formal methods (ShardStore reference models, P and PObserve)](REF-C09-aws-lightweight-fm.md) | Amazon S3 ShardStore storage node (Rust) and AWS distributed protocol designs (e.g. S3 strong consistency) with log conformance via PObserve | Rust executable reference models + property-based testing, Loom, Shuttle, Miri, Crux, Prusti (early); P checker and PObserve | production | differential-testing (ShardStore); trace-validation / runtime monitoring (PObserve) | Rust (ShardStore); Rust or Java services (PObserve) | no | 2 |
-| REF-L15 | [NyxFoundation libp2p-fv and formal-eth](REF-L15-nyx-libp2p-formal-eth.md) | Proposed safety obligations for Ethereum GossipSub over QUIC/TLS 1.3 (libp2p-fv); curated list of Ethereum FV projects (formal-eth) | none (proposal; planned Quint, TLC, Apalache, Lean 4, Tamarin) | research | none | ? | no | 2 |
+| ID | Name | Subject | Tool | Maturity | Impl links (all) | Impl language | Evidence level | AI provenance | Built |
+|---|---|---|---|---|---|---|---|---|---|
+| REF-C01 | [Project Everest (miTLS-fstar, HACL*, EverCrypt, EverParse)](REF-C01-everest.md) | TLS 1.2/1.3 record layer and handshake, QUIC record layer, cryptographic primitives, binary message parsers | F* (Low*, Vale) + Z3 + KaRaMeL; HACL* on frozen F* ref=fstar1 with KaRaMeL bd2d4fa; EverParse Z3 5.3.0 | production | extraction | C and assembly (extracted from Low*/Vale) | ? | ? | no |
+| REF-C02 | [IronFleet (Dafny) plus Verus distributed-systems work (IronKV port, Anvil)](REF-C02-ironfleet-verus.md) | MultiPaxos replicated state machine (IronRSL), sharded key-value store (IronKV), Kubernetes controllers (Anvil) | Dafny v3.4.0 (IronFleet); Verus vstd 0.0.0-2026-11-01-0251 with Rust 1.99.1 toolchain and Z3 4.16.0 | research | extraction | C# (compiled from Dafny); Rust (Verus) | ? | ? | no |
+| REF-C03 | [Verdi Raft (Coq)](REF-C03-verdi-raft.md) | Raft consensus protocol and vard replicated key-value store | Coq >= 8.14 with Verdi (dev), StructTact, Cheerios; extraction to OCaml | research | extraction | OCaml (extracted) + trusted OCaml shim | ? | ? | no |
+| REF-C04 | [Fiat-Crypto (Coq) plus AWS s2n-tls and aws-lc SAW proofs](REF-C04-fiat-crypto-aws-saw.md) | elliptic-curve field arithmetic; HMAC, DRBG, TLS 1.2/1.3 handshake state machine (s2n-tls); SHA-2, HMAC, AES-KW(P), AES-GCM (aws-lc) | Coq/Rocq >= 9.0 (Fiat-Crypto); SAW 0.9.0.99 + Cryptol + Z3 (s2n-tls); SAW, NSym, Coq, Clang 10/14 (aws-lc) | production | binary-semantics | C (generated by Fiat; existing C in s2n-tls/aws-lc), x86_64/AArch64 assembly | ? | ? | no |
+| REF-C05 | [Tamarin case studies: TLS 1.3 d21, 5G AKA, EMV (+ Arquint et al. Tamarin-to-code)](REF-C05-tamarin.md) | Symbolic Dolev-Yao models of TLS 1.3 draft 21, 3GPP 5G AKA, EMV contact/contactless; Tamarin->Gobra/VeriFast I/O-spec bridge demonstrated on WireGuard | Tamarin prover (v1.4.0 for 5G, v1.5.1 for EMV; repo HEAD 1.13.0); Gobra/VeriFast for Arquint et al. | research | none | none for TLS/5G/EMV case studies; Go and Java in Arquint et al. (manual annotation + generated I/O specs, trace inclusion) | ? | ? | no |
+| REF-C06 | [ProVerif/CryptoVerif case studies: TLS 1.3 (RefTLS), Signal (ProScript/Cryptocat), WireGuard, Noise Explorer](REF-C06-proverif-cryptoverif.md) | Symbolic (ProVerif) and computational (CryptoVerif) models of TLS 1.3 draft 18, Signal variant, WireGuard IKpsk2, and arbitrary Noise patterns; ProScript-to-ProVerif translation of JS code and Noise co-generation of Go/Rust code | ProVerif; CryptoVerif (1.24 Signal, 2.01 WireGuard); ps2pv ProScript-to-ProVerif compiler; Noise Explorer 1.0.7 | research | extraction | JavaScript (Flow/ProScript) for RefTLS and Cryptocat; Go/Rust/Wasm (Noise Explorer, co-generated, unproved); none for WireGuard CryptoVerif | ? | ? | no |
+| REF-C07 | [Ivy QUIC specification-based testing (McMillan and Zuck)](REF-C07-ivy-quic.md) | QUIC transport wire protocol (IETF drafts 18/23/29) | Ivy + Z3 (randomized compositional specification-based testing) | research | differential-testing | any (black-box over UDP); tested C, C++, Rust, Go, Python implementations | ? | ? | no |
+| REF-C08 | [TLA+ trace validation (CCF, MongoDB, etcd raft)](REF-C08-tla-trace-validation.md) | Consensus and replication protocols in production systems (CCF consensus/consistency, MongoDB replication and Realm Sync OT, etcd raft) | TLA+ / TLC trace validation and model-based test generation; CCF since 2026 Lean 4 replay | production (CCF CI until 2026-11-05), experimental (etcd), abandoned (MongoDB MBTC) | trace-validation | C++ (CCF, MongoDB), Go (etcd, Realm Sync server) | ? | ? | no |
+| REF-C09 | [AWS lightweight formal methods (ShardStore reference models, P and PObserve)](REF-C09-aws-lightweight-fm.md) | Amazon S3 ShardStore storage node (Rust) and AWS distributed protocol designs (e.g. S3 strong consistency) with log conformance via PObserve | Rust executable reference models + property-based testing, Loom, Shuttle, Miri, Crux, Prusti (early); P checker and PObserve | production | differential-testing (ShardStore); trace-validation / runtime monitoring (PObserve) | Rust (ShardStore); Rust or Java services (PObserve) | ? | ? | no |
+| REF-L15 | [NyxFoundation libp2p-fv and formal-eth](REF-L15-nyx-libp2p-formal-eth.md) | Proposed safety obligations for Ethereum GossipSub over QUIC/TLS 1.3 (libp2p-fv); curated list of Ethereum FV projects (formal-eth) | none (proposal; planned Quint, TLC, Apalache, Lean 4, Tamarin) | research | none | ? | ? | ? | no |
 
 ## Property coverage matrix
 
-Y = yes, P = partial, - = no, ? = not recorded. Values come from each dossier's section 4.
+Legend (review F-013): PROVED = machine-checked theorem; tested = established empirically only (testing, trace validation, bounded model checking); assumed = axiom or hypothesis; partial = proved for a strict subset; - = not addressed; n/a = not applicable; ? = not recorded; Y(legacy) = old yes/no value not yet reclassified. A cell describes what the reference establishes, not what Lean could do. Read the dossier's section 4 before citing a cell.
 
 | ID | functional | safety | liveness | refinement | symbolic_security | computational_security | parsing | constant_time |
 |---|---|---|---|---|---|---|---|---|
-| REF-C01 | Y | P | - | Y | - | P | Y | Y |
-| REF-C02 | Y | Y | Y | Y | - | - | Y | - |
-| REF-C03 | Y | Y | - | Y | - | - | P | - |
-| REF-C04 | Y | Y | - | Y | - | P | - | P |
-| REF-C05 | P | Y | - | P | Y | - | - | - |
-| REF-C06 | P | Y | - | P | Y | Y | - | - |
-| REF-C07 | P | Y | - | - | - | - | P | - |
-| REF-C08 | P | Y | P | - | - | - | - | - |
-| REF-C09 | Y | Y | P | P | - | - | P | - |
-| REF-L01 | P | Y | - | P | - | - | - | - |
-| REF-L02 | Y | - | P | P | - | P | - | - |
-| REF-L03 | P | P | - | P | - | - | P | - |
-| REF-L04 | - | Y | P | - | P | - | - | - |
-| REF-L05 | - | P | Y | - | - | - | - | - |
-| REF-L06 | Y | Y | P | P | - | - | - | - |
-| REF-L07 | Y | P | P | Y | - | - | P | - |
-| REF-L08 | Y | P | - | Y | - | - | - | - |
-| REF-L10 | P | - | - | P | - | Y | P | - |
-| REF-L11 | P | Y | - | P | - | - | Y | - |
-| REF-L12 | Y | P | - | Y | - | - | - | - |
-| REF-L13 | P | - | - | - | - | - | P | - |
-| REF-L14 | Y | Y | P | P | - | - | Y | - |
+| REF-C01 | Y(legacy) | partial | - | Y(legacy) | - | partial | Y(legacy) | Y(legacy) |
+| REF-C02 | Y(legacy) | Y(legacy) | Y(legacy) | Y(legacy) | - | - | Y(legacy) | - |
+| REF-C03 | Y(legacy) | Y(legacy) | - | Y(legacy) | - | - | partial | - |
+| REF-C04 | Y(legacy) | Y(legacy) | - | Y(legacy) | - | partial | - | partial |
+| REF-C05 | partial | Y(legacy) | - | partial | Y(legacy) | - | - | - |
+| REF-C06 | partial | Y(legacy) | - | partial | Y(legacy) | Y(legacy) | - | - |
+| REF-C07 | partial | Y(legacy) | - | - | - | - | partial | - |
+| REF-C08 | partial | Y(legacy) | partial | - | - | - | - | - |
+| REF-C09 | Y(legacy) | Y(legacy) | partial | partial | - | - | partial | - |
+| REF-L01 | partial | Y(legacy) | - | partial | - | - | - | - |
+| REF-L02 | Y(legacy) | - | partial | partial | - | partial | - | - |
+| REF-L03 | partial | partial | - | partial | - | - | partial | - |
+| REF-L04 | - | Y(legacy) | partial | - | partial | - | - | - |
+| REF-L05 | - | partial | Y(legacy) | - | - | - | - | - |
+| REF-L06 | Y(legacy) | Y(legacy) | partial | partial | - | - | - | - |
+| REF-L07 | Y(legacy) | partial | partial | Y(legacy) | - | - | partial | - |
+| REF-L08 | Y(legacy) | partial | - | Y(legacy) | - | - | - | - |
+| REF-L10 | partial | - | - | partial | - | Y(legacy) | partial | - |
+| REF-L11 | partial | Y(legacy) | - | partial | - | - | Y(legacy) | - |
+| REF-L12 | Y(legacy) | partial | - | Y(legacy) | - | - | - | - |
+| REF-L13 | partial | - | - | - | - | - | partial | - |
+| REF-L14 | Y(legacy) | Y(legacy) | partial | partial | - | - | Y(legacy) | - |
 | REF-L15 | - | - | - | - | - | - | - | - |
-| REF-L16 | Y | Y | P | P | P | - | Y | - |
-| REF-L17 | P | P | - | - | - | - | - | - |
-| REF-L18 | - | Y | P | - | - | - | - | - |
-| REF-L19 | - | Y | Y | Y | P | P | - | - |
-| REF-L20 | - | Y | Y | - | - | - | - | - |
-| REF-L21 | P | Y | - | - | - | - | - | - |
+| REF-L16 | Y(legacy) | Y(legacy) | partial | partial | partial | - | Y(legacy) | - |
+| REF-L17 | partial | partial | - | - | - | - | - | - |
+| REF-L18 | - | Y(legacy) | partial | - | - | - | - | - |
+| REF-L19 | - | Y(legacy) | Y(legacy) | Y(legacy) | partial | partial | - | - |
+| REF-L20 | - | Y(legacy) | Y(legacy) | - | - | - | - | - |
+| REF-L21 | partial | Y(legacy) | - | - | - | - | - | - |
 
 ## Implementation-link patterns
 
-The generalisation view: which mechanism each reference uses to reach running code.
+The generalisation view: every mechanism each reference uses to reach running code. A reference with several mechanisms appears in several rows.
 
 | Mechanism | References |
 |---|---|
@@ -173,4 +173,6 @@ The generalisation view: which mechanism each reference uses to reach running co
 | H3 | REF-C01, REF-C02, REF-C03, REF-C04, REF-C05, REF-C06, REF-C07, REF-C08, REF-C09, REF-L01, REF-L02, REF-L03, REF-L04, REF-L05, REF-L06, REF-L07, REF-L08, REF-L10, REF-L11, REF-L12, REF-L13, REF-L14, REF-L15, REF-L16, REF-L17, REF-L18, REF-L19, REF-L20, REF-L21 |
 | H4 | REF-C01, REF-C02, REF-C03, REF-C04, REF-C05, REF-C06, REF-C07, REF-C08, REF-C09, REF-L01, REF-L02, REF-L03, REF-L04, REF-L05, REF-L06, REF-L07, REF-L08, REF-L10, REF-L11, REF-L12, REF-L14, REF-L15, REF-L16, REF-L17, REF-L18, REF-L19, REF-L20, REF-L21 |
 | H5 | REF-C01, REF-C02, REF-C03, REF-C04, REF-C05, REF-C06, REF-C07, REF-C08, REF-C09, REF-L01, REF-L03, REF-L04, REF-L06, REF-L07, REF-L08, REF-L10, REF-L11, REF-L12, REF-L13, REF-L14, REF-L16, REF-L17, REF-L19, REF-L21 |
+| H5a | none |
+| H5b | none |
 | D | REF-C01, REF-C02, REF-C03, REF-C04, REF-C05, REF-C06, REF-C07, REF-C08, REF-C09, REF-L01, REF-L02, REF-L03, REF-L04, REF-L05, REF-L06, REF-L07, REF-L08, REF-L10, REF-L11, REF-L12, REF-L13, REF-L14, REF-L15, REF-L16, REF-L17, REF-L18, REF-L19, REF-L20, REF-L21 |

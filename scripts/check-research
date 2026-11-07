@@ -34,7 +34,7 @@ if conv is None:
 else:
     if HYP not in conv:
         err("FR-001", "verbatim hypothesis missing from CONVENTIONS.md")
-    for sid in ("H1", "H2", "H3", "H4", "H5"):
+    for sid in ("H1", "H2", "H3", "H4", "H5", "H5a", "H5b"):
         if not re.search(rf"^\| {sid} \|", conv, re.M):
             err("FR-001", f"sub-claim {sid} not defined in CONVENTIONS.md table")
 
@@ -57,7 +57,12 @@ for f in topic_files:
         err("NFR-001", f"{f.name}: {len(hits)} excerpt-only marker(s) outside the Unverified leads section")
     if not re.search(r"^#+ .*Conflicts", t, re.M | re.I):
         err("FR-005", f"{f.name}: no Conflicts section")
-    info.append(f"{f.name}: FULL={len(re.findall(r'\[FULL\]', t))} CODE={len(re.findall(r'\[CODE\]', t))}")
+    info.append(f"{f.name}: FULL={len(re.findall(r'\[FULL\]', t))} SECT={len(re.findall(r'\[SECT\]', t))} CODE={len(re.findall(r'\[CODE\]', t))}")
+    m2 = LEAD_HDR.search(t)
+    body2 = t[: m2.start()] if m2 else t
+    bad = re.findall(r"\[(?:PART|EXT)\]", body2)
+    if bad:
+        err("NFR-001", f"{f.name}: {len(bad)} [PART]/[EXT] tags outside Unverified leads (use [SECT] with a verbatim quote, or move to leads)")
 
 # FR-003: reference dossiers complete, each with index JSON.
 SECTIONS = ["## 1. Identity", "## 2. Claim", "## 3. What is actually formalised", "## 4. Property classes",
@@ -65,6 +70,8 @@ SECTIONS = ["## 1. Identity", "## 2. Claim", "## 3. What is actually formalised"
             "## 9. Independent evidence", "## 10. Reproducibility", "## 11. Generalisation",
             "## 12. Bearing on sub-claims", "## 13. Conflicts", "## 14. Sources", "## 15. Unverified leads"]
 REQUIRED_KEYS = {"id", "name", "kind", "tool", "properties", "impl_link", "tcb", "built", "pattern", "subclaims", "full_read_sources"}
+NEW_KEYS = {"impl_links", "evidence_level", "ai_provenance"}
+PROP_VALUES = {"proved", "tested", "assumed", "partial", "no", "n/a"}
 refs = sorted((R / "references").glob("REF-*.md"))
 if len(refs) < 20:
     err("FR-003", f"expected at least 20 reference dossiers, found {len(refs)}")
@@ -88,9 +95,14 @@ for f in refs:
     if missing:
         err("FR-003", f"{j.name}: missing keys {sorted(missing)}")
     src = t.split("## 14. Sources", 1)[-1].split("## 15.", 1)[0]
-    admissible = len(re.findall(r"\[?(?:FULL|CODE)\]?", src))
+    admissible = len(re.findall(r"\[?(?:FULL|SECT|CODE)\]?", src))
     if admissible < 3:
         warn("NFR-001", f"{f.name}: only {admissible} [FULL]/[CODE] sources in section 14")
+    if NEW_KEYS - set(d):
+        err("FR-003", f"{j.name}: missing review-F-012/F-013 keys {sorted(NEW_KEYS - set(d))}")
+    badp = {k: v for k, v in (d.get("properties") or {}).items() if str(v).lower() not in PROP_VALUES}
+    if badp:
+        err("FR-003", f"{j.name}: property values not in {sorted(PROP_VALUES)}: {badp}")
     index[rid] = d
 
 # FR-004: catalogue generated and current.

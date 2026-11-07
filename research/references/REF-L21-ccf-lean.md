@@ -97,7 +97,7 @@ Mechanism: trace validation by replay in Lean (index category: trace-validation)
 - "These are safety proofs of the CCF-Raft Lean model, not proofs about generic Raft, C++ or liveness." [S6]
 - "Committed-TxID preservation requires explicit `DurableCommit` and `FullGossipSelection` premises. A quorum opening alone does not establish full-gossip selection." [S2]
 - "These are regression examples, not exhaustive checking." (canonical action traces) [S1 consensus README]
-- #8683: "If the model silently forbids a real CCF behaviour, every theorem still holds, just vacuously for that behaviour." Mutation testing found model changes "that passed every proof and witness" [S7].
+- #8683: "If the model silently forbids a real CCF behaviour, every theorem still holds, just vacuously for that behaviour." Mutation testing found model changes "that passed every proof and witness before this PR" [S7].
 
 ## 9. Independent evidence
 - None external found. All sources are CCF repository artefacts and PRs.
@@ -139,10 +139,10 @@ Preconditions:
 | S1 | microsoft/CCF repository at 6404230 (`lean/`, `.github/workflows/lean.yml`, `lean-package.yml`, `src/consensus/aft/`, `src/tracing/`) | https://github.com/microsoft/CCF/tree/6404230c2b1e0f1770f47ce95a4e3cb3a274c657 | P | CODE | Lean models, theorems, replay, CI, C++ trace emission. |
 | S2 | PR #8277 "Add the C++-aligned Lean disaster recovery model" | https://github.com/microsoft/CCF/pull/8277 | P | FULL | First Lean merge; review boundary, proof limits, axiom audit. |
 | S3 | PR #8663 "Remove TLA+ specifications and associated tooling" | https://github.com/microsoft/CCF/pull/8663 | P | FULL | Motivation and scope of TLA+ removal (75 files, -7,040 lines). |
-| S4 | CCF merged PR list and `lean/` commit history (GitHub API) | https://github.com/microsoft/CCF/commits/main/lean | P | ABSTRACT | Titles, dates, Copilot co-author trailers. |
+| S4 | CCF merged PR list and `lean/` commit history (GitHub API) | https://github.com/microsoft/CCF/commits/main/lean | P | FULL | Complete API listing of the 40 commits touching `lean/` (titles, dates, Co-authored-by trailers); metadata only. |
 | S5 | PR #8584 "Lean-only CCF Raft trace reduction and replay" | https://github.com/microsoft/CCF/pull/8584 | P | FULL | Replay design and "What replay establishes". |
 | S6 | PR #8583 "Prove CCF-Raft safety properties in Lean" | https://github.com/microsoft/CCF/pull/8583 | P | FULL | Four consensus theorems, witness design, scope disclaimer. |
-| S7 | PR #8683 "Lean consistency: witnesses for gaps found by mutation testing" | https://github.com/microsoft/CCF/pull/8683 | P | FULL (first ~3,500 chars) | Mutation testing exposes model gaps not caught by proofs. |
+| S7 | PR #8683 "Lean consistency: witnesses for gaps found by mutation testing" | https://github.com/microsoft/CCF/pull/8683 | P | FULL | Mutation testing (297 sites) exposed 8 model gaps that passed every proof and witness; survivors in `Transitions.lean` cut from 15 to 6; merged 2026-11-06. |
 
 ## 15. Unverified leads (excluded from evidence)
 - PR #8241 (superseded DR work exposing "accepted-unexpected-location behavior") not read.

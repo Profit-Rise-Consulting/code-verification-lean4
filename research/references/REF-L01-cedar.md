@@ -84,13 +84,64 @@ Verification.lean has sound/complete pairs for `verifyNeverErrors` (:46, :64), `
 
 Other proved properties listed in the README [C1]: sound policy slicing (`Cedar/Thm/Slicing.lean`), sound level-based entity slicing (`Cedar/Thm/Validation/Levels.lean`).
 
+### 3a. Predicate semantics: what the quoted theorems do and do not guarantee
+The meaning of each theorem depends on the predicates it uses. All definitions below are verbatim from commit `a4c5a89`, paths relative to `cedar-lean/` [C1].
+
+`EvaluatesTo` (`Cedar/Thm/Validation/Typechecker/Basic.lean:61`):
+```lean
+def EvaluatesTo (e: Expr) (request : Request) (entities : Entities) (v : Value) : Prop :=
+  evaluate e request entities = .error .entityDoesNotExist ∨
+  evaluate e request entities = .error .extensionError ∨
+  evaluate e request entities = .error .arithBoundsError ∨
+  evaluate e request entities = .ok v
+```
+The docstring just above it (lines 39-60) says: "The `EvaluatesTo` predicate covers the (obvious) case where evaluation has no errors, but it also allows for errors of type `entityDoesNotExist`, `extensionError`, and `arithBoundsError`. The typechecker cannot protect against these errors because they depend on runtime information ... All other errors (`attrDoesNotExist` and `typeError`) can be prevented statically." The validator theorem uses the same predicate through `EvaluatesToBool` (`Cedar/Thm/Validation/Validator.lean:38`, `∃ (b : Bool), EvaluatesTo expr request entities b`). `validation_is_sound` (`Cedar/Thm/Validation.lean:55`) concludes `AllEvaluateToBool policies request entities`.
+
+- Guarantees of `typecheck_is_sound` / `validation_is_sound`: if typechecking succeeds and the request and entities are instances of a well-formed environment, then evaluating the policy either yields a Boolean or fails with one of exactly three runtime errors (missing entity, extension error, arithmetic overflow). It can never fail with `attrDoesNotExist` or `typeError`, and it never returns a non-Boolean value.
+- Not guaranteed: that the policy evaluates without error. A validated policy may still raise any of the three allowed errors at runtime. `typecheck_is_sound` as quoted also says nothing about which Boolean comes out, only that the result is Boolean-or-allowed-error.
+- `InstanceOfWellFormedEnvironment` (`Cedar/Thm/Validation/Typechecker/Types.lean:146`) is `env.WellFormed ∧ InstanceOfRequestType request env ∧ InstanceOfSchema entities env`, so the theorem says nothing about requests or entity stores that fail schema validation.
+
+`satisfied` and the authorizer (`Cedar/Spec/Authorizer.lean:29-30, 56-62`):
+```lean
+public def satisfied (policy : Policy) (req : Request) (entities : Entities) : Bool :=
+  (evaluate policy.toExpr req entities) = .ok true
+...
+public def isAuthorized (req : Request) (entities : Entities) (policies : Policies) : Response :=
+  let forbids := satisfiedPolicies .forbid policies req entities
+  let permits := satisfiedPolicies .permit policies req entities
+  let erroringPolicies := errorPolicies policies req entities
+  if forbids.isEmpty && !permits.isEmpty
+  then { decision := .allow, determiningPolicies := permits, erroringPolicies }
+  else { decision := .deny,  determiningPolicies := forbids, erroringPolicies }
+```
+`HasSatisfiedEffect` (`Cedar/Thm/Authorization.lean:37`) is `∃ policy, policy ∈ policies ∧ policy.effect = effect ∧ satisfied policy request entities`; `IsExplicitlyForbidden := HasSatisfiedEffect .forbid` (:50) and `IsExplicitlyPermitted := HasSatisfiedEffect .permit` (:60).
+
+- Guarantee of `forbid_trumps_permit`: if some forbid policy evaluates to `.ok true`, the decision is deny.
+- Not guaranteed: a forbid policy that evaluates to an error is not "satisfied". It is recorded in `erroringPolicies` but does not count as a forbid. If a forbid policy errors at runtime (for example with one of the three errors `EvaluatesTo` allows) while some permit policy evaluates to `true`, the decision is allow. The theorem does not say "any applicable forbid policy blocks the request"; it covers only forbid policies that evaluate to `true` without error.
+- Guarantee of `allowed_only_if_explicitly_permitted`: an allow decision implies that at least one permit policy evaluated to `.ok true`. It does not say that no policy errored, and it does not say that the forbids were checked successfully (erroring forbids are skipped as above).
+- `≡` in `order_and_dup_independent` is `a ⊆ b ∧ b ⊆ a` (`Cedar/Thm/Data/List/Basic.lean:40`). The conclusion is equality of the whole `Response`, including `determiningPolicies` and `erroringPolicies`.
+
+SymCC/SymCert relations (`Cedar/Thm/SymCC/Data/Basic.lean`):
+```lean
+public def SameOutcomes (res : Result Value) (out : Outcome Value) : Prop :=
+  match res, out with
+  | .ok v₁,   .ok v₂    => v₁ = v₂
+  | .error e, .error () => e ≠ .entityDoesNotExist
+  | _, _                => False
+```
+(line 222; installed as `∼` for `Result Value`/`Outcome Value` at line 241). `∈ₒ` (`memOfTermOutcome`, :782-785) and `∈ᵢ` (`memOfSymEnv`, :787-790) both mean "there exists a well-formed interpretation `I` such that ... `∼` ... `interpret I`". `⊭` is `Asserts.Unsatisfiable` (:766-770), i.e. `¬ ∃ I, I.WellFormed env.entities ∧ asserts.satisfiedBy I`.
+
+- `compile_is_sound`: the symbolic outcome matches concrete evaluation exactly on values, but all errors collapse to a single symbolic `.error ()`. The error kind is not preserved, and a concrete `entityDoesNotExist` error is excluded by the relation, so the theorem relies on the well-formedness premises to rule that error out.
+- `verifyEquivalent_is_sound`: its premise `εnv ⊭ asserts` is the mathematical statement that no well-formed interpretation satisfies the assertions. It is not the statement "CVC5 answered unsat". The bridge to a solver answer is the trusted `solve` function [S3]. The conclusion `bothAllowOrBothDeny` (`Cedar/Thm/SymCC/Verifier/VerifyIsAuthorizedQueries.lean:27`) is `r₁.decision = r₂.decision`: equal decisions only, with no claim about equal `determiningPolicies` or `erroringPolicies`.
+- The conclusion holds only for environments satisfying `env.StronglyWellFormedForPolicies` (`Cedar/Thm/SymCC/Data/Hierarchy.lean:123`). This requires `Entities.StronglyWellFormed := es.WellFormed ∧ es.Hierarchical` (:105), where `Hierarchical` is `Acyclic ∧ Transitive` (:92-103). Entity stores with cyclic or non-transitively-closed ancestor sets are outside the guarantee; SymCert states this explicitly ("without it, nearly all interesting properties can be violated by ill-formed environments") [S3].
+
 SymCert decomposition [S3]: compiler correctness split into "reducibility (the compiler partially evaluates literal inputs) and a property we call interpretability (compilation commutes with SMT evaluation)", plus a hierarchy enforcer (acyclicity/transitivity constraints) and a counterexample extractor that converts infinite SMT models into finite Cedar inputs.
 
 ## 4. Property classes covered
 | Class | Status | Evidence |
 |---|---|---|
 | Functional correctness | partial | The model is the definition; theorems are properties of it (forbid-trumps-permit, order independence) plus correctness of derived algorithms against the model: typechecker soundness, slicing soundness, SymCC soundness and completeness w.r.t. `evaluate` [C1]. The Rust implementation's functional correctness is not proved; it is tested by DRT [S1]. |
-| Safety invariant | yes (security properties of the decision function) | `forbid_trumps_permit`, `allowed_only_if_explicitly_permitted` [C1] |
+| Safety invariant | yes (security properties of the decision function) | `forbid_trumps_permit`, `allowed_only_if_explicitly_permitted` [C1]. Scope: these cover only policies that evaluate to `.ok true`; erroring policies are skipped by the authorizer (section 3a). |
 | Liveness | no | Not applicable; only termination of all model functions, enforced by Lean's totality checking; termination proofs found a validator non-termination bug [S1]. |
 | Refinement | partial | Proofs that one Lean algorithm agrees with another Lean definition (slicing = full authorization, SymCC semantics = concrete semantics) [C1]. Lean-to-Rust refinement is tested, not proved [S1]. |
 | Symbolic security | no | No adversary model. |
@@ -171,7 +222,7 @@ Case-specific preconditions: Cedar is a small, deterministic, terminating, side-
 | Sub-claim | Fact from this reference | Source ID |
 |---|---|---|
 | H1 | Lean expresses a full industrial authorization-language semantics, typechecker and SMT encoding; no state machine, concurrency, message passing or adversary is modelled. | C1, S1 |
-| H2 | ~97k lines of Lean proofs, 2,569 theorems, 0 sorry/axiom; SymCC sound and complete; proof effort reported in person-hours (505 h SymCert proofs). Properties are about a pure function, not a protocol. | C1, S3 |
+| H2 | ~97k lines of Lean proofs, 2,569 theorems, 0 sorry/axiom; SymCC sound and complete; proof effort reported in person-hours (505 h SymCert proofs). Properties are about a pure function, not a protocol. Their strength depends on the predicates (section 3a): type soundness via `EvaluatesTo` allows three runtime errors; forbid-trumps-permit applies only to forbid policies that evaluate to `true`; SymCC treats all errors as one; analysis results assume acyclic, transitive hierarchies and compare decisions only. | C1, S3 |
 | H3 | Lean model linked to Rust production code by DRT/PBT only; authors describe agreement as "a piece of evidence"; DRT missed a non-termination bug. Release gated on model/proofs/DRT up to date. | S1, S4 |
 | H4 | Mechanism depends on an executable model plus a serialisation interface plus random generators; build "only been tested on Amazon Linux 2". Language-agnostic in principle (any implementation callable from the fuzz harness). | C1, S1 |
 | H5 | The implementation is checked against the Lean spec by testing, independently of the protocol-level proofs: DRT works on the executable model regardless of which theorems exist; PBT tests properties "we have yet to prove". | S1 |

@@ -6,7 +6,9 @@ Purpose: run a strong, reproducible multi-model debate on the owner's hypothesis
 
 > "LEAN4 cannot verify protocols AND therefore unable to check code implementation of these protocols." (owner, R1, verbatim; see [original-requests.md](../handoff/original-requests.md))
 
-The council rules on each sub-claim first and then on the compound motion. A compound "true" requires both conjuncts and the inference (H5) to stand.
+The council rules on each sub-claim first and then on the compound motion. A compound "true" requires both conjuncts and the relevant inference (H5a and/or H5b) to stand. H5a and H5b are debated separately (review F-009). Do not substitute the easier implication for the owner's sentence.
+
+Every ruling must state its scope axes (review F-008): quantifier (some / typical / every), protocol class, property class, semantics (model / source / binary), implementation layer, assumptions, and resource envelope. A narrow existential success does not refute a universal-impracticality reading, and a universal "any codebase" failure does not refute bounded practical use. The council should expose this asymmetry rather than count citations.
 
 ## Definitions
 
@@ -26,12 +28,13 @@ The verdict must state which readings it used. Different readings legitimately p
 
 | ID | Sub-claim (from [CONVENTIONS.md](../../research/CONVENTIONS.md)) | Primary evidence sources |
 |---|---|---|
-| D | What "verify" and "check" mean | research/04, research/05, all dossiers §5 |
+| D | What "verify" and "check" mean; adopt a two-axis taxonomy (property established × implementation linkage) | research/04, research/05, all dossiers §5 |
 | H1 | Expressiveness | research/01, research/06, REF-L04..L06, REF-L18..L20 |
 | H2 | Provability at scale | research/01, research/02, research/06, REF-L01..L12, comparators REF-C01..C06 |
 | H3 | Implementation link | research/03, research/05, REF-L01..L03, REF-L07, REF-L08, REF-L13, REF-L14, REF-C01..C04, REF-C07..C09 |
 | H4 | Generality across codebases | research/03, research/07, catalogue "Implementation-link patterns" |
-| H5 | The "therefore" inference | research/05, REF-L01 (differential testing), REF-C07..C09 (conformance without proofs) |
+| H5a | H1 → H3: inexpressibility blocks any Lean-based implementation check | research/01, research/06, REF-L04..L06, REF-L19; note that methods presupposing a Lean spec cannot rebut this antecedent |
+| H5b | H2 → H3: unprovability blocks implementation checks | research/05, REF-L01 (differential testing), REF-L21 (trace replay), REF-C07..C09 (conformance without proofs) |
 
 ## Roles and model families
 
@@ -49,9 +52,9 @@ Example assignment (illustrative, not binding): A = GPT, B = Gemini, C = Grok, D
 
 ## Rules of evidence
 
-1. Only cite [FULL] or [CODE] entries from research/01-08 and research/references/, by ID (for example "REF-L04 §3", "research/06 A9"). Unverified leads are inadmissible.
+1. Only cite [FULL], [SECT] (for the quoted claim only) or [CODE] entries from research/01-08 and research/references/, by ID (for example "REF-L04 §3", "research/06 A9"). Unverified leads are inadmissible.
 2. Quote theorem statements and author scope statements verbatim. Do not paraphrase them into stronger claims.
-3. Every "X proves Y" claim must state X's trusted base from the dossier's §6. Claims about AI-generated or unreviewed repos must carry that caveat.
+3. Every "X proves Y" claim must state X's trusted base from the dossier's §6 and the predicate meaning from §3a. Distinguish proved, tested and assumed (catalogue legend). State the result evidence level (author-reported, static-inspected, rebuilt, deployed); static sorry/axiom counts are lexical, not proof-closure audits. AI provenance must use the CONVENTIONS categories, and agent configuration alone never discounts a result.
 4. Conflicts listed in [research/CONFLICTS.md](../../research/CONFLICTS.md) must be argued, not ignored. A side relying on one half of a conflict must address the other.
 5. New evidence may be introduced only if it is fetched in full during the debate and appended to the ledger with URL and access date. The clerk may refuse it.
 6. Absence of evidence is not proof of absence. Arguments of the form "not found" must say what was searched (see each file's gaps).
@@ -62,7 +65,7 @@ Example assignment (illustrative, not binding): A = GPT, B = Gemini, C = Grok, D
 2. **Round 1, Openings.** For each of H1 to H5: proposition opens, then opposition (maximum 800 words each, citation-dense).
 3. **Round 2, Rebuttals.** Each side rebuts the other's strongest point, citing evidence (maximum 500 words).
 4. **Round 3, Red team.** The red team publishes overclaims found on both sides; each side gets one 300-word reply.
-5. **Round 4, Judgement.** Each judge independently scores every sub-claim with the rubric, then rules TRUE / FALSE / PARTLY TRUE / UNDETERMINED, with a confidence of 0-100 and a one-paragraph reason.
+5. **Round 4, Judgement.** Each judge independently scores every sub-claim with the rubric, then rules TRUE / FALSE / PARTLY TRUE / UNDETERMINED, with a confidence of 0-100, the scope axes used, and a one-paragraph reason. For H2, each judge states the cost or scale threshold applied, using [research/CASE-COMPARISON.md](../../research/CASE-COMPARISON.md), and says when the corpus cannot evaluate it (review F-011).
 6. **Round 5, Compound motion.** Judges rule on the full motion under the adopted definitions, plus at least one alternative definition set.
 7. **Synthesis.** The clerk writes `phase2-council-report.md` using the template below. Majority rules; minority opinions are published in full.
 
@@ -92,6 +95,7 @@ Prepared inputs. Give every debater all of them, not a filtered subset.
 | P4 Conflicts | [research/CONFLICTS.md](../../research/CONFLICTS.md) |
 | P5 Independent review | [research/REVIEW-phase1.md](../../research/REVIEW-phase1.md): known weaknesses of the corpus itself |
 | P6 Benchmark corpus | research/07 protocol table (for Phase 3 pilot implications) |
+| P7 Case comparison | [research/CASE-COMPARISON.md](../../research/CASE-COMPARISON.md): effort, scale, trust and evidence level per principal result, unknowns marked (review F-011) |
 
 ## Output template
 
@@ -99,7 +103,7 @@ Prepared inputs. Give every debater all of them, not a filtered subset.
 
 1. Council roster: role, model ID and family.
 2. Adopted definitions (Round 0), with dissent.
-3. Per sub-claim (D, H1-H5): ruling, mean confidence, the three judges' individual rulings, the key evidence cited by each side, and minority opinion.
+3. Per sub-claim (D, H1-H4, H5a, H5b), with scope axes: ruling, mean confidence, the three judges' individual rulings, the key evidence cited by each side, and minority opinion.
 4. Compound-motion ruling under the adopted definitions and under at least one alternative set.
 5. Red-team findings, and which ones changed a ruling.
 6. Evidence gaps that limited any ruling, as candidate Phase 3 research.
