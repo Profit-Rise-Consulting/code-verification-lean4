@@ -1,0 +1,51 @@
+{
+ "id": "REF-L22",
+ "name": "Perennial / Goose (Lean branch)",
+ "subject": "Verification of concurrent, crash-prone and distributed Go code: goose translates Go to GooseLang (Lean deep embedding), proofs in iris-lean; Go stdlib parts, tchajed/marshal, crashfs/netfs crash-safety examples",
+ "kind": "lean",
+ "tool": "Lean 4 v4.34.1 + iris-lean 6d6544a; goose translator (Go)",
+ "org": "MIT PDOS",
+ "repo": "https://github.com/mit-pdos/perennial",
+ "commit": "84d5380639a38f56cd517f1e81246fad7be5b21b",
+ "toolchain": "leanprover/lean4:v4.34.1",
+ "maturity": "research",
+ "ai_provenance": "agent-config-present",
+ "properties": {
+  "functional": "proved",
+  "safety": "proved",
+  "liveness": "no",
+  "refinement": "no",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "partial",
+  "constant_time": "no"
+ },
+ "impl_link": "extraction",
+ "impl_links": [
+  "extraction"
+ ],
+ "impl_language": "Go",
+ "evidence_level": "static-inspected",
+ "tcb": {
+  "sorry": 162,
+  "axiom": 3726,
+  "native_decide": 0,
+  "unverified_translator": "goose Go->GooseLang translator (Go, 10,476 non-test lines) and proofgen trusted; direction is Go source -> Lean (not extraction from Lean); GooseLang/Go semantics incl. crash relation; go.Semantics/PreSemantics/ArraySemantics typeclass hypotheses with no instance found; per-package FuncUnfold Assumptions; TrustedCode models (3,425 lines); toy fs/net extensions; KNOWN_LIMITATIONS lists unsound model-vs-Go cases. Counts lexical: 162 'sorry -- axiomatized type' lines; 3726 axiom declaration lines (~3454 ': val' for untranslated code, 3 Prop spec axioms)"
+ },
+ "loc": {
+  "spec": 18494,
+  "proof": 62393,
+  "impl": 115096
+ },
+ "built": "no",
+ "pattern": "Trusted source-to-Lean translation of Go into a deeply embedded language, per-function Iris separation-logic specs, and (distributed) crash adequacy theorems yielding end-to-end no-stuck/no-panic results under semantic typeclass assumptions",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 3
+}

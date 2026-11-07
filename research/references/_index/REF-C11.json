@@ -1,0 +1,46 @@
+{
+ "id": "REF-C11",
+ "name": "Verified-compilation boundary (CompCert, CakeML; Lean compiler trust)",
+ "subject": "What compiler-correctness theorems transfer to binaries; remaining assembler, linker, runtime and hardware assumptions; contrast with Lean 4's unverified compiler",
+ "kind": "comparator",
+ "tool": "Rocq/Coq (CompCert, extracted to OCaml); HOL4 (CakeML, bootstrapped in-logic)",
+ "org": "Inria / AbsInt (CompCert); CakeML team (Chalmers, CSIRO Data61, CMU, Cambridge, Kent, ANU)",
+ "repo": "https://github.com/AbsInt/CompCert ; https://github.com/CakeML/cakeml",
+ "commit": "CompCert 2685140bf72c959446981fb99b5e44a8975021bc; cakeml 79f649eae40e37b71f1dd9d8dcaebfa5b8475cb8",
+ "toolchain": "Rocq/Coq (CompCert); HOL4 (CakeML)",
+ "maturity": "production",
+ "properties": {
+  "functional": "proved",
+  "safety": "proved",
+  "liveness": "n/a",
+  "refinement": "proved",
+  "symbolic_security": "n/a",
+  "computational_security": "n/a",
+  "parsing": "partial",
+  "constant_time": "no"
+ },
+ "impl_link": "extraction",
+ "impl_links": ["extraction", "binary-semantics"],
+ "impl_language": "OCaml (CompCert, extracted) emitting textual assembly; CakeML machine code (in-logic bootstrap) inside an unverified assembly wrapper",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 0,
+  "native_decide": 0,
+  "admit": 0,
+  "unverified_translator": "CompCert: Coq extraction, OCaml compiler, pseudo-instruction expansion and TargetPrinter, external assembler and linker, malloc/free model, runtime helpers (axiomatized); CakeML: per-target assembly wrapper, linking/loading, ISA model, FFI and OS-interference oracles",
+  "note": "Counts not taken (statement-level dossier; not built). Lean 4 contrast: no compiler-correctness theorem; native evaluation adds per-computation axioms; implemented_by/extern equivalence trusted."
+ },
+ "loc": {
+  "spec": null,
+  "proof": null,
+  "impl": null,
+  "note": "Not collected for this boundary dossier"
+ },
+ "built": "no",
+ "pattern": "verified compiler: semantic preservation between formal source semantics and target model; last mile (assembly/link/load/hardware) trusted",
+ "subclaims": ["H3", "H5", "D"],
+ "full_read_sources": 3,
+ "evidence_level": "static-inspected",
+ "ai_provenance": "commit-trailers",
+ "ai_provenance_basis": "GitHub API, last 100 commits: CakeML/cakeml 83/100 with 'Assisted-by: Codex' or 'Bot: sol (OpenAI GPT-6.1 Sol)' lines (2026-10-27..2026-11-06); AbsInt/CompCert 0/100. Cited theorems predate these commits."
+}
