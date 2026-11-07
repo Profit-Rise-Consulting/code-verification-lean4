@@ -209,19 +209,20 @@ The late dossiers materially improve the range of debate evidence. REF-L16 expos
 
 | Finding | Disposition | Action | Status |
 |---|---|---|---|
-| F-001 (blocker) | Accepted | C08/C09 sources re-read in full by d9. research/07 [EXT] removed and [PART] converted to [SECT] or leads (r07). L08 B4/B5 re-read in full with authors and dates corrected (d3). The checker now fails on [PART]/[EXT] outside leads. | see status column in handoff.md |
-| F-002 (major) | Accepted | CONVENTIONS now defines [FULL], [SECT] (claim-scoped) and [CODE]. ADR-0003 is amended by reference. All topic agents re-tag (Phase 1c). The council kit rule 1 is updated. | in progress |
-| F-003 (major) | Accepted | A "3a. Predicate semantics" section is required in every dossier. L01-L03 are done (d1), and L10 SecurityTarget expansion is assigned (d4). The council kit rule 3 requires §3a. | in progress |
-| F-004 (major) | Accepted | research/06 V03 restated as a lexical count with its method and limits (r06). research/01 count tables are assigned (r01). | in progress |
-| F-005 (minor) | Accepted | A03 corrected to 63.0% (247/392) and 61.3% (247/403). | done |
-| F-006 (major) | Accepted | Four AI-provenance categories in CONVENTIONS, plus an `ai_provenance` field in SCHEMA v2. All agents relabel. | in progress |
-| F-007 (major) | Accepted | L07 semantics anchored to the pinned Aeneas d71d2e3f, and checker-bug impact stated or marked unknown (d3). | in progress |
-| F-008 (major) | Accepted | Scope axes added to CONVENTIONS. The council kit requires scope axes on every ruling and exposes the existential/universal asymmetry. | done |
-| F-009 (major) | Accepted | H5 split into H5a (H1→H3) and H5b (H2→H3) in CONVENTIONS, the council kit and the checker. | done |
-| F-010 (major) | Accepted | New dossiers REF-L22 Perennial/Goose (d2), REF-L23 Telltale (d5), REF-C10 Aneris/Trillium/Grove/Fairneris (d6), and lower-priority REF-C11 verified-compilation boundary (d7). | in progress |
-| F-011 (major) | Accepted | research/CASE-COMPARISON.md with unknowns marked and no ranking (d8). Judges must state the H2 cost threshold. | in progress |
-| F-012 (minor) | Accepted | `evidence_level` (author-reported / static-inspected / rebuilt / deployed) in SCHEMA v2 and the catalogue. The council kit rule 3 requires it. Rebuilding is deferred to a Phase 3 CI job. | in progress |
-| F-013 (major) | Accepted | Property values are now proved / tested / assumed / partial / no / n/a with a legend. `impl_links` lists all mechanisms. The checker rejects legacy values. C05, C07, C08, L16 and L21 are specifically assigned. | in progress |
+| F-001 (blocker) | Accepted | C08/C09 sources re-read in full by d9. research/07 [EXT] removed and [PART] converted to [SECT] or leads (r07). L08 B4/B5 re-read in full with authors and dates corrected (d3). The checker now fails on [PART]/[EXT] outside leads. | verified closed (pass 3) |
+| F-002 (major) | Accepted | CONVENTIONS now defines [FULL], [SECT] (claim-scoped) and [CODE]. ADR-0003 is amended by reference. All topic agents re-tag (Phase 1c). The council kit rule 1 is updated. | verified closed (pass 3) |
+| F-003 (major) | Accepted | A "3a. Predicate semantics" section is required in every dossier. L01-L03 are done (d1), and L10 SecurityTarget expansion is assigned (d4). The council kit rule 3 requires §3a. | verified closed (pass 3) |
+| F-004 (major) | Accepted | research/06 V03 restated as a lexical count with its method and limits (r06). research/01 count tables are assigned (r01). | verified closed (pass 3) |
+| F-005 (minor) | Accepted | A03 corrected to 63.0% (247/392) and 61.3% (247/403). | verified closed (pass 3) |
+| F-006 (major) | Accepted | Four AI-provenance categories in CONVENTIONS, plus an `ai_provenance` field in SCHEMA v2. All agents relabel. | verified closed (pass 3) |
+| F-007 (major) | Accepted | L07 semantics anchored to the pinned Aeneas d71d2e3f, and checker-bug impact stated or marked unknown (d3). | verified closed (pass 3) |
+| F-008 (major) | Accepted | Scope axes added to CONVENTIONS. The council kit requires scope axes on every ruling and exposes the existential/universal asymmetry. | verified closed (pass 3) |
+| F-009 (major) | Accepted | H5 split into H5a (H1→H3) and H5b (H2→H3) in CONVENTIONS, the council kit and the checker. | verified closed (pass 3) |
+| F-010 (major) | Accepted | New dossiers REF-L22 Perennial/Goose (d2), REF-L23 Telltale (d5), REF-C10 Aneris/Trillium/Grove/Fairneris (d6), and lower-priority REF-C11 verified-compilation boundary (d7). | verified closed (pass 3) |
+| F-011 (major) | Accepted | research/CASE-COMPARISON.md with unknowns marked and no ranking (d8). Judges must state the H2 cost threshold. | verified closed (pass 3) |
+| F-012 (minor) | Accepted | `evidence_level` (author-reported / static-inspected / rebuilt / deployed) in SCHEMA v2 and the catalogue. The council kit rule 3 requires it. Rebuilding is deferred to a Phase 3 CI job. | verified closed (pass 3) |
+| F-013 (major) | Accepted | Property values are now proved / tested / assumed / partial / no / n/a with a legend. `impl_links` lists all mechanisms. The checker rejects legacy values. C05, C07, C08, L16 and L21 are specifically assigned. | verified closed (pass 3) |
+| F-014 (major) | Accepted | Lean-SMT 247 vs 348 kept as a source conflict (research/06 A03 and C11, CF-128). Table I transcription corrected. Issue #20 tracks the external resolution. | verified closed (pass 3) |
 
 ## Disposition verification (pass 2)
 
@@ -266,3 +267,15 @@ Snapshot: **11 verified closed, 2 partially closed, 0 open among F-001–F-013**
 An earlier pass-2 checker run detected the concurrently missing C10 index. After that index landed, a fresh `scripts/check-research --output json` run returned zero errors and zero warnings. The remaining case-table staleness and source transcription error demonstrate why structural success does not establish semantic consistency.
 
 Only this review file was edited during pass 2. No git command, Lean build or proof execution was run.
+
+## Disposition verification (pass 3)
+
+Rechecked the three remaining partial findings against the repaired files, with at least two locations per finding. All three are verified closed, bringing the final review count to **14 closed, 0 partial, 0 open findings**. This closes the review actions, not the underlying research disagreements or the hypothesis.
+
+| Finding | Verified closed / partially closed / open | Evidence (file:section) | Residual risk |
+|---|---|---|---|
+| F-006 | Verified closed | research/01 S5 now states that no assistance statement was found; S22 distinguishes unknown authorship from workflow tooling; S26 calls automated updates tooling only. The requested inference-phrase searches return no matches, while per-entry provenance still distinguishes agent configuration from author reports. | Presence of agent tools does not establish authorship or weaken a theorem. The revised wording preserves that distinction. |
+| F-012 | Verified closed | REF-C10.json gives `evidence_level: static-inspected` and `ai_provenance: none-found`. CASE-COMPARISON's header no longer contains the pending-index qualification; its Aneris/Trillium, Grove, Fairis and Fairneris rows now carry the matching values rather than absent-index placeholders. | Reference-wide static inspection does not mean independent rebuilding, and Fairneris's theorem remains author-reported within that inspected reference. The row's Status column explicitly retains this limitation. |
+| F-014 | Verified closed | research/06 A03 now correctly transcribes all five Table I configuration rows, matching the independently inspected PDF from pass 2. Its local C11 and CONFLICTS CF-128 preserve both introduction 247 and evaluation 348 counts without choosing between them. | The paper-internal numerical disagreement remains unresolved. It is now accurately available for debate; CF-128 remaining open is consistent with this review action being closed. |
+
+The final `scripts/check-research --output json` run returned zero errors and zero warnings. No new finding was identified in this targeted final pass, and no verdict on the owner's hypothesis is implied. Only this review file was edited; no git command or Lean build was run.
