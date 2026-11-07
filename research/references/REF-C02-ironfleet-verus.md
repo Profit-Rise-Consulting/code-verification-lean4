@@ -104,7 +104,7 @@ Author-stated TCB: "the spec for each system is trusted, as is the brief main-ev
 - Anvil: functional tests (Acto) "found a bug in the ZooKeeper controller ... caused by an incomplete specification of a trusted ZooKeeper API"; crash tests (Sieve) found none; "The verification process exposed deep bugs in both our early implementations and unverified reference controllers" [C02-S4].
 - Verus IronKV port confirmed fidelity by benchmarking against IronFleet's harness: "The Verus version performs comparably to the IronFleet original" [C02-S2].
 - Verus paper reports external use: "other research groups have already used Verus to produce verified cluster-management controllers, a verified microkernel, a security module for confidential VMs, and to verify LLM-produced code" [C02-S2]. Verus persistent log "integrated into a production codebase" [C02-S2].
-- No independent audit of IronFleet read.
+- Independent study (Fonseca et al., EuroSys 2017, University of Washington) of IronFleet, Verdi and Chapar: "we found a total of 16 bugs"; for IronFleet, Bug I1 "Incomplete high-level specification prevents verification of exactly-once semantics" (a 7-line patch disabling deduplication "still verified"), Bug I2 "Prover crash causes incorrect validation" (NuBuild caused the verifier "to falsely report that any program passed verification checks, including programs that asserted false"), Bugs I3-I4 in verification tooling; "we found no shim layer bugs in IronFleet, which is the system studied with fewest unverified components"; "No protocol bugs were found in the verified systems" [C02-S7]. The current IronRSL spec header states "the specification does not require exactly-once semantics" [C02-S5].
 
 ## 10. Reproducibility
 Not built: sandbox disk limit (instruction from /root: no Dafny/.NET/Verus/Rust toolchain installs). Commands that would be used: IronFleet `scons --dafny-path=<dafny>` (per `ironfleet/README.md`); verified-ironkv `scons --verus-path=<path_to_verus>` (per README). Static inspection only; clones deleted after extraction.
@@ -120,6 +120,7 @@ Pattern: three-layer refinement (trusted centralized spec, protocol state machin
 | H3 | Link is "verifier language is the implementation" (Dafny→C#, Verus→Rust via rustc); I/O, main loop, specs trusted. | C02-S1, C02-S2 |
 | H4 | Requires writing code in Dafny or Verus-annotated Rust; authors note developers "would prefer ... C++". | C02-S1 |
 | H5 | Verus IronKV port verifies the host implementation against the protocol-level host description without re-doing the protocol-level proof. | C02-S2, C02-S3 |
+| H5 (cont.) | Independent study found IronFleet bugs only in high-level spec and verification tooling, none in verified protocol code. | C02-S7 |
 | D | "verify" = machine-checked refinement and temporal properties under stated assumptions; Anvil adds testing (Acto, Sieve) as a separate check. | C02-S1, C02-S4 |
 
 ## 13. Conflicts
@@ -134,6 +135,7 @@ Pattern: three-layer refinement (trusted centralized spec, protocol state machin
 | C02-S3 | verus-lang/verified-ironkv @ 7e35ed0 | https://github.com/verus-lang/verified-ironkv | P | CODE | Verus port of IronSHT host; no assume/admit; 25 external_body in trusted files; protocol layer not replicated. |
 | C02-S4 | Anvil: Verifying Liveness of Cluster Management Controllers (OSDI 2024) | https://www.usenix.org/system/files/osdi24-sun-xudong.pdf | P | FULL | Verus-based framework with TLA embedding; ESR liveness of three Kubernetes controllers; trusted models; bug found in trusted API spec. |
 | C02-S5 | microsoft/Ironclad (ironfleet) @ 2fe4dcd | https://github.com/microsoft/Ironclad/tree/main/ironfleet | P | CODE | Dafny sources; top-level RefinementProof lemma; 1 live assume, 64 axioms in trusted native/IO specs. |
+| C02-S7 | An Empirical Study on the Correctness of Formally Verified Distributed Systems (Fonseca, Zhang, Wang, Krishnamurthy; EuroSys 2017) | https://www.cs.purdue.edu/homes/pfonseca/papers/eurosys2017-dsbugs.pdf | P | FULL | Independent bug study of IronFleet, Verdi, Chapar: 16 bugs in specs, tooling and shim layers; none in verified protocol code. |
 | C02-S6 | verus-lang/verus @ dc1b61c | https://github.com/verus-lang/verus | P | CODE | Verifier source; Rust toolchain and Z3 pins recorded. |
 
 ## 15. Unverified leads (excluded from evidence)

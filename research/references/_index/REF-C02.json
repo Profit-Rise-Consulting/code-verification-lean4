@@ -1,1 +1,51 @@
-{"id":"REF-C02","name":"IronFleet (Dafny) plus Verus distributed-systems work (IronKV port, Anvil)","subject":"MultiPaxos replicated state machine (IronRSL), sharded key-value store (IronKV), Kubernetes controllers (Anvil)","kind":"comparator","tool":"Dafny v3.4.0 (IronFleet); Verus vstd 0.0.0-2026-11-01-0251 with Rust 1.99.1 toolchain and Z3 4.16.0","org":"Microsoft Research; Verus: MPI-SWS, CMU, MSR, ETH, VMware Research and others; Anvil: UIUC, UW-Madison, VMware Research, Feldera","repo":"https://github.com/microsoft/Ironclad ; https://github.com/verus-lang/verified-ironkv ; https://github.com/verus-lang/verus","commit":"Ironclad 2fe4dcdc323b92e93f759cc3e373521366b7f691; verified-ironkv 7e35ed097c4089b9fbda483ea2629a0033f4d874; verus dc1b61c7affc1f947ce0724134bec33656ae0da0","toolchain":"Dafny v3.4.0 + .NET 6; Verus + Z3 4.16.0","maturity":"research","properties":{"functional":"yes","safety":"yes","liveness":"yes","refinement":"yes","symbolic_security":"no","computational_security":"no","parsing":"yes","constant_time":"no"},"impl_link":"same-language","impl_language":"C# (compiled from Dafny); Rust (Verus)","tcb":{"sorry":0,"axiom":64,"native_decide":0,"admit":0,"assume":1,"external_body":25,"unverified_translator":"Dafny-to-C# compiler and .NET runtime; rustc; Z3","note":"axiom = Dafny {:axiom} in IronFleet trusted specs; assume = live 'assume TimeNotZeno(timefun)' in IronRSL liveness proof; external_body = verified-ironkv trusted files; reduction argument informal"},"loc":{"spec":1400,"proof":39253,"impl":5114,"note":"IronFleet Figure 12 totals; Verus IronKV port: trusted 1613, proof 4509, code 1533"},"built":"no","pattern":"three-layer refinement (spec / protocol state machine / implementation) with TLA embedding for liveness in an SMT-based verifier","subclaims":["H1","H2","H3","H4","H5","D"],"full_read_sources":3}
+{
+ "id": "REF-C02",
+ "name": "IronFleet (Dafny) plus Verus distributed-systems work (IronKV port, Anvil)",
+ "subject": "MultiPaxos replicated state machine (IronRSL), sharded key-value store (IronKV), Kubernetes controllers (Anvil)",
+ "kind": "comparator",
+ "tool": "Dafny v3.4.0 (IronFleet); Verus vstd 0.0.0-2026-11-01-0251 with Rust 1.99.1 toolchain and Z3 4.16.0",
+ "org": "Microsoft Research; Verus: MPI-SWS, CMU, MSR, ETH, VMware Research and others; Anvil: UIUC, UW-Madison, VMware Research, Feldera",
+ "repo": "https://github.com/microsoft/Ironclad ; https://github.com/verus-lang/verified-ironkv ; https://github.com/verus-lang/verus",
+ "commit": "Ironclad 2fe4dcdc323b92e93f759cc3e373521366b7f691; verified-ironkv 7e35ed097c4089b9fbda483ea2629a0033f4d874; verus dc1b61c7affc1f947ce0724134bec33656ae0da0",
+ "toolchain": "Dafny v3.4.0 + .NET 6; Verus + Z3 4.16.0",
+ "maturity": "research",
+ "properties": {
+  "functional": "yes",
+  "safety": "yes",
+  "liveness": "yes",
+  "refinement": "yes",
+  "symbolic_security": "no",
+  "computational_security": "no",
+  "parsing": "yes",
+  "constant_time": "no"
+ },
+ "impl_link": "same-language",
+ "impl_language": "C# (compiled from Dafny); Rust (Verus)",
+ "tcb": {
+  "sorry": 0,
+  "axiom": 64,
+  "native_decide": 0,
+  "admit": 0,
+  "assume": 1,
+  "external_body": 25,
+  "unverified_translator": "Dafny-to-C# compiler and .NET runtime; rustc; Z3",
+  "note": "axiom = Dafny {:axiom} in IronFleet trusted specs; assume = live 'assume TimeNotZeno(timefun)' in IronRSL liveness proof; external_body = verified-ironkv trusted files; reduction argument informal"
+ },
+ "loc": {
+  "spec": 1400,
+  "proof": 39253,
+  "impl": 5114,
+  "note": "IronFleet Figure 12 totals; Verus IronKV port: trusted 1613, proof 4509, code 1533"
+ },
+ "built": "no",
+ "pattern": "three-layer refinement (spec / protocol state machine / implementation) with TLA embedding for liveness in an SMT-based verifier",
+ "subclaims": [
+  "H1",
+  "H2",
+  "H3",
+  "H4",
+  "H5",
+  "D"
+ ],
+ "full_read_sources": 4
+}

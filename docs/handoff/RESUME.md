@@ -10,7 +10,7 @@ Branch: `phase1b-wip`. `main` still holds the original Phase 1 output.
 
 ## Not done (in order)
 1. Phase 1b topic-file upgrades (r01-r08). None written yet. Re-send research/prompts/phase1b-upgrade.md to each agent.
-2. 29 reference dossiers (d1-d9; list in research/prompts/phase1b-dossiers.md). None written yet. Constraint: no local Lean builds (disk limit); static inspection only, delete clones after use.
+2. 28 reference dossiers (d1-d9; list in research/prompts/phase1b-dossiers.md). None written yet. Constraint: no local Lean builds (disk limit); static inspection only, delete clones after use.
 3. `scripts/build-catalogue` to generate research/references/README.md.
 4. research/CONFLICTS.md (CF-NNN entries aggregated from all files).
 5. Skeptical review by a different model family, written to research/REVIEW-phase1.md with a `## Dispositions` section.

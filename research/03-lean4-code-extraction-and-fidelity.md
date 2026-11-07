@@ -1,6 +1,6 @@
 # 03 – Lean 4 code extraction and fidelity (Phase 1b)
 
-**Header counts:** [FULL] entries: 31 | [CODE] entries: 19 (several [CODE] entries also include full reading of the repo's own docs) | Unverified leads (excluded from evidence): 19. Depth tags are per entry. Neutral record; no verdict on the hypothesis.
+**Header counts:** [FULL] entries: 23 | [CODE] entries: 18 (several [CODE] entries also include full reading of the repo's own docs) | Unverified leads (excluded from evidence): 19. Depth tags are per entry. Neutral record; no verdict on the hypothesis.
 
 Access date for every URL: **2026-11-07**. Tags: **[P]** primary, **[S]** secondary. Sub-claim IDs (H1–H5, D) follow `research/CONVENTIONS.md`. This file bears mainly on H3 (implementation link), H4 (generality), H5 (inference) and D (definitions); it touches H1/H2 only where a source says so.
 
@@ -14,7 +14,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - Repositories were shallow-cloned into `/tmp` (`--depth 1 --filter=blob:limit=1m`). Counts below come from a crude `grep` over `*.lean` files (excluding `.lake` and `.git`). They count textual matches, including comments and doc strings (for example `admit` in `lean-surfaces` matches the C++ semantics vocabulary, not the tactic). They are indicative only. Where a repo documents its own counts, those are quoted separately.
 - Disclosure: during Phase 1b a few GitHub REST API calls were made early (repository archive flag and pushed date for about 18 repos; one README each for Perennial, julia-in-lean and Goose; existence of two Go issues). This contravenes CONVENTIONS rule 3. None of those results is used as evidence here without a second read: the Clear archive status was re-read from the GitHub web page, the Go issues from the web pages, and the Perennial and julia-in-lean READMEs from cloned copies. The Goose README read through the API is not used.
 - AI-generated or AI-assisted repositories are flagged by what was observed: presence of `AGENTS.md`, `CLAUDE.md`, `.claude/` or `.agents/` files, and README self-statements. This is a determination from repo files, not from commit history (shallow clones have one commit).
-- A correction to the Phase 1 version of this file: the Phase 1 text described lean-zip as a case with `@[extern]` zlib opaques, taken from a secondary summary. The README read in Phase 1b describes a pure-Lean DEFLATE implementation (entry E38).
+- A correction to the Phase 1 version of this file: the Phase 1 text described lean-zip as a case with `@[extern]` zlib opaques, taken from a secondary summary. The README read in Phase 1b describes a pure-Lean DEFLATE implementation (entry E37).
 
 ---
 
@@ -44,7 +44,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - 4.35.0 headline: "The main new feature of Lean 4.35.0 is vcgen, a faster and more general successor of mvcgen. It also adds lake check and lake comparator, which check a project with Lean's kernel and, if requested, with several independent kernels that now come with the toolchain."
 - 4.35 vcgen: "vcgen builds on the Std.WP framework, whose weakest precondition interpretation applies to any program type rather than only to monads: besides do-programs in any monad, vcgen verifies deeply embedded languages, such as that of x64 assembler or WebAssembly for which a notion of weakest precondition is definable." Performance claim: on the AddSubCancel benchmark "vcgen needs 0.32 s where mvcgen needs 66 s".
 - 4.31.0: assertion language generalised to any `CompleteLattice`; experimental `mvcgen'` "can outperform `mvcgen` by a factor of over 100x on some synthetic benchmarks".
-- 4.30.0: LCNF compiler-backend completion (the new compiler front half is Lean-implemented; see E11 for the older C++ pipeline).
+- 4.30.0 (read: LCNF entries): the release notes describe completing the new LCNF compiler backend and porting the C emission pass from IR to LCNF ("marking the final step of the IR/LCNF conversion"); see E11 for the older C++ pipeline.
 - 4.22.0: introduces `Std.Do.Triple` and `mvcgen`.
 
 ### E06 Lean reference manual "The mvcgen tactic" and tutorial "Verifying Imperative Programs Using mvcgen" — https://lean-lang.org/doc/reference/latest/The--mvcgen--tactic/ ; .../Overview/ ; https://lean-lang.org/doc/tutorials/latest/mvcgen/ — [P] [FULL] — H3, D
@@ -87,7 +87,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - Paper statement on Aeneas: "Aeneas comes with restrictions, notably, the programmer cannot rely on runtime-checked aliasing (RefCell) or concurrency."
 - "some less-central features such as generic associated types, dyn Trait, or trait aliases are not yet fully supported."
 - "a declaration that cannot be translated is marked as missing and the rest of the crate is translated as usual".
-- Numbers read: Charon runs average about 80 s on the largest case studies; evaluation targets include libcrux ML-KEM and a safe-Rust HACL* port. The paper does not claim Charon itself is formally verified.
+- Numbers read: Charon is "18kLoC" plus an 11 kLoC frontend-exporter crate; evaluation targets include a safe-Rust HACL* port ("about 84kLoC") and an ML-KEM implementation from libcrux (12 kLoC). "On the evaluated crates, translation from Charon to LLBC takes on average 80 s". The paper was not read as claiming Charon itself is formally verified; no such claim was found.
 
 ### E14 Aeneas README — https://github.com/AeneasVerif/aeneas — [P] [FULL] — H3, H4
 - Aeneas is "a verification toolchain for Rust programs" and "relies on a translation from Rust's MIR internal language to a pure lambda calculus". Backends "F*, Coq, HOL4 and LEAN"; "Our most mature backends are Lean and HOL4".
@@ -123,8 +123,8 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 
 ## 3. Machine-code, bytecode and binary-level routes
 
-### E20 LNSym README — https://github.com/leanprover/LNSym (raw README) — [P] [FULL] — H3, D
-- "LNSym is described as" a symbolic simulator for Armv8 machine code, with an `Arm` formalisation of the AArch64 ISA, specifications of algorithms, proofs, and a `cosim` conformance-testing target. Read in full; no supported-instruction list in the README. LNSym dossier owns detail.
+### E20 LNSym README — https://github.com/leanprover/LNSym (raw README.md) — [P] [FULL] — H3, D
+- Title: "LNSym: Native Code Symbolic Simulator in Lean". Opening line: "LNSym is a symbolic simulator for Armv8 machine-code programs." The README read in full contains build prerequisites, repository layout and test targets (including a `cosim` conformance-testing target); it contains no list of supported instructions and no limitation statement. LNSym dossier owns detail.
 
 ### E21 Amazon Science blog "How the Lean language brings math to coding and coding to math" — https://www.amazon.science/blog/how-the-lean-language-brings-math-to-coding-and-coding-to-math — [P] [FULL] — H3, D
 - "LNSym uses Lean as a specification language to model the Arm instruction semantics and cryptographic protocols and as a theorem prover for reasoning about these artifacts. Since Lean programs are executable, the specifications achieve a high degree of trust through thorough conformance testing." Also describes LNSym as "currently under development, with a focus on enabling automated reasoning of cryptographic machine-code programs."
@@ -162,7 +162,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 
 ### E27 LemmaScript — https://github.com/midspiral/LemmaScript — [P] [CODE + docs] — H3, H4, D
 - SHA `385cfbdf4ffb`, last commit 2026-11-04, toolchain `leanprover/lean4:v4.34.0`, MIT. Lean files 94, LOC 3,755. Crude counts: sorry 0, axiom 0. `AGENTS.md` present (AI-agent-assisted indicated).
-- README: TypeScript with `//@` annotations compiled to Dafny or Lean ("with Velvet 2"); marked "Tech Preview". `docs/SUBSET.md` lists the supported TypeScript subset; several documented examples are Dafny-only, with narrower Lean-backend support (SUBSET and SPEC_LEAN.md). `DESIGN.md` states the translation is validated by inspection of the code generator rather than proved.
+- README: TypeScript with `//@` annotations compiled to Dafny or Lean ("with Velvet 2"); marked "Tech Preview". `docs/SUBSET.md` lists the supported TypeScript subset; `docs/SUBSET.md`: "Both Dafny and Lean are supported, but Dafny currently understands a wider set of library methods (most string/array helpers below are Dafny-only)... When in doubt, target Dafny." Per-backend columns are in SPEC.md. `DESIGN.md` states the translation is validated by inspection of the code generator rather than proved.
 - The Lean backend generates definitions; specs and proofs are hand-written files.
 
 ### E28 Thales (TypeScript to Lean) — https://github.com/jessealama/thales — [P] [CODE + docs] — H3, H4
@@ -171,7 +171,7 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 - `docs/axioms.md`: "`Thales.TS.Runtime` postulates twelve `axiom`s. They all encode properties of IEEE-754 doubles". README: emitted code reasoning about safe-integer arithmetic "ultimately rests on these."
 
 ### E29 PastaLean (Python to Lean) — https://arxiv.org/pdf/2610.34205 — [P] [FULL] — H3, H4
-- Deterministic transpiler producing a "provable twin" and a "runnable twin". Table 1 of the paper: HumanEval+ 164 problems, 151 elaborated (92.1%), 7,007 tests all passed; LeetCode 2,589 problems, 2,391 elaborated (92.4%), 215,126 tests, 208,736 passed (97.0%); LiveCodeBench 476 problems, 469 elaborated (98.5%), 10,213 tests all passed. Footnote: the thirteen remaining HumanEval programs elaborate "with one type hint added". The paper says of the two twins: "We do not prove that the runnable Unsupported statements degrade to `pyUnsupported` placeholders; out of scope: `exec`, async/threads, dynamic dispatch, metaclasses. Preprint dated 25 Oct 2026 per its arXiv stamp.
+- Deterministic transpiler producing a "provable twin" and a "runnable twin". Table 1 of the paper: HumanEval+ 164 problems, 151 elaborated (92.1%), 7,007 tests all passed; LeetCode 2,589 problems, 2,391 elaborated (92.4%), 215,126 tests, 208,736 passed (97.0%); LiveCodeBench 476 problems, 469 elaborated (98.5%), 10,213 tests all passed. Footnote: the thirteen remaining HumanEval programs elaborate "with one type hint added". The paper says of the two twins (Appendix): "We do not prove that the runnable twin refines the provable one. The two are tied empirically instead, by running the runnable twin against CPython on the dataset's own tests ... and making that tie a proof is future work." Unsupported Python degrades to a `pyUnsupported` placeholder no-op (Appendix A.13); the paper lists `exec`, monkey-patching, `super()` and metaclasses among untranslated features (Appendix A.11 has the full list). Preprint dated 25 Oct 2026 per its arXiv stamp.
 
 ### E30 leanlift — https://github.com/zeta1999/leanlift — [P] [CODE + SPEC] — H3, H4, D
 - SHA `5a5d6f6ca654`, last commit 2026-10-02, toolchain `leanprover/lean4:v4.28.0`, no licence file. Lean files 79, LOC 11,446. Crude counts: sorry 21, admit 5, axiom 2. No AGENTS/CLAUDE files; README itself is WIP-labelled and describes LLM-generated candidates.
@@ -217,10 +217,10 @@ Scope split: separate dossiers cover Cedar, SampCert, LNSym, Veil/Lentil/Velvet/
 ## 5. CompCert-style and verified-compilation routes
 
 ### E38 CompCert motivations and manual — https://compcert.org/motivations.html ; https://compcert.org/man/manual001.html — [P] [FULL] — H3, D
-- CompCert is written and proved in Coq/Rocq. Claim: the compiled code "is proved to behave exactly as specified by the semantics of the source C program". Theorem shape: compilation success implies observable behaviour of the code "improves on" an allowed source behaviour. The pages state that the verified part starts after preprocessing, parsing, type-checking and elaboration, and that assembling and linking are not verified (manual and motivations pages). Not a Lean artifact.
+- CompCert is written and proved in Coq/Rocq. Manual page: "the executable code it produces is proved to behave exactly as specified by the semantics of the source C program". Both pages state: "complete, end-to-end formal verification has not been achieved yet" in the sense that "the remaining 10% (including elaboration, presimplifications, assembling and linking) are not verified" (about 90% of the compiler's algorithms are proved in Coq/Rocq). Not a Lean artifact.
 
-### E39 "The Trusted Computing Base of the CompCert Verified Compiler" — https://ar5iv.labs.arxiv.org/html/2201.10280 — [P] [FULL, abstract and intro] — D, H3
-- Dedicated TCB analysis of CompCert; states the guarantee holds when compilation succeeds and the C program executes without undefined behaviour. Included as a reference point for "verified compilation" TCB statements.
+### E39 "The Trusted Computing Base of the CompCert Verified Compiler" — https://ar5iv.labs.arxiv.org/html/2201.10280 — [P] [FULL, abstract and introduction] — D, H3
+- Dedicated TCB analysis of CompCert. Introduction states the headline guarantee: "if the compiler succeeded in compiling a C program and that program executes with no undefined behavior, then the assembly code produced executes correctly with the same observable behavior. Yet, this impressive claim comes with some caveats". Included as a reference point for "verified compilation" TCB statements; not a Lean artifact.
 
 ### E40 lean-compcert — https://github.com/gersh/leancompcert — [P] [CODE + docs] — H3, H4, D
 - SHA `dfc7ae2171e8`, last commit 2026-08-31, toolchain `leanprover/lean4:v4.32.1`, no root licence file. Lean files 6,129, LOC 1,628,183 (includes much generated/vendored content). Crude counts: sorry 10, axiom 62, native_decide 74. Repo includes Coq/CompCert scripts.
@@ -291,7 +291,7 @@ Legend: Y documented supported; N documented unsupported; ? not stated in what w
 
 ## 9. Quote verification
 
-All verbatim quotes in this file were machine-checked after writing against the downloaded page text or repository files (exact string match, whitespace-normalised). Quotes that failed to match were corrected or removed. The check script and its result are summarised in the message sent with this file.
+Method: an automated pass extracted every quoted string of 25 or more characters (141 strings) and tested for an exact, whitespace-normalised match against the downloaded page texts and repository files. Mismatches found in that pass were corrected in the text (examples: Lean4Lean, Aeneas ICFP sentence, PastaLean Table 1 figures and appendix quote, Scylla wording, trustCompiler paraphrase). 23 strings remained unmatched by the script; they were checked by hand and fall into these groups: (a) quotes containing an ellipsis that joins two non-adjacent passages of the same source; (b) strings containing markdown link syntax or inline code spans that the plain-text source lacks; (c) text read on a rendered web page (for example the GitHub archived-repository banner, the Lean release notes, README sections) that is not in the downloaded text files; (d) fragments cut by the script at a quote boundary. This hand check was not a second exact-match run, so it is weaker than the automated pass. Quotes in group (c) are the least mechanically verified.
 
 ---
 
