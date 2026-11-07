@@ -144,3 +144,99 @@ Method (CONVENTIONS rule 3): `git clone --depth 1` into /tmp; GitHub REST API no
 ### E22 — Amazon is investing in the Lean Focused Research Organization (Amazon Science, 2026-07-26)
 - https://www.amazon.science/news/amazon-is-investing-in-the-lean-focused-research-organization [P] [FULL]. Tags: H2, H3.
 - Substance: "Amazon uses Lean-based verification across multiple products including Bedrock AgentCore for agentic safety, SampCert for differential-privacy guarantees, and AWS Neuron for AI chip compilation, with scientists using LLM-Lean combinations to prove complex distributed protocol correctness." "One scientist recently used an LLM with Lean to prove the correctness of Amazon Aurora's segment repair protocol, our most durability-critical distributed protocol, in a fraction of the time it would have taken manually." No paper, theorem or scope is given for the Aurora claim; the page does not mention Cedar.
+
+---
+
+## 3. [CODE] Repositories inspected by shallow clone
+
+All clones: `git clone --depth 1`, static inspection only. Metrics are naive counts (Section 0). "Stars" from repo HTML on 2026-11-07. Several repos contain `CLAUDE.md`/agent files; where this is present it is recorded under AI-assistance (CONVENTIONS rule 7). Absence of such a file does not show human authorship.
+
+### C01 — verse-lab/veil [P] [CODE]. Tags: H1, H2, D
+- https://github.com/verse-lab/veil — SHA 57447722e7f2, last commit 2026-11-07, `lean4:v4.35.0`, LICENSE present, 366 stars (cached page seen earlier showed 350). 495 files, 89,474 Lean LOC.
+- Counts: sorry 33, admit 10, native_decide 30, implemented_by 16, partial 67, axiom 0, opaque 1. The `sorry` hits are in the DSL/tactic source that emits `sorry`-bodied theorems when proof reconstruction is off (consistent with E13); not hand-classified exhaustively.
+- README (HEAD): lists "(3) model-checking, and (4) proving safety and liveness properties of state transition systems, with a focus on distributed protocols." Examples directory table: `Liveness/` ("Temporal properties proved with `prove_temporal_by`"), `LivenessMC/` ("model checked with `#temporal_check`, including TLA+ specifications and CAVA benchmarks"), `Examples/Demo/FloodSet/FloodSetLiveness.lean`, plus `Simulate`, `AWS`. `docs/DSL-Reference.md`: `#simulate` is described as non-exhaustive testing of the model; the compiled model checker "calls them directly". README line 176 area: a comparison "of TLC and Veil on safety model checking" over 20 TLA+ specs.
+- Scope: the repo's verified objects are Veil DSL transition systems. No extraction to or from an external-language implementation was found in the tree (not exhaustively searched).
+
+### C02 — verse-lab/loom [P] [CODE]. Tags: H2
+- https://github.com/verse-lab/loom — SHA 78928abc9054, 2026-02-21, `lean4:v4.24.0`, LICENSE, 167 stars; 38 files, 3,094 LOC; sorry 1, admit 1 (naive). Small core library (monad-transformer algebras, WP generation). Clone HEAD is older than Veil's pinned toolchain (v4.35.0), so the Loom copy used by current Veil is not this HEAD (not verified further).
+
+### C03 — verse-lab/velvet [P] [CODE]. Tags: H2, H4
+- https://github.com/verse-lab/velvet — SHA b2a349a57021, 2026-11-05, `lean4:v4.35.0`, LICENSE, 136 stars; 140 files, 34,674 LOC; sorry 2, native_decide 22, partial 17.
+
+### C04 — SecPriv/leandy [P] [CODE]. Tags: H1, H2, H3(no)
+- https://github.com/SecPriv/leandy — SHA e0705986c5de, 2026-07-07, `lean4:v4.24.0-rc1`, LICENSE, 6 stars; 83 files, 18,096 LOC. sorry 0, admit 0, axiom 0, native_decide 1, partial 1.
+- Matches E05: protocol model and proofs are written in Lean's own eDSL; no Rust/C implementation link. Contains payment-channel liveness theorems (`punish.sound`, `punish.eventually_onchain`) stated under continuous-mining and miner-liveness assumptions.
+
+### C05 — Beneficial-AI-Foundation/libsignal-verify [P] [CODE]. Tags: H2, H3, H4, D
+- https://github.com/Beneficial-AI-Foundation/libsignal-verify — SHA a69cb0119dd4, 2026-11-06, `lean4:v4.31.0`, LICENSE present (type not checked), 13 stars. 88 Lean files, 26,211 LOC. Counts: sorry 19, axiom 344, native_decide 0, extern 0, opaque 0.
+- README: "This project aims to verify the functional correctness of libsignal. More info to be added…".
+- `Protocols/LEDGER.md` (dated 2026-10-30), read in full: pins Lean v4.31.0, Mathlib fabf563a, VCVio cbd4144b, Aeneas nightly-2026.09.30. `Protocols/` = 38 Lean files, 7,344 LOC, 19 `sorry`; `ProtocolsTest/` = 4 files, 821 LOC, 0 `sorry`. The rest is Aeneas/Charon-extracted Rust under `rust/Libsignal/Translated/`, whose 344 `axiom`s are almost all external-function stubs in `FunsExternal.lean`/`TypesExternal.lean` (e.g. 190 and 11 in the protocol crate; 73 and 7 in the crypto crate; counts from per-file grep).
+- Model-level theorems per the ledger: `uakeInitiator_perfectlyCorrect` and `uakeRecipient_perfectlyCorrect` depend on `propext`, `Classical.choice`, `Quot.sound` only; `uakeInitiator_secure_dh` and `uakeInitiator_secure_pq` depend on `sorryAx` "from six admitted hops". Statement shape (file `Protocols/PQXDH/Security.lean`, line 94): `theorem uakeInitiator_secure_dh (P : Params …) … (A : UAKE.Adversary (uakeInitiator P EntryPoints.extracted msg hasOPK)) … : fullAdvantage P msg hasOPK A ≤ εsig + 2 * q * (εodh + 2 * εaead) + 3 * (q : ℝ) ^ 2 * εpk + …`. The security statement is parametrised by `EntryPoints.extracted`, i.e. by the Aeneas-translated Rust entry points; those translated functions' axiom dependencies include `crypto.hkdf_sha256`, `curve.PrivateKey.calculate_agreement`, post-quantum KEM items, and a native-decision axiom introduced by extraction of `pqxdh_accept` (ledger).
+- Fault fixtures exist in `ProtocolsTest/PQXDH/FaultFixtures.lean`. Authors in file headers: Alessandro D'Angelo / Beneficial AI Foundation. Includes Signal's own source files plus `src-modifications.diff` and `extraction-notes.md`.
+- Status in the repo's own words: a work in progress. AI-assistance: not determined (no agent file seen); the BAIF organisation publicly pursues AI-assisted Lean verification (E16).
+
+### C06 — dsyme/raft-lean-squad [P] [CODE]. Tags: H2, H3, D. AI-generated: yes (self-declared)
+- https://github.com/dsyme/raft-lean-squad — SHA ab7a184fbdfe, 2026-06-03, no `lean-toolchain` file found, LICENSE, 11 stars. 80 files, 21,355 LOC. Naive sorry 29: sampled hits are docstring text "0 sorry" (not exhaustively classified); axiom 1; native_decide 2. An `agents` directory is present; repo is produced by Don Syme's "Lean Squad" agent workflow (self-declared in its REPORT/README).
+- REPORT (read): 716 theorems across 79 files, 0 sorry, 129 runs, 28 correspondence targets with 625 `#guard` tests. The Lean code is a hand-written model of raft-rs checked against the Rust by tests (correspondence), not an extraction.
+- Theorem (file `FVSquad/RaftTrace.lean:228`): `theorem raftReachable_safe [DecidableEq E] (hd : Nat) (tl : List Nat) (cs : ClusterState E) (hvoters : cs.voters = hd :: tl) (hreach : RaftReachable cs) : isClusterSafe cs` — safety over the model's reachable states.
+- Internal tension noted in the report itself: it says all hypotheses are discharged while still listing a "reduce trust boundary" item.
+
+### C07 — NyxFoundation formal-verification repos [P] [CODE]. Tags: H1, H2. AI-assisted: yes for formal-leanSpec
+- minimmit-fv: https://github.com/NyxFoundation/minimmit-fv — SHA 145f1089f3df, 2026-07-29, `v4.29.1`, no LICENSE found, 2 stars; 23 files, 2,954 LOC. Naive sorry 3 and admit 1: the hits inspected are docstring phrases ("no `sorry`"); real axioms are two idealised-crypto axioms in `Minimmit/Axioms.lean`: `signature_unforgeable` (line 19) and `collision_resistant` (line 35). `Minimmit/AxiomAudit.lean` pins each lemma's axiom set for CI. Models the Minimmit consensus protocol in Lean (Lemma 5.1 consistency etc.); the Phase 1 statement "contains `sorry`" was not supported.
+- rlmd-ghost-fv: https://github.com/NyxFoundation/rlmd-ghost-fv — SHA 5d7d7c58897f, 2026-07-29, `v4.29.0`, 0 stars; 34 files, 5,498 LOC; docstrings state "`sorry`-free, Lean core axioms only" for probabilistic lemmas; `RLMDGhost/Axioms.lean` says the only unproven mechanisms are explicit `axiom`s and hypotheses.
+- formal-leanSpec: https://github.com/NyxFoundation/formal-leanSpec — SHA ba7284513031, 2026-07-30, `v4.29.1`, 3 stars; 41 files, 8,534 LOC. `CLAUDE.md` says it is for "Claude Code" and "Each Lean file extracts propositions from the Python spec and proves them as theorems" with "no test runner — every theorem whose proof type-checks is a passing 'test'". AI-assistance flag: CLAUDE.md present.
+- All three model protocols/specs in Lean; none runs or extracts the production client.
+
+### C08 — fradamt/verified-consensus [P] [CODE]. Tags: H1, H2, D
+- https://github.com/fradamt/verified-consensus — SHA d379754762cc, 2026-10-12, `v4.34.1`, LICENSE, 31 stars; 1,047 files, 334,092 LOC; sorry 0, axiom 0, native_decide 5.
+- Theorem `concreteConsensus (S : Setup V) : Statements.Instantiation.Consensus S` in `DecoupledConsensusProofs/ReviewTheorem.lean:288`; the `Consensus` structure has 13 fields (including `certificatesAccountable`, `finalizedAccountable`, `honestNeverSlashed`, `finalizedMonotone`, `finalizedSafe`, `available`).
+- README: "no sorry, no project-specific axiom"; assumes unforgeable honest signatures, collision-free roots, bounded delivery after GST, honest committee majorities; liveness additionally needs participation and proposer recurrence; has a premise ledger. Verifies a Lean model of the protocol; the implementation link was not found.
+
+### C09 — etheorem/etheorem [P] [CODE]. Tags: H3, H4, D. AI-assisted: CLAUDE.md present
+- https://github.com/etheorem/etheorem — SHA 417ca909aa7d, 2026-11-01, `v4.34.1`, LICENSE, 34 stars; 369 files, 61,202 LOC. Counts: axiom 9, native_decide 795, extern 109, implemented_by 22, opaque 45, sorry 0. README says "not an EF release" (Invisible Garden project).
+- Verification-status table in the repo: EthCLSpecs 19 characterized and 58 touched of 625 spec functions; SizzLean 5 of 5 properties over 15 admitted arms; LeanSha256 relies on 3 named equivalence axioms (e.g. `sha256Hash_eq_spec`); EthCLLib proofs out of scope. The repo is an ongoing Lean implementation of Ethereum consensus-layer components; the table is its own account of partial coverage.
+
+### C10 — leanprover/SampCert [P] [CODE]. Tags: H3
+- https://github.com/leanprover/SampCert — SHA a2c53bb5ff79, 2026-09-25, `v4.34.1`, LICENSE, 107 stars; 108 files, 18,463 LOC; sorry 0, axiom 0, extern 6, opaque 2, partial 6. Matches E11 (verified sampler code with FFI via a small C++ shim).
+
+### C11 — cedar-policy/cedar-spec [P] [CODE]. Tags: H3
+- https://github.com/cedar-policy/cedar-spec — SHA a4c5a89cd156, 2026-11-06, `v4.35.0`, LICENSE, 222 stars; 388 files, 126,845 LOC (Lean plus DRT tooling); sorry 0, admit 1, native_decide 26, partial 42, implemented_by 2. Lean model + proofs next to Rust differential-test fuzzing (E10).
+
+### C12 — edusporto/lean-mqtt [P] [CODE]. Tags: H1, H3, D
+- https://github.com/edusporto/lean-mqtt — SHA af23e7bea58d, 2026-09-21, `v4.34.0`, LICENSE, 3 stars; 42 files, 4,751 LOC; sorry 0. Lean MQTT 3/5 packet parser and codec library. Theorem `Parser.bytes_roundtrip` (`LeanMqtt/Core/Parser/Proofs.lean:39`): `theorem Parser.bytes_roundtrip (l rest : List UInt8) : (Parser.bytes l.length).run (l ++ rest) = some (l, rest)`. Accompanying paper at SBLP 2026: https://sol.sbc.org.br/index.php/sblp/article/view/46205 [S, only the landing record read]. Proofs cover the parser; broker/client behaviour is listed as future work in the repo; the Lean code is itself the implementation, written in Lean.
+
+### C13 — leanprover/lean4 (Std.Http, Std.Async) [P] [CODE]. Tags: H1, H4
+- https://github.com/leanprover/lean4 — sparse checkout at a2f1a64, 2026-11-06, 9,901 stars. `src/Std/Http`: 47 files, 13,726 lines, 25 theorem/lemma declarations, 0 sorry. `src/Std/Async`: 11 files, 3,132 lines, 0 theorems. Shows that HTTP and async I/O libraries exist in the standard distribution; the proofs present are mostly small lemmas (no protocol-level theorem identified).
+
+### C14 — AeneasVerif/aeneas and charon [P] [CODE]. Tags: H3, H4
+- aeneas: https://github.com/AeneasVerif/aeneas — SHA c5eb4a28cef6, 2026-11-07, LICENSE.md, 1,170 stars; 417 Lean files, 78,034 LOC (Lean library and proofs; tool itself is OCaml); sorry 56, axiom 31, native_decide 33, opaque 11, partial 72.
+- charon: https://github.com/AeneasVerif/charon — SHA f070bb923309, 2026-11-06, 477 stars; Rust front end (no Lean).
+- hax: https://github.com/cryspen/hax — SHA 4d52f781015f, 2026-11-06, LICENSE, 503 stars; 268 Lean files, 53,385 LOC; sorry 16, opaque 64.
+
+### C15 — Other Lean verification repos inspected [P] [CODE]
+| Repo | SHA | Last commit | Toolchain | Lean LOC | Notable counts | Stars | Notes |
+|---|---|---|---|---|---|---|---|
+| rupakm/leslie | 58e58b2502b2 | 2026-06-09 | v4.27.0 | 103,805 | sorry 44 | 16 | Lean TLA/protocol-proof library (scope not read in depth) |
+| leanprover/con-ron | 97eead2d5b49 | 2026-10-31 | none | 332,513 | sorry 88, axiom 10 | 34 | CLAUDE.md present (AI-assisted) |
+| Verified-zkEVM/ArkLib | 34613d617af3 | 2026-11-05 | v4.35.0 | 382,226 | sorry 29, admit 18 | 353 | cryptographic proof systems; VCV-io 172 stars |
+| Verified-zkEVM/rust-lean | 49a83d2a231c | 2026-04-18 | none | 9,970 | sorry 24, axiom 22 | 12 | |
+| leanprover/cslib | 76b7943d0b8d | 2026-11-05 | v4.36.0-rc2 | 52,113 | sorry 0 | 799 | CS library incl. process calculi (E26 lead) |
+| leanprover/LNSym | 49f8a1d9e46f | 2026-11-06 | v4.35.0 | 45,232 | sorry 50, native_decide 194 | 121 | ARM machine-code symbolic simulator |
+| konnov/leanda | f7abaa1d043e | 2026-07-28 | none | 19,196 | sorry 1 | 21 | |
+| athanor-ai/pythia | 65404339b5c6 | 2026-06-15 | v4.28.0 | 66,589 | sorry 104 | 18 | |
+| AfonsoBitoque/LeanServer | 24b916aaa6ae | 2026-05-14 | v4.29.1 | 38,581 | native_decide 417, extern 77, opaque 81, sorry 2, admit 7 | 6 | Lean-written server/TLS stack; proofs not evaluated |
+| solanaqubits/leanbook | 5276529c6c10 | 2026-11-05 | v4.33.1 | 165,863 | sorry 0 | 3 | |
+| runtimeverification/kernel-rust-verification-spike | dc20c29367b0 | 2026-08-12 | none | 1,556 | sorry 2, axiom 6 | 4 | RV Binder spike (E18) |
+| nocaptheorem/RaftFormalModel | 51f60b20d207 | 2026-09-18 | v4.32.2 | 655 | sorry 18 | 0 | Raft model with 18 sorry |
+| akkeshavan/tla-plus-lean-workflow | 991034218346 | 2026-06-29 | none | 3,377 | sorry 8 | 0 | TLA+ to Lean workflow |
+| Koukyosyumei/PoL | c71ce2374efd | 2025-08-26 | v4.22.0-rc3 | 919 | sorry 1 | 5 | |
+| repowazdogz-droid/escrow-budget | 6595f1283a43 | 2026-07-24 | none | 713 | sorry 0 | 0 | `Escrow.reachable_safe`; separate TLA+ |
+| e6qu/rust-lean-aeneas | 146e06a1a78c | 2026-03-23 | none | 40,297 | sorry 66, axiom 449 | 9 | see C16 |
+| Chronos-Vault/chronos-vault-contracts | 004ae28b73f0 | 2025-12-23 | none | 3,016 | sorry 59, axiom 13 | 1 | see C17 |
+Other stars (HTML): leanprover/lean4 9,901 (a2f1a64); leanprover/mathlib4 4,442 (df6966d, 2026-11-07); microsoft/SymCrypt 898; Chronos-Vault/chronos-vault-security 6. digama0/lean4lean: clone gave no commit data and star count was not retrieved; leanprover/lean4lean returned "repository not found".
+
+### C16 — e6qu/rust-lean-aeneas [P] [CODE]. Tags: H3, D. Flag: low-reliability
+- https://github.com/e6qu/rust-lean-aeneas — SHA 146e06a1a78c, 2026-03-23; 133 files. Its own `STATUS.md` states the goal is formally verifying Rust with Lean 4 and Aeneas, and the repo notes (STATUS/WHAT_WE_DID) state that proofs are not real: theorems rely on axioms, Aeneas prelude is faked, concurrency is unsupported. 449 axiom lines. Docs are extensive (LEAN.md, PLAN.md, WHAT_WE_DID.md), which together with the self-description suggests tutorial/agent-generated material; authorship not determined.
+
+### C17 — Chronos-Vault/chronos-vault-contracts [P] [CODE]. Tags: H2, D. Flag: vendor/marketing
+- https://github.com/Chronos-Vault/chronos-vault-contracts — SHA 004ae28b73f0, 2025-12-23. Naive sorry 59 (a real placeholder `sorry -- Proof implementation` is in `Trinity.lean`), axiom 13. Its documents give inconsistent theorem counts (184 theorems; "78/78" and "778/78"; 14/22 theorems proven; 42 theorems for 14 contracts). Its developer guide states the Lean proofs cover abstract properties independent of the Solidity implementation. See Conflicts C-6.
